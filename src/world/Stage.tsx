@@ -5,6 +5,9 @@ import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
 import type { BloomEffect } from 'postprocessing';
 import * as THREE from 'three';
 import { SCENES } from '../scenes';
+import { STYLE_DEFS } from '../style/registry';
+import { getSettings, useSettings } from '../style/store';
+import TitleLayer from '../style/titles';
 import Ambient from '../scenes/Ambient';
 import { SceneCtx } from './context';
 import { world } from './store';
@@ -48,6 +51,8 @@ function World() {
   const bloom = useRef<BloomEffect>(null);
   const mountedKey = useRef('');
   const [mounted, setMounted] = useState<string[]>([]);
+  const { style, titles } = useSettings();
+  const StyleEffects = STYLE_DEFS[style].Effects;
   const pos = useRef(new THREE.Vector3(...DEFAULT_POSE.pos));
   const look = useRef(new THREE.Vector3(...DEFAULT_POSE.look));
   const tmp = useMemo(() => ({ p: new THREE.Vector3(), l: new THREE.Vector3(), bg: new THREE.Color(), c: new THREE.Color() }), []);
@@ -102,7 +107,7 @@ function World() {
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov += (fov - cam.fov) * k; cam.updateProjectionMatrix(); }
 
     (state.scene.background as THREE.Color).lerp(bg.multiplyScalar(1 / moodW), k);
-    if (bloom.current) bloom.current.intensity += (bl / moodW - bloom.current.intensity) * k;
+    if (bloom.current) bloom.current.intensity += (bl / moodW * (STYLE_DEFS[getSettings().style].bloomScale ?? 1) - bloom.current.intensity) * k;
 
     ambientW.current = clamp01(1 - sumW);
     const key = live.join('|');
@@ -123,6 +128,8 @@ function World() {
       <EffectComposer multisampling={0}>
         <Bloom ref={bloom} intensity={0.5} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
         <Vignette eskil={false} offset={0.2} darkness={0.7} />
+        {titles ? <TitleLayer /> : <></>}
+        <StyleEffects />
       </EffectComposer>
     </>
   );

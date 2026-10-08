@@ -8,6 +8,7 @@ const Stage = lazy(() => import('./world/Stage')); // three.js + scenes load aft
 import { webglAvailable } from './world/gl';
 import { updateWorld, world } from './world/store';
 import Minimap from './components/Minimap';
+import LabPanel from './components/LabPanel';
 import Track from './components/Track';
 
 export default function App() {
@@ -130,6 +131,7 @@ export default function App() {
       >
         <Track layout={layout} activeIndex={activeIndex} onBegin={begin} onRestart={() => scrollToX(0)} />
       </main>
+      <LabPanel />
       <Minimap
         layout={layout}
         progress={progress}

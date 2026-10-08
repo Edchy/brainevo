@@ -240,3 +240,25 @@ button { font: inherit; color: inherit; }
 .deep[open] > summary { margin-bottom: 4px; }
 .deep .significance { margin-bottom: 8px; }
 .deep .detail { color: var(--ink-dim); margin: 0 0 10px; }
+
+/* ---- design tokens: each [data-style] theme overrides these; UI uses them (see STYLE.md) ---- */
+:root {
+  --ui-ink: #f2f3fa;
+  --ui-ink-dim: #c3c7da;
+  --ui-line: rgba(255, 255, 255, 0.16);
+  --ui-panel: rgba(5, 7, 16, 0.58);
+  --ui-panel-blur: 14px;
+  --ui-radius: 14px;
+  --ui-font-display: var(--serif);
+  --ui-font-body: var(--sans);
+  --ui-font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* Lab panel (temporary experiment switcher) */
+.lab { position: fixed; top: 14px; right: 14px; z-index: 60; font: 0.8rem var(--sans); }
+.lab-toggle { background: rgba(0, 0, 0, 0.5); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; backdrop-filter: blur(8px); }
+.lab-pop { margin-top: 8px; background: rgba(8, 10, 20, 0.88); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; min-width: 190px; backdrop-filter: blur(12px); }
+.lab-pop fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; }
+.lab-pop legend { padding: 0 0 4px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.68rem; }
+.lab-pop label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.lab-check { border-top: 1px solid var(--line); padding-top: 8px; }
