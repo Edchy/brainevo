@@ -8,6 +8,7 @@ import { SCENES } from '../scenes';
 import { STYLE_DEFS } from '../style/registry';
 import { getSettings, useSettings } from '../style/store';
 import TitleLayer from '../style/titles';
+import { titleState } from '../style/titles/state';
 import Ambient from '../scenes/Ambient';
 import { SceneCtx } from './context';
 import { world } from './store';
@@ -69,7 +70,7 @@ function World() {
     const f = world.stationF;
     let sumW = 0;
     const p = tmp.p.set(0, 0, 0), l = tmp.l.set(0, 0, 0), bg = tmp.bg.setRGB(0, 0, 0);
-    let fov = 0, bl = 0, moodW = 0;
+    let fov = 0, bl = 0, moodW = 0, td = 0;
     const live: string[] = [];
 
     for (const r of resolved) {
@@ -87,6 +88,8 @@ function World() {
       p.x += pose.pos[0] * w; p.y += pose.pos[1] * w; p.z += pose.pos[2] * w;
       l.x += pose.look[0] * w; l.y += pose.look[1] * w; l.z += pose.look[2] * w;
       fov += (pose.fov ?? 55) * w;
+      const tdef = r.def.titleDepth;
+      td += (tdef === undefined ? Math.hypot(pose.pos[0] - pose.look[0], pose.pos[1] - pose.look[1], pose.pos[2] - pose.look[2]) : typeof tdef === 'function' ? tdef(t) : tdef) * w;
       const mood = r.def.mood?.(t);
       if (mood) { bg.add(tmp.c.set(mood.bg ?? '#000').multiplyScalar(w)); bl += (mood.bloom ?? 0.6) * w; moodW += w; }
     }
@@ -95,8 +98,10 @@ function World() {
     p.x += DEFAULT_POSE.pos[0] * rest; p.y += DEFAULT_POSE.pos[1] * rest; p.z += DEFAULT_POSE.pos[2] * rest;
     l.x += DEFAULT_POSE.look[0] * rest; l.y += DEFAULT_POSE.look[1] * rest; l.z += DEFAULT_POSE.look[2] * rest;
     fov += 55 * rest;
+    td += 6 * rest;
     const norm = sumW + rest || 1;
     p.divideScalar(norm); l.divideScalar(norm); fov /= norm;
+    titleState.depth += (td / norm - titleState.depth) * (1 - Math.exp(-dt * 14));
     bl += 0.5 * (1 - Math.min(1, moodW)); moodW = Math.max(moodW, 1);
 
     const k = 1 - Math.exp(-dt * 14); // slight damping, still scrubs tightly

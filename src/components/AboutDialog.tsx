@@ -1,5 +1,7 @@
 import { useRef } from 'react';
 
+export const ABOUT_KEYS = 'Keys: left and right arrows move between events, Shift plus arrow scrolls further, Home and End jump to the ends.';
+
 /** Native modal <dialog>: focus is trapped, Esc closes, focus returns to the button. */
 export default function AboutDialog() {
   const ref = useRef<HTMLDialogElement>(null);
@@ -18,8 +20,8 @@ export default function AboutDialog() {
           {' '}<em>A Brief History of Intelligence</em> (2023). Any mistakes in the retelling are ours, not his.
         </p>
         <p>All images and audio narration here are placeholders. Real artwork and recordings will replace them later.</p>
-        <p className="about-keys">Keys: left and right arrows move between events, Shift plus arrow scrolls further, Home and End jump to the ends.</p>
-        <button type="button" className="btn-begin about-close" onClick={() => ref.current?.close()} autoFocus>Close</button>
+        <p className="about-keys">{ABOUT_KEYS}</p>
+        <button type="button" className="btn-quiet about-close" onClick={() => ref.current?.close()} autoFocus>Close</button>
       </dialog>
     </>
   );

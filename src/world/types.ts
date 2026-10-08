@@ -40,4 +40,10 @@ export interface SceneDef {
   camera?: (t: number) => CameraPose;
   /** Background colour / bloom as a function of local progress t. Blended by weight. */
   mood?: (t: number) => Mood;
+  /**
+   * Distance from the camera (world units) of the plane the depth-sandwiched headline sits on: nearer geometry
+   * hides the type, farther geometry sits behind it. Number or function of t. Default: the camera's focal distance
+   * |pos - look|, so things at the focal point are half in front of / half behind the title.
+   */
+  titleDepth?: number | ((t: number) => number);
 }

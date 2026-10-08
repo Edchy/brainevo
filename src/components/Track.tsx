@@ -5,9 +5,9 @@ import EraBanner from './EraBanner';
 import BreakthroughMarker from './BreakthroughMarker';
 import Ruler from './Ruler';
 
-interface Props { layout: Layout; activeIndex: number; onBegin: () => void; onRestart: () => void }
+interface Props { layout: Layout; activeIndex: number; cards: boolean; onBegin: () => void; onRestart: () => void }
 
-function Track({ layout, activeIndex, onBegin, onRestart }: Props) {
+function Track({ layout, activeIndex, cards, onBegin, onRestart }: Props) {
   return (
     <div className="track" style={{ width: `calc(var(--intro-w) + ${layout.total}px)` }}>
       <section className="intro" aria-labelledby="intro-title">
@@ -25,7 +25,7 @@ function Track({ layout, activeIndex, onBegin, onRestart }: Props) {
       </section>
       {layout.banners.map((b) => <EraBanner key={b.era + b.x} era={b.era} x={b.x} />)}
       {layout.markers.map((m) => <BreakthroughMarker key={m.breakthrough} id={m.breakthrough} x={m.x} />)}
-      {layout.stations.map((s) => (
+      {cards && layout.stations.map((s) => (
         <EventCard key={s.event.id} event={s.event} x={s.x} active={s.index === activeIndex} />
       ))}
       <section className="outro" style={{ left: `calc(var(--intro-w) + ${layout.endX - 200}px)` }} aria-labelledby="outro-title">
@@ -33,7 +33,7 @@ function Track({ layout, activeIndex, onBegin, onRestart }: Props) {
         <p>Every brain that has ever wondered about its own origins is the latest page of this story.</p>
         <button type="button" className="btn-begin" onClick={onRestart}>Return to the beginning</button>
       </section>
-      <Ruler layout={layout} />
+      {cards && <Ruler layout={layout} />}
     </div>
   );
 }

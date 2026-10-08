@@ -1,1 +1,35 @@
-/* Theme for [data-style="signal"]: set the --ui-* tokens (see STYLE.md) and any style-specific UI treatment here. */
+/* Theme for [data-style="signal"] */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+[data-style="signal"] {
+  --ui-ink: #e6fbff;
+  --ui-ink-dim: #86b8d6;
+  --ui-line: #19e3ff;
+  --ui-panel: rgba(4, 3, 20, 0.82);
+  --ui-panel-blur: 3px;
+  --ui-radius: 0px;
+  --ui-font-display: 'Space Grotesk', 'JetBrains Mono', sans-serif;
+  --ui-font-body: 'Space Grotesk', system-ui, sans-serif;
+  --ui-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+[data-style="signal"] .card {
+  border: 1px solid var(--ui-line);
+  border-top: 2px solid var(--accent);
+  border-radius: 0;
+  box-shadow: 0 0 0 1px rgba(255, 40, 190, 0.35), 4px 4px 0 rgba(255, 40, 190, 0.28), 0 0 24px rgba(25, 227, 255, 0.18);
+}
+[data-style="signal"] .banner-kicker,
+[data-style="signal"] .significance h3,
+[data-style="signal"] .deep > summary,
+[data-style="signal"] .mm-era,
+[data-style="signal"] .year {
+  font-family: var(--ui-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+}
+[data-style="signal"] .tags li { border-radius: 0; font-family: var(--ui-font-mono); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.66rem; }
+[data-style="signal"] .btn-play { border-radius: 0; }
+[data-style="signal"] .volume-fill { border-radius: 0; }
+[data-style="signal"] :focus-visible { outline: 1px solid #19e3ff; outline-offset: 2px; border-radius: 0; box-shadow: 0 0 0 3px rgba(255, 40, 190, 0.5); }
+[data-style="signal"] ::selection { background: #ff2bbd; color: #04031a; }

@@ -42,7 +42,12 @@ export function updateWorld(layout: Layout, scrollLeft: number, vw: number) {
   const trackX = scrollLeft + focusX(vw) - vw; // intro panel is one viewport wide
   world.pendingDx += trackX - lastX;
   lastX = trackX;
-  if (world.override !== null) { world.stationF = world.override; return; }
+  if (world.override !== null) {
+    world.stationF = world.override;
+    const o = st[Math.max(0, Math.min(st.length - 1, Math.round(world.override)))];
+    world.eraAccent = ERA_META[o.event.era].accent;
+    return;
+  }
   let f: number;
   if (trackX <= st[0].x) f = (trackX - st[0].x) / ((focusX(vw) + st[0].x) / 1.6); // scroll 0 -> f = -1.6, whatever the viewport
   else if (trackX >= st[st.length - 1].x) f = st.length - 1 + Math.min(2, (trackX - st[st.length - 1].x) / OUTSIDE);

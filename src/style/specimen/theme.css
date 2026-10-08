@@ -1,1 +1,130 @@
-/* Theme for [data-style="specimen"]: set the --ui-* tokens (see STYLE.md) and any style-specific UI treatment here. */
+@import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap');
+
+/* Living specimen: Victorian atlas plate. Parchment panels, sepia ink, thin double rules. */
+[data-style="specimen"] {
+  --ui-ink: #2c1c0e;
+  --ui-ink-dim: #5e4630;
+  --ui-line: rgba(70, 44, 22, 0.55);
+  --ui-panel: rgba(240, 225, 190, 0.90);
+  --ui-panel-blur: 3px;
+  --ui-radius: 2px;
+  --ui-font-display: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+  --ui-font-body: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+  --ui-font-mono: 'IM Fell English SC', Georgia, serif;
+  --paper-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.1  0 0 0 0.55 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  --sc: 'IM Fell English SC', 'IM Fell English', Georgia, serif;
+  --ink: var(--ui-ink);
+  --ink-dim: var(--ui-ink-dim);
+  --line: var(--ui-line);
+  font-family: var(--ui-font-body);
+}
+/* Body copy sits on the dark umber ground unless inside a panel */
+[data-style="specimen"] body, html[data-style="specimen"] body { background: #0a0603; }
+
+/* ---- panels: cream card with double rule and plate-mark ---- */
+[data-style="specimen"] .card {
+  background: var(--paper-grain), linear-gradient(180deg, rgba(246, 233, 201, 0.94), rgba(233, 214, 172, 0.92));
+  color: var(--ui-ink); border: 1px solid #3b2612; border-top: 1px solid #3b2612;
+  border-radius: 1px; padding: 18px 22px 16px;
+  box-shadow: inset 0 0 0 4px rgba(246, 233, 201, 0.0), inset 0 0 0 5px rgba(60, 38, 18, 0.55), inset 0 0 40px rgba(120, 80, 30, 0.28), 0 18px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 230, 170, 0.12);
+  backdrop-filter: blur(var(--ui-panel-blur)); -webkit-backdrop-filter: blur(var(--ui-panel-blur));
+  position: relative;
+}
+/* thin accent-coloured ribbon in the top margin, like a plate tint */
+[data-style="specimen"] .card::before {
+  content: ''; position: absolute; left: 14px; right: 14px; top: 9px; height: 3px;
+  border-top: 1px solid var(--accent); border-bottom: 1px solid var(--accent); opacity: 0.85;
+}
+[data-style="specimen"] .card-head { padding-top: 8px; border-bottom: 1px solid var(--ui-line); padding-bottom: 6px; }
+[data-style="specimen"] .year { font-family: var(--sc); font-size: 1.15rem; color: #7b2a14; letter-spacing: 0.06em; }
+[data-style="specimen"] .year::before { content: 'Fig. '; font-size: 0.8em; color: var(--ui-ink-dim); letter-spacing: 0.1em; font-style: italic; }
+[data-style="specimen"] .era-chip { font-family: var(--sc); font-size: 0.82rem; letter-spacing: 0.14em; text-transform: none; color: var(--ui-ink-dim); }
+[data-style="specimen"] .card h2 { font-family: var(--ui-font-display); font-weight: 400; font-size: 1.65rem; line-height: 1.12; color: #1d1108; }
+[data-style="specimen"] .card h2::first-letter { color: #7b2a14; }
+[data-style="specimen"] .summary { color: var(--ui-ink); font-size: 1.03rem; line-height: 1.45; }
+[data-style="specimen"] .significance { border-left: 0; padding: 6px 0 4px; margin-bottom: 12px; border-top: 1px solid var(--ui-line); border-bottom: 1px solid var(--ui-line); position: relative; }
+[data-style="specimen"] .significance::before { content: ''; position: absolute; left: 0; right: 0; top: 2px; border-top: 1px solid var(--ui-line); }
+[data-style="specimen"] .significance h3 { font-family: var(--sc); font-weight: 400; font-size: 0.9rem; letter-spacing: 0.16em; text-transform: none; color: #7b2a14; margin-top: 4px; }
+[data-style="specimen"] .significance p { color: var(--ui-ink-dim); font-style: italic; font-size: 0.98rem; }
+[data-style="specimen"] .more, [data-style="specimen"] .transcript { color: var(--ui-ink-dim); font-size: 0.97rem; }
+[data-style="specimen"] .more summary, [data-style="specimen"] .transcript summary { color: var(--ui-ink); font-family: var(--sc); letter-spacing: 0.08em; }
+[data-style="specimen"] .figure { border-radius: 0; background: #2a1a0c; border: 1px solid #3b2612; padding: 3px; background-clip: content-box; box-shadow: 0 0 0 1px rgba(60, 38, 18, 0.5); filter: sepia(0.55) contrast(1.05); }
+[data-style="specimen"] .figure figcaption { font-style: italic; color: var(--ui-ink-dim); }
+[data-style="specimen"] .volume-head { color: var(--ui-ink-dim); }
+[data-style="specimen"] .volume-head strong { color: var(--ui-ink); }
+[data-style="specimen"] .volume-bar { border-radius: 0; background: rgba(70, 44, 22, 0.18); border: 1px solid var(--ui-line); height: 9px; }
+[data-style="specimen"] .volume-fill { border-radius: 0; background: repeating-linear-gradient(45deg, var(--accent) 0 2px, rgba(60, 38, 18, 0.8) 2px 3px); }
+[data-style="specimen"] .volume-ref { background: #7b2a14; }
+[data-style="specimen"] .volume-note { color: var(--ui-ink-dim); font-style: italic; }
+[data-style="specimen"] .tags li { font-family: var(--sc); border-radius: 0; border: 1px solid var(--ui-line); background: rgba(120, 80, 30, 0.10); color: var(--ui-ink); letter-spacing: 0.06em; font-size: 0.82rem; }
+[data-style="specimen"] .btn-play { border-color: #5a3a1c; color: #5a3a1c; border-radius: 50%; }
+[data-style="specimen"] .btn-play:hover:not(:disabled) { background: #5a3a1c; color: #f0e1be; }
+[data-style="specimen"] .audio-label { color: var(--ui-ink-dim); font-style: italic; }
+[data-style="specimen"] .card :focus-visible, [data-style="specimen"] .card summary:focus-visible { outline-color: #7b2a14; }
+
+/* ---- intro / banners / outro: on the dark umber ground, parchment ink ---- */
+[data-style="specimen"] .intro h1, [data-style="specimen"] .banner-title, [data-style="specimen"] .outro h2 {
+  font-family: var(--ui-font-display); font-weight: 400; color: #f4e6c4; letter-spacing: 0.01em;
+  text-shadow: 0 0 40px rgba(255, 190, 110, 0.35), 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+[data-style="specimen"] .intro-kicker, [data-style="specimen"] .banner-kicker {
+  font-family: var(--sc); text-transform: none; letter-spacing: 0.3em; color: #e4c88c; font-size: 0.95rem;
+}
+[data-style="specimen"] .banner-kicker::before, [data-style="specimen"] .banner-kicker::after { content: '\2767'; margin: 0 0.8em; opacity: 0.7; }
+[data-style="specimen"] .intro-sub, [data-style="specimen"] .intro-hint, [data-style="specimen"] .banner-tag, [data-style="specimen"] .intro-hint, [data-style="specimen"] .outro p { color: #dcc79a; font-style: italic; }
+[data-style="specimen"] .btn-begin {
+  font-family: var(--sc); letter-spacing: 0.16em; background: rgba(240, 225, 190, 0.92); color: #2c1c0e; border: 1px solid #3b2612; border-radius: 1px;
+  box-shadow: inset 0 0 0 3px rgba(240, 225, 190, 0), inset 0 0 0 4px rgba(60, 38, 18, 0.6), 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+[data-style="specimen"] .btn-begin:hover { box-shadow: inset 0 0 0 4px rgba(60, 38, 18, 0.6), 0 8px 30px rgba(255, 190, 110, 0.3); }
+
+/* ---- ruler / minimap: a specimen-label strip ---- */
+[data-style="specimen"] .minimap, [data-style="specimen"] .axis {
+  background: var(--paper-grain), linear-gradient(180deg, rgba(238, 222, 184, 0.93), rgba(220, 198, 150, 0.95));
+  color: var(--ui-ink); border-top: 1px solid #3b2612; box-shadow: inset 0 3px 0 -2px rgba(60, 38, 18, 0.7), 0 -10px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+[data-style="specimen"] .mm-years { font-family: var(--sc); letter-spacing: 0.04em; }
+[data-style="specimen"] .mm-era { color: #7b2a14; font-style: italic; }
+[data-style="specimen"] .mm-seg { border-radius: 0; }
+[data-style="specimen"] .ruler-line { background: linear-gradient(90deg, transparent, rgba(240, 220, 170, 0.7) 10%, rgba(240, 220, 170, 0.7)); height: 1px; box-shadow: 0 3px 0 rgba(240, 220, 170, 0.45); }
+[data-style="specimen"] .ruler-dot { background: #f0e1be; border-color: #7b2a14; border-radius: 50%; }
+[data-style="specimen"] .ruler-tick { color: #e4c88c; font-family: var(--sc); font-size: 0.82rem; }
+[data-style="specimen"] .ruler-tick i { background: rgba(240, 220, 170, 0.7); }
+[data-style="specimen"] .ruler-note { color: #cdb585; font-style: italic; }
+
+/* ---- Lab panel ---- */
+[data-style="specimen"] .lab-toggle { background: rgba(236, 219, 178, 0.9); color: #2c1c0e; border: 1px solid #3b2612; border-radius: 1px; font-family: var(--sc); letter-spacing: 0.1em; }
+[data-style="specimen"] .lab-pop { background: var(--paper-grain), rgba(238, 222, 184, 0.96); color: #2c1c0e; border: 1px solid #3b2612; border-radius: 1px; box-shadow: inset 0 0 0 3px rgba(238, 222, 184, 0), inset 0 0 0 4px rgba(60, 38, 18, 0.5), 0 12px 30px rgba(0, 0, 0, 0.5); font-family: var(--ui-font-body); }
+[data-style="specimen"] .lab-pop legend { color: #7b2a14; font-family: var(--sc); text-transform: none; letter-spacing: 0.14em; font-size: 0.85rem; }
+
+/* scrollbars, selection */
+[data-style="specimen"] ::selection { background: rgba(123, 42, 20, 0.45); color: #fff4d8; }
+[data-style="specimen"] .intro-sub, [data-style="specimen"] .intro-hint, [data-style="specimen"] .banner-tag, [data-style="specimen"] .outro p { font-family: var(--ui-font-body); font-size: 1.2em; }
+
+/* ---- new UI structure: captions, sheets, menu, about: all on parchment with a double rule ---- */
+[data-style="specimen"] .caption, [data-style="specimen"] .sheet, [data-style="specimen"] .about, [data-style="specimen"] .menu {
+  background: var(--paper-grain), linear-gradient(180deg, rgba(246, 233, 201, 0.95), rgba(231, 211, 168, 0.94));
+  color: var(--ui-ink); border: 1px solid #3b2612; border-radius: 1px;
+  box-shadow: inset 0 0 0 5px rgba(246, 233, 201, 0), inset 0 0 0 6px rgba(60, 38, 18, 0.5), inset 0 0 40px rgba(120, 80, 30, 0.25), 0 16px 36px rgba(0, 0, 0, 0.55);
+  font-family: var(--ui-font-body);
+}
+[data-style="specimen"] .caption { padding: 16px 20px 12px; pointer-events: auto; }
+[data-style="specimen"] .caption > *, [data-style="specimen"] :root[data-ui='hud'] .caption > * { text-shadow: none; }
+[data-style="specimen"] .caption::before { content: ''; position: absolute; left: 12px; right: 12px; top: 7px; height: 3px; border-top: 1px solid var(--accent); border-bottom: 1px solid var(--accent); }
+[data-style="specimen"] .caption .btn-more, [data-style="specimen"] .caption .btn-play, [data-style="specimen"] .menu-btn {
+  background: rgba(120, 80, 30, 0.10); color: var(--ui-ink); border: 1px solid #5a3a1c; border-radius: 1px; font-family: var(--sc); letter-spacing: 0.08em;
+}
+[data-style="specimen"] .caption .btn-play, [data-style="specimen"] .menu-btn { border-radius: 50%; }
+[data-style="specimen"] .menu-btn { background: rgba(240, 225, 190, 0.92); }
+[data-style="specimen"] .sheet h2, [data-style="specimen"] .about h2, [data-style="specimen"] .menu h2 { font-weight: 400; color: #1d1108; }
+[data-style="specimen"] .sheet::backdrop, [data-style="specimen"] .about::backdrop, [data-style="specimen"] .menu::backdrop { background: rgba(10, 5, 2, 0.6); }
+[data-style="specimen"] .caption .ev-title { color: #1d1108; font-weight: 400; }
+[data-style="specimen"] .caption button, [data-style="specimen"] .menu button, [data-style="specimen"] .sheet button, [data-style="specimen"] .about button { font-family: var(--sc); letter-spacing: 0.08em; }
+
+[data-style="specimen"] .axis { padding-top: 8px; pointer-events: auto; }
+[data-style="specimen"] .ax-read strong { font-family: var(--sc); font-weight: 400; font-size: 1rem; letter-spacing: 0.06em; color: var(--ui-ink); }
+[data-style="specimen"] .ax-read span { font-style: italic; }
+[data-style="specimen"] .ax-line { background: rgba(60, 38, 18, 0.55); }
+[data-style="specimen"] .ax-tick { background: rgba(60, 38, 18, 0.7); }
+[data-style="specimen"] .ax-head { border-radius: 0; transform: rotate(45deg); background: #7b2a14; }

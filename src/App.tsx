@@ -10,8 +10,13 @@ import { updateWorld, world } from './world/store';
 import Minimap from './components/Minimap';
 import LabPanel from './components/LabPanel';
 import Track from './components/Track';
+import Caption from './components/Caption';
+import Axis from './components/Axis';
+import Menu from './components/Menu';
+import { useSettings } from './style/store';
 
 export default function App() {
+  const { ui } = useSettings();
   const reduced = usePrefersReducedMotion();
   const scroller = useRef<HTMLDivElement>(null);
   const layout = useMemo(() => buildLayout(events), []);
@@ -60,6 +65,9 @@ export default function App() {
     if (d < best) { best = d; activeIndex = s.index; }
   }
   if (activeIndex >= 0 && best > vw * 0.6 && trackX < st[0].x) activeIndex = -1;
+  // caption fades out between events so chapter / breakthrough markers can breathe
+  const capOpacity = activeIndex < 0 ? 0 : 1 - Math.min(1, Math.max(0, (best - 70) / 150));
+  const capEvent = activeIndex >= 0 ? st[activeIndex].event : null;
 
   let top = ERA_META.cosmic.top, bottom = ERA_META.cosmic.bottom, accent = ERA_META.cosmic.accent;
   let eraName = ERA_META.cosmic.name;
@@ -77,8 +85,9 @@ export default function App() {
     eraName = (k > 0.5 ? b : a).name;
   }
   const years = xToYears(layout, trackX);
-  const span = Math.abs(xToYears(layout, trackX - vw / 2) - xToYears(layout, trackX + vw / 2));
   const darkness = Math.min(1, sl / Math.max(1, vw));
+
+  const goToTrackX = useCallback((x: number) => scrollToX(xToScroll(x)), [scrollToX, xToScroll]);
 
   const goToStation = useCallback((i: number) => {
     const s = layout.stations[Math.max(0, Math.min(layout.stations.length - 1, i))];
@@ -119,7 +128,7 @@ export default function App() {
   }, [layout, vw, introW, max, goToStation, scrollByX, scrollToX]);
 
   return (
-    <div className="app" style={{ '--intro-w': `${introW}px` } as React.CSSProperties}>
+    <div className="app" data-ui={ui} style={{ '--intro-w': `${introW}px`, '--accent': accent } as React.CSSProperties}>
       <a className="skip" href="#timeline-end" onClick={(e) => { e.preventDefault(); scrollToX(max); }}>Skip to the end of the timeline</a>
       {gl ? <Suspense fallback={null}><Stage /></Suspense> : null}
       {!gl && <Background top={top} bottom={bottom} scroll={sl} reduced={reduced} accent={accent} darkness={darkness} />}
@@ -129,19 +138,27 @@ export default function App() {
         tabIndex={0}
         aria-label="Timeline of brain evolution. Use the left and right arrow keys to move between events."
       >
-        <Track layout={layout} activeIndex={activeIndex} onBegin={begin} onRestart={() => scrollToX(0)} />
+        <Track layout={layout} activeIndex={activeIndex} cards={ui === 'tidy'} onBegin={begin} onRestart={() => scrollToX(0)} />
       </main>
       <LabPanel />
-      <Minimap
-        layout={layout}
-        progress={progress}
-        xToFrac={xToFrac}
-        years={years}
-        span={span}
-        accent={accent}
-        eraName={eraName}
-        onJump={(f) => scrollToX(f * max)}
-      />
+      {ui !== 'tidy' && <Caption event={capEvent} opacity={capOpacity} />}
+      {ui === 'minimal' ? (
+        <>
+          <Menu layout={layout} onGo={goToTrackX} />
+          <Axis layout={layout} progress={progress} xToFrac={xToFrac} years={years} eraName={eraName} accent={accent} onJump={(f) => scrollToX(f * max)} />
+        </>
+      ) : (
+        <Minimap
+          variant={ui}
+          layout={layout}
+          progress={progress}
+          xToFrac={xToFrac}
+          years={years}
+          accent={accent}
+          eraName={eraName}
+          onJump={(f) => scrollToX(f * max)}
+        />
+      )}
     </div>
   );
 }

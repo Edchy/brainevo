@@ -31,28 +31,20 @@ export default function AudioSlot({ event }: { event: TimelineEvent }) {
 
   return (
     <div className="audio">
-      <div className="audio-row">
-        <button
-          type="button"
-          className="btn-play"
-          onClick={toggle}
-          disabled={state === 'failed'}
-          aria-label={state === 'playing' ? `Pause narration: ${event.title}` : `Play narration: ${event.title}`}
-        >
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-            {state === 'playing' ? <path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" /> : <path d="M8 5v14l11-7z" fill="currentColor" />}
-          </svg>
-        </button>
-        <span className="audio-label" role="status">
-          {state === 'failed' ? 'Narration coming soon' : state === 'playing' ? 'Playing narration' : 'Listen to narration'}
-        </span>
-      </div>
-      {audio?.transcript && (
-        <details className="transcript">
-          <summary>Transcript</summary>
-          <p>{audio.transcript}</p>
-        </details>
-      )}
+      <button
+        type="button"
+        className="btn-play"
+        onClick={toggle}
+        disabled={state === 'failed'}
+        aria-label={state === 'playing' ? `Pause narration: ${event.title}` : `Play narration: ${event.title}`}
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          {state === 'playing' ? <path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor" /> : <path d="M8 5v14l11-7z" fill="currentColor" />}
+        </svg>
+      </button>
+      <span className="audio-label" role="status">
+        {state === 'failed' ? 'Narration coming soon' : state === 'playing' ? 'Playing' : 'Listen'}
+      </span>
     </div>
   );
 }
