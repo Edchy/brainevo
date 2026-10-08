@@ -89,3 +89,16 @@
 [data-style="cartoon"] .lab-toggle { background: #ffd23f; color: var(--toon-ink); border: 3px solid var(--toon-ink); font-family: var(--ui-font-display); font-weight: 600; box-shadow: 3px 3px 0 var(--toon-ink); backdrop-filter: none; }
 [data-style="cartoon"] .lab-pop { background: #fff6dc; color: var(--ui-ink); border: 3px solid var(--toon-ink); border-radius: 18px; box-shadow: 5px 5px 0 var(--toon-ink); backdrop-filter: none; }
 [data-style="cartoon"] :focus-visible { outline: 4px solid #ff3d7f; outline-offset: 3px; }
+
+/* caption as a sticker so text stays legible on the flat colour fields */
+[data-style="cartoon"] .caption {
+  background: #fff6e0; color: #2a1840; border: 3px solid #2a1840; border-radius: 18px;
+  padding: 12px 16px 14px; box-shadow: 5px 5px 0 #2a1840;
+}
+[data-style="cartoon"] .caption > * { text-shadow: none; }
+[data-style="cartoon"] .caption .summary { color: #3a2a55; }
+[data-style="cartoon"] .caption .year { font-size: 0.95rem; padding: 0; background: none; border: 0; box-shadow: none; color: #6a3fb5; }
+[data-style="cartoon"] .caption .btn-more, [data-style="cartoon"] .caption .btn-play { background: #ffd23f; color: #2a1840; border: 2px solid #2a1840; }
+
+/* headline layer: chunky white lettering with a hint of cream */
+[data-style="cartoon"] { --title-color: #fffdf2; --title-blend: normal; --title-opacity: 0.97; }

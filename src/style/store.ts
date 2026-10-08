@@ -17,7 +17,7 @@ function load(): Settings {
   if (s && STYLES.includes(s)) d.style = s;
   if (u && UIS.includes(u)) d.ui = u;
   if (q.has('titles')) d.titles = q.get('titles') !== '0';
-  if (q.get('lab') === '0') d.lab = false;
+  if (q.has('lab')) d.lab = q.get('lab') !== '0';
   if (!STYLES.includes(d.style)) d.style = 'ink';
   if (!UIS.includes(d.ui)) d.ui = 'minimal';
   return d;

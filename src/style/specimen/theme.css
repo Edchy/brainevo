@@ -128,3 +128,11 @@
 [data-style="specimen"] .ax-line { background: rgba(60, 38, 18, 0.55); }
 [data-style="specimen"] .ax-tick { background: rgba(60, 38, 18, 0.7); }
 [data-style="specimen"] .ax-head { border-radius: 0; transform: rotate(45deg); background: #7b2a14; }
+
+/* headline layer: dark sepia ink lettering reads like a printed plate title */
+[data-style="specimen"] {
+  --title-color: #f0e2c0;
+  --title-blend: normal;
+  --title-opacity: 0.9;
+  --title-weight: 400;
+}

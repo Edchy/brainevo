@@ -52,6 +52,8 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
   col.r = texture2D(inputBuffer, u + dir*ca).r;
   col.g = texture2D(inputBuffer, u).g;
   col.b = texture2D(inputBuffer, u - dir*ca).b;
+  // add back what earlier effects (bloom, depth headlines) contributed on top of the raw buffer
+  col += max(inputColor.rgb - texture2D(inputBuffer, uv).rgb, 0.0);
 
   // gradient-map by luminance, keep a trace of source hue
   float l = dot(col, vec3(.2126,.7152,.0722));
