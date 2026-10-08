@@ -10,6 +10,9 @@
   --ui-font-display: 'Playfair Display', 'EB Garamond', Georgia, serif;
   --ui-font-body: 'EB Garamond', Georgia, serif;
   --ui-font-mono: 'EB Garamond', Georgia, serif;
+  --title-color: #f3e6c8;
+  --title-blend: normal;
+  --title-opacity: 0.92;
 }
 
 [data-style="oil"] body,

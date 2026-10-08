@@ -22,19 +22,24 @@ uniform float uScale;
 float h21(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p,p+45.32); return fract(p.x*p.y); }
 float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
   return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }
+// soft shoulder: HDR (bloom/neon >1) is compressed to <=1 per channel BEFORE filtering/grading, otherwise the
+// contrast curve c*c*(3-2c) goes negative for channels >1.5 and clips channels differently => rainbow rims.
+vec3 tm(vec3 c){ c = max(c, 0.); vec3 o = (c - .72) / .28; return mix(c, .72 + .28*(1. - exp(-o)), step(.72, c)); }
+vec4 T(vec2 u){ return vec4(tm(texture2D(inputBuffer, u).rgb), 1.); }
 float lum(vec3 c){ return dot(c, vec3(.299,.587,.114)); }
 
-void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+void mainImage(const in vec4 inputColor0, const in vec2 uv, out vec4 outputColor) {
+  vec4 inputColor = vec4(tm(inputColor0.rgb), inputColor0.a);
   vec2 px = 1.0 / resolution.xy;
   float s = uScale;                       // pixel scale so strokes keep size across resolutions
   vec2 asp = vec2(resolution.x / resolution.y, 1.0);
 
   // --- stroke orientation
   vec2 g1 = px * 3.0 * s;
-  float lr = lum(texture2D(inputBuffer, uv + vec2(g1.x, 0.)).rgb);
-  float ll = lum(texture2D(inputBuffer, uv - vec2(g1.x, 0.)).rgb);
-  float lu = lum(texture2D(inputBuffer, uv + vec2(0., g1.y)).rgb);
-  float ld = lum(texture2D(inputBuffer, uv - vec2(0., g1.y)).rgb);
+  float lr = lum(T(uv + vec2(g1.x, 0.)).rgb);
+  float ll = lum(T(uv - vec2(g1.x, 0.)).rgb);
+  float lu = lum(T(uv + vec2(0., g1.y)).rgb);
+  float ld = lum(T(uv - vec2(0., g1.y)).rgb);
   vec2 grad = vec2(lr - ll, lu - ld);
   float gm = length(grad);
   // swirling flow (Starry Night curls)
@@ -57,12 +62,12 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
     float sg = (k == 0 || k == 2) ? 1. : -1.;
     d *= sg;
     float a0 = (k < 2) ? 2.0 : 1.5;
-    float a1 = (k < 2) ? 6.0 : 4.0;
+    float a1 = (k < 2) ? 7.0 : 4.5;
     float b  = (k < 2) ? 1.5 : 3.0;
-    vec3 c0 = texture2D(inputBuffer, uv + (d*a0 + p*b) * st).rgb;
-    vec3 c1 = texture2D(inputBuffer, uv + (d*a0 - p*b) * st).rgb;
-    vec3 c2 = texture2D(inputBuffer, uv + (d*a1 + p*b) * st).rgb;
-    vec3 c3 = texture2D(inputBuffer, uv + (d*a1 - p*b) * st).rgb;
+    vec3 c0 = T(uv + (d*a0 + p*b) * st).rgb;
+    vec3 c1 = T(uv + (d*a0 - p*b) * st).rgb;
+    vec3 c2 = T(uv + (d*a1 + p*b) * st).rgb;
+    vec3 c3 = T(uv + (d*a1 - p*b) * st).rgb;
     vec3 m = (c0 + c1 + c2 + c3 + inputColor.rgb) * .2;
     vec3 sqm = (c0*c0 + c1*c1 + c2*c2 + c3*c3 + inputColor.rgb*inputColor.rgb) * .2;
     mean[k] = m;
@@ -71,10 +76,10 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
   }
   vec3 col = vec3(0.); float wsum = 0.;
   for (int k = 0; k < 4; k++) {
-    float w = 1.0 / (1.0 + pow(vr[k] * 900.0, 4.0));
+    float w = 1.0 / (1.0 + pow(min(vr[k] * 900.0, 20.0), 4.0)) + 1e-4;
     col += mean[k] * w; wsum += w;
   }
-  col = wsum > 1e-5 ? col / wsum : inputColor.rgb;
+  col = col / max(wsum, 1e-4);
 
   // --- impasto relief
   vec2 pp = uv * resolution.xy / s;               // paint-space pixels
@@ -82,15 +87,15 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
   float bristle = vn(vec2(rp.x * .06, rp.y * 1.15)) * .6 + vn(vec2(rp.x * .17 + 3., rp.y * 2.6)) * .4;
   float weave = (sin(pp.x * 1.25) * .5 + .5) * (sin(pp.y * 1.25) * .5 + .5) * .6
               + (sin((pp.x + pp.y) * .62) * .5 + .5) * .4;
-  float h = lum(col) * 1.6 + bristle * .5;
+  float h = lum(col) * 1.6 + bristle * .8;
   vec2 hg = vec2(dFdx(h), dFdy(h));
-  vec2 bump = -vec2(grad.x, grad.y) * 3.0 - hg * 1.2;
+  vec2 bump = clamp(-vec2(grad.x, grad.y) * 4.5 - hg * 1.6, vec2(-1.5), vec2(1.5));
   float rel = .2 + .8 * smoothstep(.04, .45, lum(col));
-  vec3 N = normalize(vec3(bump * 1.8 * rel, 1.0));
+  vec3 N = normalize(vec3(bump * 2.4 * rel, 1.0));
   vec3 L = normalize(vec3(-.45, .55, .70));
   float diff = clamp(dot(N, L), 0., 1.);
   vec3 H = normalize(L + vec3(0., 0., 1.));
-  float spec = pow(clamp(dot(N, H), 0., 1.), 60.0);
+  float spec = min(pow(clamp(dot(N, H), 0., 1.), 60.0), 1.0);
   float paint = smoothstep(.04, .5, lum(col)); // dark thin glazes are flatter than thick highlights
 
   // --- colour grade: rich, warm, slightly Prussian shadows
@@ -104,10 +109,11 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
   c = c / (1. + .22 * c);                                          // soften neon peaks into buttery daubs
   c *= 1.12;
 
-  c *= .78 + .55 * diff;                                           // paint ridges catch the light
+  c *= .7 + .68 * diff;                                           // paint ridges catch the light
   c += vec3(1., .93, .78) * spec * (.28 + .5 * paint);
   c *= 1. - .07 * weave * (1.0 - paint*.6);                        // canvas tooth shows in thin paint
-  c = mix(c, c * (.9 + .2 * bristle), .8);
+  c = mix(c, c * (.85 + .3 * bristle), .9);
+  c = min(c, vec3(1.0));
 
   outputColor = vec4(max(c, 0.), inputColor.a);
 }
