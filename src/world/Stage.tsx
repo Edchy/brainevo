@@ -47,13 +47,30 @@ function resolve(): Resolved[] {
  * (recompiling the merged shader, which outputs a black frame) whenever its children change identity, and World
  * re-renders every time a scene mounts/unmounts while scrolling. Keep this out of World's render path.
  */
+/**
+ * Scrub NaN / Inf / runaway HDR texels before the bloom blur sees them. A single bad texel (a divide-by-zero or an
+ * additive-blend overflow in half-float from some scene's particles) otherwise gets smeared by the mip blur over the
+ * whole frame, which shows up as one-frame black flashes. Only the bloom input is sanitised.
+ */
+function sanitizeBloom(b: BloomEffect | null) {
+  if (!b) return;
+  const m = b.luminanceMaterial;
+  if (m.userData.sanitized) return;
+  m.userData.sanitized = true;
+  m.fragmentShader = m.fragmentShader.replace(
+    'vec4 texel=texture2D(inputBuffer,vUv);',
+    'vec4 texel=texture2D(inputBuffer,vUv);texel=(any(isnan(texel))||any(isinf(texel)))?vec4(0.0):clamp(texel,vec4(0.0),vec4(64.0));',
+  );
+  m.needsUpdate = true;
+}
+
 const PostFX = memo(function PostFX({ bloom }: { bloom: RefObject<BloomEffect | null> }) {
   if (import.meta.env.DEV) (window as unknown as Record<string, number>).__postRenders = ((window as unknown as Record<string, number>).__postRenders ?? 0) + 1;
   const { style, titles } = useSettings();
   const StyleEffects = STYLE_DEFS[style].Effects;
   return (
     <EffectComposer multisampling={0}>
-      <Bloom ref={bloom} intensity={0.5} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
+      <Bloom ref={(b) => { bloom.current = b; sanitizeBloom(b); }} intensity={0.5} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
       <Vignette eskil={false} offset={0.2} darkness={0.7} />
       {titles ? <TitleLayer /> : <></>}
       <StyleEffects />
