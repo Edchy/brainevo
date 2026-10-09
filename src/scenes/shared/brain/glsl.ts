@@ -321,16 +321,19 @@ void main(){
     vec3 col; float rr=length(u);
     if(uPart<.5){
       float wob=.035*snoise(u*6.)+.02*snoise(u*13.);
-      float rc=.9+wob;
       vec3 dr=normalize(u+1e-4);
       float c2; float c1=gyri(dr,uFF*1.15,c2);
       float Hc=profile(c1,c2,uFold);
+      // grey/white boundary follows the folds, as on an MRI slice: white matter reaches up into each gyrus and dips
+      // deep under each sulcus, so the cortical ribbon convolutes instead of being a uniform rim
+      float rc=mix(.9,.76+.16*Hc,uFold)+wob*.6;
       // white matter: bright, with faint fibre tracts radiating toward the cortex; grey matter: a distinct darker ribbon
       float fib=snoise(vec3(dr*vec3(26.,26.,26.))+rr*1.5)*.5+snoise(u*9.)*.5;
       vec3 wm=vec3(.8,.77,.73)*(.9+.1*fib), gm=vec3(.3,.27,.29);
-      col=mix(wm,gm,smoothstep(rc-.025,rc+.01,rr));
+      col=mix(wm,gm,smoothstep(rc-.02,rc+.01,rr));
       col*=1.-.1*step(.5,fract((rr-rc)/(1.-rc+.001)*6.))*smoothstep(rc-.01,rc+.02,rr);
-      float sulc=(1.-smoothstep(.12,.34,Hc))*smoothstep(rc-.1,rc-.03,rr)*uFold*(1.-smoothstep(rc+.02,rc+.08,rr));
+      // CSF-dark sulcus: a thin line along the fold's zero, running from the surface down to just under the ribbon
+      float sulc=(1.-smoothstep(.02,.07,abs(c1)))*smoothstep(rc-.07,rc-.01,rr)*uFold;
       col=mix(col,vec3(.03),sulc);
       float ca=abs(u.z);
       float vent=length(vec3((u.x-.02)/.5,(u.y-.14)/.13,(ca-.2)/.1))*1.0;

@@ -56,7 +56,7 @@ void main(){
   float grow=smoothstep(.0,.55,season)*sprout;
   float ripe=smoothstep(.45,.9,season);
   float rr=length(vec2(aI.x/${FW.toFixed(2)},aI.y/${FD.toFixed(2)}));
-  float edge=1.-smoothstep(.5,1.05,rr);
+  float edge=1.-smoothstep(.82,1.08,rr);               // a level stand that only thins at its rim (no mound)
   float H=aI.z*(.12+.88*grow)*(.3+.7*edge);
   float ca=cos(aR.y), sa=sin(aR.y);
   float gust=sin(aI.x*.7+aI.y*.35-uTime*1.1)*.5+.5;
@@ -100,15 +100,16 @@ uniform float uW;
 varying float vK; varying float vS; varying float vSh; varying float vRip; varying float vV; varying float vFog; varying float vSd;
 void main(){
   float ao=smoothstep(.0,.55,vS);                      // dark at the foot of the stand
-  vec3 young=vec3(.4,.55,.45), gold=vec3(1.5,.82,.1), straw=vec3(1.0,.6,.12);
+  // ripe straw is pale (the mono grade keeps it near-neutral); real gold only where the low sun shines through the ears
+  vec3 young=vec3(.4,.55,.45), gold=vec3(1.5,.82,.1), straw=vec3(.82,.72,.55);
   vec3 stem=mix(young, straw, vRip);
-  vec3 grain=mix(vec3(.55,.75,.55), gold, vRip);
-  vec3 awn=mix(vec3(.5,.7,.5), vec3(1.7,1.1,.35), vRip);
+  vec3 grain=mix(vec3(.55,.75,.55), vec3(.95,.84,.62), vRip);
+  vec3 awn=mix(vec3(.5,.7,.5), vec3(1.0,.9,.7), vRip);
   vec3 c = vK<.5 ? stem : (vK<1.5 ? grain*(.75+.5*vV) : awn);
   float sh = .35+.8*vSh;
   // translucent backlight: the ears glow where the sun comes through them
   float back = pow(max(vSh,0.),3.)*(vK>.5?.55:.25);
-  c = c*sh*(.15+.9*ao) + gold*back*vRip*.35;
+  c = c*sh*(.15+.9*ao) + gold*back*vRip*.6;
   c *= mix(1.,.45+.55*(.7+.6*vSd),.4);
   float a = vK>1.5 ? .65 : 1.;
   c *= (1.-vFog*.55)*.62;
@@ -117,7 +118,7 @@ void main(){
 
 export default function Agriculture() {
   const scene = useScene();
-  const { geo, mat, pgeo, pmat, gmat } = useMemo(() => {
+  const { geo, mat, pgeo, pmat, gmat, sun } = useMemo(() => {
     const st = buildStalk();
     const q = world.quality;
     const NS = Math.floor(3400 * Math.min(1, q + 0.25));
@@ -167,9 +168,19 @@ export default function Agriculture() {
       void main(){ float r=length(vP*vec2(.5,.9)); float c=exp(-r*r*.9); float rows=.5+.5*sin(vP.y*30.);
         vec3 col=vec3(.03,.022,.014)*c*(.7+.3*rows)+vec3(1.0,.5,.06)*exp(-r*r*1.6)*.16*smoothstep(.3,.9,uSeason); gl_FragColor=vec4(col, c*uW*.9); }`,
     });
-    return { geo: g, mat, pgeo: pb.build(), pmat, gmat };
+    // a low sun behind the stand: the ears read as backlit silhouettes against it
+    const sun = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uW: { value: 0 }, uSeason: { value: 0 } },
+      vertexShader: 'varying vec2 vP; void main(){ vP=position.xy; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader: `uniform float uW,uSeason; varying vec2 vP;
+      void main(){ vec2 d=vP-vec2(1.2,.9); float r=length(d*vec2(.55,1.));
+        vec3 c=vec3(1.4,.75,.2)*(exp(-r*r*.35)*.22+exp(-r*r*6.)*.5)+vec3(2.2,1.7,1.)*exp(-r*r*120.)*.9;
+        c*=smoothstep(-.2,.4,vP.y)*(.35+.65*uSeason); gl_FragColor=vec4(c*uW,1.); }`,
+    });
+    return { geo: g, mat, pgeo: pb.build(), pmat, gmat, sun };
   }, []);
-  useEffect(() => () => { geo.dispose(); pgeo.dispose(); mat.dispose(); pmat.dispose(); gmat.dispose(); }, [geo, pgeo, mat, pmat, gmat]);
+  useEffect(() => () => { geo.dispose(); pgeo.dispose(); mat.dispose(); pmat.dispose(); gmat.dispose(); sun.dispose(); }, [geo, pgeo, mat, pmat, gmat, sun]);
 
   useFrame((state) => {
     if (!scene.active) return;
@@ -180,10 +191,12 @@ export default function Agriculture() {
     u.uTime.value = tm; u.uSeason.value = season; u.uT.value = scene.t; u.uW.value = scene.weight;
     tickU(pmat, scene, state.gl.getPixelRatio());
     gmat.uniforms.uW.value = scene.weight; gmat.uniforms.uSeason.value = season;
+    sun.uniforms.uW.value = scene.weight; sun.uniforms.uSeason.value = season;
   });
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]} material={gmat}><planeGeometry args={[12, 7]} /></mesh>
+      <mesh position={[0, 0, -5]} material={sun}><planeGeometry args={[16, 6]} /></mesh>
       <mesh geometry={geo} material={mat} frustumCulled={false} />
       <points geometry={pgeo} material={pmat} frustumCulled={false} />
     </group>

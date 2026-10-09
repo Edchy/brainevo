@@ -30,11 +30,13 @@ export default function Membrane() {
     return { headM: heads, tailM: tails };
   }, []);
 
-  const headMat = useMemo(() => makeBead('#ffb86b', { emis: 0.22, spec: 0.8, rim: 0.7 }), []);
-  const tailMat = useMemo(() => makeBead('#6a9be0', { emis: 0.04, spec: 0.15, rim: 0.25 }), []);
-  const chMat = useMemo(() => makeBead('#6fd6ee', { emis: 0.2, spec: 0.5, rim: 1.1, noise: 3 }), []);
-  const recMat = useMemo(() => makeBead('#c98cff', { emis: 0.35, spec: 0.6, rim: 1.3, noise: 3 }), []);
-  const molMat = useMemo(() => makeGlass('#ffe28a', { rim: 2, fill: 1.8, power: 1 }), []);
+  // Monochrome tissue (pearl heads, graphite tails, pale proteins) with one colour per beat: gold signal molecules and
+  // their cascade for chemical signalling, electric-blue ions and voltage spike for ion channels.
+  const headMat = useMemo(() => makeBead('#e8e4de', { emis: 0.12, spec: 0.8, rim: 0.7 }), []);
+  const tailMat = useMemo(() => makeBead('#4a4e55', { emis: 0.02, spec: 0.15, rim: 0.25 }), []);
+  const chMat = useMemo(() => makeBead('#c8d0d8', { emis: 0.14, spec: 0.5, rim: 1.1, noise: 3 }), []);
+  const recMat = useMemo(() => makeBead('#d8d4dc', { emis: 0.18, spec: 0.6, rim: 1.3, noise: 3 }), []);
+  const molMat = useMemo(() => makeGlass('#ffc23a', { rim: 2, fill: 1.8, power: 1 }), []);
   const heads = useRef<THREE.InstancedMesh>(null), tails = useRef<THREE.InstancedMesh>(null);
   const chs = useRef<THREE.InstancedMesh>(null), recs = useRef<THREE.InstancedMesh>(null), mols = useRef<THREE.InstancedMesh>(null);
   const d = useMemo(() => new THREE.Object3D(), []);
@@ -48,10 +50,10 @@ export default function Membrane() {
       void main(){
         float up=smoothstep(.55,4.,vP.y), dn=smoothstep(-.55,-4.,vP.y);
         float n=fbm(vec3(vP.xy*.6,uTime*.1));
-        vec3 c=vec3(.9,.45,.15)*up*(.25+uV*.5)*(.4+n)+vec3(.1,.35,1.)*dn*(.15+uV*.7)*(.4+n);
+        vec3 c=vec3(.5,.5,.52)*up*(.12+uV*.25)*(.4+n)+vec3(.42,.46,.52)*dn*(.08+uV*.3)*(.4+n);
         float sp=exp(-pow((vP.x-uSpike)*.7,2.));
-        c+=vec3(.5,1.,1.4)*sp*smoothstep(1.2,.3,abs(vP.y))*1.6;
-        c+=vec3(.9,.4,1.2)*uCas*dn*exp(-pow((vP.x),2.)*.04)*(.5+.5*sin(vP.y*3.-uTime*3.))*.5;
+        c+=vec3(.25,.75,1.6)*sp*smoothstep(1.2,.3,abs(vP.y))*1.8;
+        c+=vec3(1.2,.75,.15)*uCas*dn*exp(-pow((vP.x),2.)*.04)*(.5+.5*sin(vP.y*3.-uTime*3.))*.5;
         c*=smoothstep(8.,2.5,abs(vP.y)); gl_FragColor=vec4(c*uW*.55,1.); }`,
   }), []);
   const ionMat = useMemo(() => new THREE.ShaderMaterial({
@@ -67,7 +69,7 @@ export default function Membrane() {
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(NCH * IONS * 3), 3));
     const c = new Float32Array(NCH * IONS * 4);
     for (let i = 0; i < NCH * IONS; i++) {
-      const na = i % 3 !== 0; c.set(na ? [1.6, 1.1, 0.35] : [0.4, 1.4, 1.9], i * 4); c[i * 4 + 3] = 0;
+      const na = i % 3 !== 0; c.set(na ? [0.35, 1.0, 2.2] : [0.7, 1.3, 2.0], i * 4); c[i * 4 + 3] = 0;
     }
     g.setAttribute('aC', new THREE.BufferAttribute(c, 4));
     return g;
@@ -77,7 +79,7 @@ export default function Membrane() {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(NREC * 6 * 3), 3));
     const c = new Float32Array(NREC * 6 * 4);
-    for (let i = 0; i < NREC * 6; i++) { c.set([1.5, 0.6, 1.8, 0], i * 4); }
+    for (let i = 0; i < NREC * 6; i++) { c.set([1.9, 1.15, 0.25, 0], i * 4); }
     g.setAttribute('aC', new THREE.BufferAttribute(c, 4));
     return g;
   }, []);
@@ -153,8 +155,8 @@ export default function Membrane() {
 
   return (
     <group rotation={[0.18, 0, 0]}>
-      <Backdrop color="#3bb3e0" caustics={0.12} shafts={0.1} haze={0.12} z={-12} />
-      <Plankton count={400} box={[20, 10, 8]} color="#9fe8ff" size={0.04} dir={[0, 0, 0]} />
+      <Backdrop color="#8c99a4" caustics={0.08} shafts={0.08} haze={0.1} z={-12} />
+      <Plankton count={400} box={[20, 10, 8]} color="#d6dde4" size={0.04} dir={[0, 0, 0]} />
       <mesh material={fieldMat} position={[0, 0, -1.8]} frustumCulled={false}>
         <planeGeometry args={[30, 20]} />
       </mesh>

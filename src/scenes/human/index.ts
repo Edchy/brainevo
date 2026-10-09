@@ -57,7 +57,8 @@ export const humanScenes: SceneDef[] = [
   {
     id: 'human-agriculture', from: 'agriculture', to: 'agriculture', lead: 0.45, tail: 0.3, fade: 0.4,
     Component: Agriculture,
-    camera: (t) => ({ pos: [-1.2 + t * 2.4, 3.2, 6.6], look: [0, 0.2, 0], fov: 50 }),
+    // just above the ears at the edge of the stand, drifting along it, the low sun on the horizon
+    camera: (t) => ({ pos: [-0.9 + t * 1.8, 1.75, 4.4], look: [0.2 + t * 0.5, 0.75, -2], fov: 42 }),
     mood: () => ({ bg: '#03060a', bloom: 1.2 }),
   },
   {

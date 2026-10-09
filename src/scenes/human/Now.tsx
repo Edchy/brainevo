@@ -18,6 +18,8 @@ const BRAIN_SCALE = 2.7;
 export default function Now() {
   const scene = useScene();
   const { mat: eMat, atmo } = useEarthMats();
+  // the finale is the night side: a thin sunlit crescent at the limb, and the lit cities as the one warm splash
+  useEffect(() => { (eMat.uniforms.uSun.value as THREE.Vector3).set(0.85, 0.32, -0.42).normalize(); }, [eMat]);
   const earth = useRef<THREE.Group>(null);
   const bcg = useRef<THREE.Group>(null);
   const bc = useBrainCtl({ grow: 1, holo: 1, holoColor: '#6f8fc0', starColor: '#e8f0ff', stars: 0 });
@@ -43,7 +45,7 @@ export default function Now() {
         const lat = la + Math.sin(a) * d, lon = lo + Math.cos(a) * d / Math.max(0.3, Math.cos((la * Math.PI) / 180));
         if (landV(lat, lon) < 0.52) continue;
         const v = llToVec(lat, lon, 1.004);
-        cb.add(v[0], v[1], v[2], r() < 0.85 ? [2.2, 1.7, .9] : [1.2, 1.7, 2.4], hi / hubs.length);
+        cb.add(v[0], v[1], v[2], r() < 0.85 ? [2.2, 1.6, .7] : [2.4, 2.1, 1.6], hi / hubs.length);
       }
     });
     const cMat = pointMat({
@@ -76,7 +78,7 @@ export default function Now() {
       float on = smoothstep(aSeed.w*.9+.1, aSeed.w*.9+.3, uOn);
       float pp = fract(aA.y + uTime*.12 + uT*1.2);
       float head = exp(-pow((pp-aA.x)*12.,2.));
-      col = mix(vec3(.5,1.1,2.),vec3(2.2,2.0,1.6),head);
+      col = mix(vec3(1.2,1.2,1.25),vec3(2.4,1.7,.7),head);
       a = on*(.07+1.1*head); size=.4+head*.9;`,
     });
     // --- far stars ---

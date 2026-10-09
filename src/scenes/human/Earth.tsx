@@ -32,9 +32,10 @@ function rasterise() {
   for (let lon = -180; lon <= 180; lon += 6) ant.push(lon, -69 - 3 * Math.sin(lon * 0.09) - 2 * Math.sin(lon * 0.31 + 1) - (lon > -70 && lon < -55 ? 7 : 0));
   ant.push(180, -90, -180, -90);
   poly(ant, '#fff');
-  // soften the edge slightly (the shader re-sharpens it with noise)
+  // soften the edge into a ~0.7 degree shore band: the shader's fractal noise roughens coastlines only inside it, so a
+  // band this wide is what breaks the hand-traced polygons' straight segments into organic coasts
   const sm = mk(), sctx = sm.getContext('2d', { willReadFrequently: true })!;
-  sctx.filter = 'blur(1.6px)'; sctx.drawImage(cv, 0, 0); sctx.filter = 'none';
+  sctx.filter = 'blur(4px)'; sctx.drawImage(cv, 0, 0); sctx.filter = 'none';
   const img = sctx.getImageData(0, 0, W, H).data;
   mask = new Uint8Array(W * H);
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) mask[(H - 1 - j) * W + i] = img[(j * W + i) * 4];
@@ -93,9 +94,10 @@ float fb(vec3 p){ float a=.5,s=0.; for(int i=0;i<5;i++){ s+=a*vn(p); p=p*2.03+17
 export function makeEarthMaterial() {
   const m = new THREE.ShaderMaterial({
     transparent: true,
-    uniforms: { uTex: { value: landTexture() }, uW: { value: 1 }, uDay: { value: 0 }, uTime: { value: 0 } },
+    // uSun: view-space sun direction (camera-relative lighting)
+    uniforms: { uTex: { value: landTexture() }, uW: { value: 1 }, uDay: { value: 0 }, uTime: { value: 0 }, uSun: { value: new THREE.Vector3(-0.55, 0.5, 0.68).normalize() } },
     vertexShader: 'varying vec3 vO; varying vec3 vNv; void main(){vO=normal; vNv=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: /* glsl */ `uniform sampler2D uTex; uniform float uW,uDay,uTime; varying vec3 vO; varying vec3 vNv;
+    fragmentShader: /* glsl */ `uniform sampler2D uTex; uniform float uW,uDay,uTime; uniform vec3 uSun; varying vec3 vO; varying vec3 vNv;
 ${NOISE}
 void main(){
   vec3 n=normalize(vO);
@@ -103,10 +105,10 @@ void main(){
   vec4 t=texture2D(uTex,uv);
   // fractal coastlines: perturb the soft mask only near the shore
   float shore=1.-abs(t.r-.5)*2.;
-  float wob=(fb(n*14.)-.5)*.34 + (fb(n*46.)-.5)*.18;
+  float wob=(fb(n*14.)-.5)*.3 + (fb(n*46.)-.5)*.3 + (fb(n*130.)-.5)*.22;
   float v=t.r+wob*shore*shore;
   float land=smoothstep(.47,.53,v);
-  vec3 L=normalize(vec3(-.55,.5,.68));
+  vec3 L=uSun;
   float ndl=dot(vNv,L);
   float lit=smoothstep(-.12,.45,ndl);
   float night=1.-smoothstep(-.18,.1,ndl);
@@ -127,7 +129,7 @@ void main(){
   // thin cloud belts
   vec3 cp=n*3.4+vec3(uTime*.012,0.,0.);
   float cl=smoothstep(.52,.78,fb(cp*vec3(1.,2.4,1.)+fb(cp*2.)*1.6))*(.6+.4*(1.-lat));
-  vec3 col=base*(.03+1.0*lit);
+  vec3 col=base*(.05+1.0*lit);                          // faint earthshine keeps the night-side continents legible
   col+=vec3(.9,.95,1.)*glint*.6;
   col+=vec3(.12,.3,.5)*coast*(.25+.75*lit)*.9;
   col=mix(col,vec3(.9,.95,1.)*(.1+.9*lit)*.8,cl*.2*lit);
