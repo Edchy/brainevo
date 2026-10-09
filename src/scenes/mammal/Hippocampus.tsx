@@ -107,7 +107,7 @@ export default function Hippocampus() {
     vertexShader: CELL_VERT, fragmentShader: CELL_FRAG, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
     uniforms: { uW: { value: 1 } },
   }), []);
-  const ratMat = useMemo(() => silhouetteMaterial('#e4ecff', '#010102', 2.4, 2.0), []);
+  const ratMat = useMemo(() => silhouetteMaterial('#e4ecff', '#010102', 2.4, 1.1), []);
   const lineMat = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(0.22, 0.25, 0.32), toneMapped: false, transparent: true }), []);
   const noseMat = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(2.5, 2.4, 2.2), toneMapped: false }), []);
   const rewardMat = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.2, 1.6), toneMapped: false }), []);
@@ -247,7 +247,7 @@ export default function Hippocampus() {
       <mesh ref={comet} material={headMat}><sphereGeometry args={[0.07, 12, 10]} /></mesh>
       <group ref={rat}>
         <group ref={ratHead} position={[0, 0, 0]}>
-          <group scale={0.3} position={[-0.15, 0.2, 0]}><Critter mat={ratMat} shape={SHAPES.shrew} eyeMat={noseMat} /></group>
+          <group scale={0.6} position={[-0.3, 0.58, 0]}><Critter mat={ratMat} shape={SHAPES.mammal} eyeMat={noseMat} /></group>
         </group>
       </group>
     </group>

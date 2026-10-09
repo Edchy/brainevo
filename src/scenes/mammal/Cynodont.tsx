@@ -5,6 +5,7 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { near, eventPos, rng, smoothstep } from '../../world/util';
 import Critter, { SHAPES } from './Critter';
+import CreatureDemo from '../shared/creatures/CreatureDemo';
 import { GLSL_NOISE, pointMaterial, pointScale, silhouetteMaterial } from './kit';
 
 // One cynodont, rim-lit against black. Its edge warms from cold steel to ember-white as the animal turns endothermic;
@@ -21,6 +22,8 @@ void main(){
 }`;
 const FLOOR_VERT = /* glsl */ `varying vec3 vWp; void main(){ vec4 w = modelMatrix*vec4(position,1.); vWp=w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`;
 
+const DEMO = import.meta.env.DEV && typeof location !== 'undefined' ? new URLSearchParams(location.search).get('creatures') : null;
+
 export default function Cynodont() {
   const scene = useScene();
   const body = useMemo(() => silhouetteMaterial('#8fa3cf', '#010203', 3.0, 1.0), []);
@@ -29,7 +32,6 @@ export default function Cynodont() {
     uniforms: { uW: { value: 1 }, uHeat: { value: 0 }, uX: { value: 0 } },
   }), []);
   const cyno = useRef<THREE.Group>(null);
-  const legs = useRef<(THREE.Object3D | null)[]>([]);
   const cold = useMemo(() => new THREE.Color('#7f93c0'), []);
   const hot = useMemo(() => new THREE.Color('#ffd2a0'), []);
 
@@ -71,15 +73,15 @@ export default function Cynodont() {
     (motes.m.uniforms.uOrigin.value as THREE.Vector3).set(x - 0.1, -0.5, -1);
 
     const c = cyno.current!;
-    c.position.set(x, -0.45 + Math.abs(Math.sin(x * 6)) * 0.02, -1);
+    c.position.set(x, -0.92 + 0.635 * 1.3 * 1.75, -1); // feet on the floor plane (y=-0.92)
     c.scale.setScalar(1.75);
-    for (let i = 0; i < 4; i++) { const l = legs.current[i]; if (l) l.rotation.z = Math.sin(x * 6 + (i % 2) * Math.PI + (i > 1 ? 1.1 : 0)) * 0.42; }
   });
 
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.92, -6]} material={floor}><planeGeometry args={[60, 30]} /></mesh>
-      <group ref={cyno}><Critter mat={body} shape={SHAPES.cyno} legRefs={legs} /></group>
+      {DEMO && <CreatureDemo kind={DEMO === 'biped' || ['sapiens', 'erectus', 'lucy', 'sahelanthropus'].includes(DEMO) ? 'biped' : 'quadruped'} solo={['quadruped', 'biped'].includes(DEMO) ? undefined : DEMO} />}
+      <group ref={cyno} visible={!DEMO}><Critter mat={body} shape={SHAPES.cyno} walk={1} /></group>
       <points geometry={motes.g} material={motes.m} frustumCulled={false} />
     </group>
   );

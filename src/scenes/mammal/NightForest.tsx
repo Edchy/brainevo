@@ -46,7 +46,6 @@ export default function NightForest() {
   const scene = useScene();
   const trunks = useRef<THREE.InstancedMesh>(null);
   const shrew = useRef<THREE.Group>(null);
-  const legs = useRef<(THREE.Object3D | null)[]>([]);
   const theropod = useRef<THREE.Group>(null);
   const eye = useRef<THREE.Mesh>(null);
   const rings = useRef<(THREE.Mesh | null)[]>([]);
@@ -115,9 +114,8 @@ export default function NightForest() {
     // the shrew forages toward the beetle, nose bobbing
     const sx = -3.4 + t * 3.4;
     const s = shrew.current!;
-    s.position.set(sx, -0.14 + Math.abs(Math.sin(sx * 7)) * 0.025, 0);
+    s.position.set(sx, -1 + 0.606 * 1.85 * 1.4, 0); // feet on the ground plane (y=-1)
     s.rotation.z = Math.sin(time * 5 + sx * 3) * 0.02 * (0.4 + beat) - 0.03;
-    for (let i = 0; i < 4; i++) { const l = legs.current[i]; if (l) l.rotation.z = Math.sin(sx * 7 + (i % 2) * Math.PI) * 0.5; }
     nose.set(sx + 2.34, -0.1, 0);
     (scent.m.uniforms.uDst.value as THREE.Vector3).copy(nose);
     scent.m.uniforms.uStr.value = 0.45 + 0.55 * smoothstep(0.05, 0.5, t);
@@ -171,7 +169,7 @@ export default function NightForest() {
       {[0, 1].map((i) => (
         <mesh key={i} ref={(o) => { rings.current[i] = o; }} rotation={[-Math.PI / 2, 0, 0]} material={ringMats[i]}><planeGeometry args={[2, 2]} /></mesh>
       ))}
-      <group ref={shrew} scale={1.4}><Critter mat={furMat} shape={SHAPES.shrew} legRefs={legs} eyeMat={beetleMat} /></group>
+      <group ref={shrew} scale={1.4}><Critter mat={furMat} shape={SHAPES.shrew} walk={1} eyeMat={beetleMat} /></group>
     </group>
   );
 }

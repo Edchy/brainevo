@@ -75,7 +75,6 @@ export default function KPg() {
   const scene = useScene();
   const root = useRef<THREE.Group>(null);
   const hero = useRef<THREE.Group>(null);
-  const legs = useRef<(THREE.Object3D | null)[]>([]);
   const blades = useRef<THREE.InstancedMesh>(null);
   const ring = useRef<THREE.Mesh>(null);
   const flashMesh = useRef<THREE.Mesh>(null);
@@ -229,9 +228,8 @@ export default function KPg() {
     eyeMat.color.setRGB(2.4 * w, 2.4 * w, 2.2 * w);
     const hg = hero.current!;
     // looks up at the streak, then settles and sniffs the air
-    hg.position.set(1.5, GROUND_Y + 0.62 * 1.25, -1.4);
+    hg.position.set(1.5, GROUND_Y + 0.72 * 1.35 * 1.9, -1.4);
     hg.rotation.set(0, -0.25 + 0.1 * Math.sin(time * 0.3) * rec, 0.1 * (1 - smoothstep(-0.8, -0.5, s)) + 0.0);
-    for (let i = 0; i < 4; i++) { const l = legs.current[i]; if (l) l.rotation.z = 0; }
 
     bladeMat.color.setRGB(0.1 * w, 0.115 * w, 0.14 * w).multiplyScalar(0.4 + rec * 1.2);
     const bm = blades.current!;
@@ -261,7 +259,7 @@ export default function KPg() {
         <instancedMesh ref={blades} args={[undefined, undefined, bladeData.length]} material={bladeMat} frustumCulled={false}>
           <coneGeometry args={[1, 1, 4]} />
         </instancedMesh>
-        <group ref={hero} scale={1.25}><Critter mat={heroMat} shape={SHAPES.mammal} legRefs={legs} eyeMat={eyeMat} /></group>
+        <group ref={hero} scale={1.9}><Critter mat={heroMat} shape={SHAPES.mammal} walk={0} alert={0.6} eyeMat={eyeMat} /></group>
       </group>
       <mesh ref={flashMesh} material={flashMat} renderOrder={999} frustumCulled={false}><planeGeometry args={[1, 1]} /></mesh>
     </group>

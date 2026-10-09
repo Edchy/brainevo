@@ -15,13 +15,13 @@ export const mammalScenes: SceneDef[] = [
   {
     id: 'cynodont-endothermy', from: 'cynodont-endothermy', to: 'cynodont-endothermy', lead: 0.6, tail: 0.1, fade: 0.3,
     Component: Cynodont,
-    camera: (t) => ({ pos: [t * 0.6 - 0.3, 0.3, 6 - t * 0.8], look: [t * 0.5 - 0.2, -0.3, -1], fov: 55 }),
+    camera: (t) => ({ pos: [t * 0.6 - 0.3, 0.1, 4.9 - t * 0.8], look: [t * 0.5 - 0.2, -0.15, -1], fov: 55 }),
     mood: (t) => ({ bg: '#020203', bloom: 0.9 + t * 0.6 }),
   },
   {
     id: 'nocturnal-bottleneck', from: 'nocturnal-bottleneck', to: 'nocturnal-bottleneck', lead: 0.45, tail: 0.1, fade: 0.25,
     Component: NightForest,
-    camera: (t) => ({ pos: [-0.6 + t * 1.6, 0.1, 7.5 - t * 1.0], look: [0.2 + t * 1.2, 0.2, 0], fov: 52 }),
+    camera: (t) => ({ pos: [-0.6 + t * 1.6, 0.1, 6.2 - t * 1.0], look: [0.2 + t * 1.2, 0.2, 0], fov: 52 }),
     mood: () => ({ bg: '#020203', bloom: 1.1 }),
   },
   {
@@ -42,7 +42,7 @@ export const mammalScenes: SceneDef[] = [
   {
     id: 'hippocampus-replay', from: 'limbic-hippocampus', to: 'vicarious-trial-and-error-replay', lead: 0.45, tail: 0.3, fade: 0.25,
     Component: Hippocampus,
-    camera: (t) => ({ pos: [0, 7.2 - t * 1.2, 5.8 + t * 0.2], look: [0, 0, 0.7], fov: 50 }),
+    camera: (t) => ({ pos: [0, 4.4 - t * 0.6, 5.4 + t * 0.2], look: [0, 0, 0.5], fov: 50 }),
     mood: () => ({ bg: '#020203', bloom: 1.3 }),
   },
   {
@@ -57,7 +57,7 @@ export const mammalScenes: SceneDef[] = [
     camera: (t) => {
       const s = kS(t);
       const impact = Math.exp(-Math.pow((s + 0.5) / 0.15, 2));
-      return { pos: [0, -0.3 + smoothstep(0, 1, t) * 0.5, 8 - smoothstep(0, 1, t) * 1.5 + impact * 0.8], look: [1 * (1 - smoothstep(-1, -0.4, s)), 0.2, -20], fov: 55 };
+      return { pos: [0, -0.3 + smoothstep(0, 1, t) * 0.5, 6.4 - smoothstep(0, 1, t) * 1.5 + impact * 0.8], look: [1 * (1 - smoothstep(-1, -0.4, s)), 0.2, -20], fov: 55 };
     },
     mood: (t) => {
       const s = kS(t);
