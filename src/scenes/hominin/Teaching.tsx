@@ -3,199 +3,140 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
-import { makeGlowMat, makeRim } from './common';
-import { ik, makeSkin, seg, taperGeo } from './limbs';
-import { smoothstep } from '../../world/util';
+import { lerp, range, rng, smoothstep } from '../../world/util';
+import { GLSL_NOISE, makeGlowMat, setKnap, strikeCurve } from './common';
+import { makeSkin } from './limbs';
+import { Creature } from '../shared/creatures/Creature';
+import type { CreatureHandle } from '../shared/creatures/Creature';
 
-const N = 5, TR = 46;
-const SP = 1.4;
-const pos = (i: number, out: THREE.Vector3) => out.set(-2.4 + i * SP, 0, -0.25 * i);
-const sc = (i: number) => (i === 0 ? 1.28 : 1.12 - i * 0.015);
-const COOL = new THREE.Color('#2b2522'), GOLD = new THREE.Color('#ffe0b8');
-const A = 0.4, B = 0.38;
-
-interface Shared { s: number; w: number; tm: number; hand: THREE.Vector3[]; lit: number[] }
-
-function Person({ i, S, geo, shard, ringG, shardM, ringM }: {
-  i: number; S: Shared; geo: Record<string, THREE.BufferGeometry>; shard: THREE.BufferGeometry; ringG: THREE.BufferGeometry;
-  shardM: THREE.Material; ringM: THREE.Material;
-}) {
-  const grp = useRef<THREE.Group>(null);
-  const skin = useMemo(() => makeSkin('#6b4a3a', '#ffcf94', { rimPow: 3.0 }), []);
-  const eyeM = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), toneMapped: false }), []);
-  const m = {
-    torso: useRef<THREE.Mesh>(null), lL: useRef<THREE.Mesh>(null), lR: useRef<THREE.Mesh>(null), sL: useRef<THREE.Mesh>(null), sR: useRef<THREE.Mesh>(null),
-    uR: useRef<THREE.Mesh>(null), fR: useRef<THREE.Mesh>(null), uL: useRef<THREE.Mesh>(null), fL: useRef<THREE.Mesh>(null),
-    hand: useRef<THREE.Mesh>(null), halo: useRef<THREE.Group>(null), pool: useRef<THREE.Mesh>(null), tool: useRef<THREE.Mesh>(null),
-    shards: useRef<Array<THREE.Mesh | null>>([]), head: useRef<THREE.Group>(null),
-  };
-  const V = useMemo(() => ({ sh: new THREE.Vector3(), el: new THREE.Vector3(), ha: new THREE.Vector3(), pole: new THREE.Vector3(0.2, -1, 0.6), a: new THREE.Vector3(), b: new THREE.Vector3(), w: new THREE.Vector3(), poolM: makeGlowMat('#ffb468', 2.2) }), []);
-  useEffect(() => () => { skin.dispose(); eyeM.dispose(); V.poolM.dispose(); }, [skin, eyeM, V]);
-  const fwd = useMemo(() => {
-    const a = pos(i, new THREE.Vector3()), b = pos(Math.min(N - 1, i + 1), new THREE.Vector3());
-    if (i === N - 1) { b.copy(pos(i - 1, new THREE.Vector3())); const d = a.clone().sub(b); return Math.atan2(-d.z, d.x) - 0.95; }
-    const d = b.sub(a); return Math.atan2(-d.z, d.x) - 0.95;
-  }, [i]);
-
-  useFrame(() => {
-    const g = grp.current; if (!g) return;
-    const { s, w, tm } = S;
-    const lit = smoothstep(i - 0.45, i + 0.05, s);
-    const near = Math.exp(-(s - i) * (s - i) * 6);
-    S.lit[i] = lit;
-    const bright = 0.13 + lit * 0.1 + near * 0.9;
-    skin.uniforms.uInt.value = bright; skin.uniforms.uAlpha.value = w; skin.uniforms.uHotAmt.value = (lit * 0.03 + near * 0.5) * w;
-    (skin.uniforms.uColor.value as THREE.Color).copy(COOL).lerp(GOLD, lit * 0.8);
-    eyeM.color.setRGB(2.6, 1.9, 1.0).multiplyScalar(lit * (0.6 + near));
-    const sw = 1 + 0.012 * Math.sin(tm * 1.7 + i) ;
-    g.updateMatrixWorld();
-    // arm: raise to give / receive
-    const r = Math.max(0.12, smoothstep(i - 0.65, i - 0.1, s) * (1 - 0.6 * smoothstep(i + 0.55, i + 1.1, s)));
-    V.sh.set(0, 1.42, -0.27);
-    V.ha.set(0.1 + 0.42 * r, 1.0 + 0.32 * r, -0.2 + 0.0 * r);
-    ik(V.sh, V.ha, A, B, V.pole, V.el);
-    seg(m.uR.current, V.sh, V.el, 0.062); seg(m.fR.current, V.el, V.ha, 0.047);
-    if (m.hand.current) { m.hand.current.position.copy(V.ha); }
-    S.hand[i].copy(V.ha).add(V.w.set(0.1, 0.02, 0)).applyMatrix4(g.matrixWorld);
-    // left arm relaxed, slightly swinging
-    V.a.set(0, 1.42, 0.27); V.b.set(0.02, 0.93 + 0.02 * Math.sin(tm + i), 0.3);
-    ik(V.a, V.b, A, B, V.w.set(-0.2, -0.3, 1), V.el);
-    seg(m.uL.current, V.a, V.el, 0.062); seg(m.fL.current, V.el, V.b, 0.047);
-    // tool + halo (complexity grows down the chain)
-    const tool = m.tool.current;
-    if (tool) { tool.position.set(V.ha.x + 0.1, V.ha.y + 0.03, V.ha.z); tool.scale.setScalar(0.0001); tool.rotation.y = tm * 1.4 + i; tool.rotation.z = 0.4; }
-    const halo = m.halo.current;
-    if (halo) {
-      halo.position.y = 2.2 + Math.sin(tm * 1.4 + i) * 0.03; halo.rotation.y = tm * 0.7 + i; halo.scale.setScalar(0.0001);
-      const n = Math.min(8, i + 1);
-      for (let k = 0; k < 8; k++) {
-        const sh = m.shards.current![k]; if (!sh) continue;
-        if (k >= n) { sh.visible = false; continue; }
-        sh.visible = true;
-        const a = (k / n) * Math.PI * 2 + tm * (0.5 + 0.1 * i), rad = 0.3 + 0.025 * i;
-        sh.position.set(Math.cos(a) * rad, Math.sin(a * 1.7 + k) * 0.05 * (1 + i * 0.2), Math.sin(a) * rad);
-        sh.rotation.set(a, a * 1.3, 0);
-      }
-    }
-    if (m.pool.current) { V.poolM.uniforms.uAlpha.value = (0.04 + lit * 0.12 + near * 0.3) * w; }
-    void sw;
-  });
-
-  const L = 0.0;
-  return (
-    <group position={pos(i, new THREE.Vector3()).toArray()} scale={sc(i)}>
-      <mesh ref={m.pool} material={V.poolM} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} scale={[1.2 + i * 0.05, 1.2 + i * 0.05, 1]}><planeGeometry args={[2, 2]} /></mesh>
-      <group ref={grp} rotation={[0, fwd, 0]}>
-        {/* legs */}
-        <mesh geometry={geo.limb} material={skin} position={[0, 0.9, 0.12]} rotation={[0, 0, Math.PI]} scale={[0.1, 0.9, 0.1]} />
-        <mesh geometry={geo.limb} material={skin} position={[0, 0.9, -0.12]} rotation={[0, 0, Math.PI]} scale={[0.1, 0.9, 0.1]} />
-        <mesh geometry={geo.foot} material={skin} position={[0.1, 0.04, 0.12]} scale={[0.17, 0.05, 0.075]} />
-        <mesh geometry={geo.foot} material={skin} position={[0.1, 0.04, -0.12]} scale={[0.17, 0.05, 0.075]} />
-        {/* torso: tapered from hips to shoulders */}
-        <mesh ref={m.torso} geometry={geo.limb} material={skin} position={[0, 1.45, 0]} rotation={[0, 0, Math.PI]} scale={[0.17, 0.6, 0.17]} />
-        <mesh geometry={geo.sph} material={skin} position={[0, 0.9, 0]} scale={[0.17, 0.11, 0.15]} />
-        <mesh geometry={geo.sph} material={skin} position={[0, 1.4, 0]} scale={[0.12, 0.1, 0.33]} />
-        <mesh geometry={geo.sph} material={skin} position={[0, 1.42, 0.27]} scale={0.075} />
-        <mesh geometry={geo.sph} material={skin} position={[0, 1.42, -0.27]} scale={0.075} />
-        {/* neck + head */}
-        <mesh geometry={geo.limb} material={skin} position={[0.02, 1.47, 0]} scale={[0.065, 0.1, 0.065]} />
-        <group ref={m.head} position={[0.05, 1.7, 0]}>
-          <mesh geometry={geo.sph} material={skin} scale={[0.17, 0.19, 0.15]} />
-          <mesh geometry={geo.sph} material={skin} position={[0.09, -0.07, 0]} scale={[0.1, 0.085, 0.1]} />
-          <mesh geometry={geo.sph} material={skin} position={[0.11, 0.045, 0]} scale={[0.09, 0.04, 0.15]} />
-          <mesh geometry={geo.sph} material={eyeM} position={[0.135, 0.03, 0.055]} scale={0.02} />
-          <mesh geometry={geo.sph} material={eyeM} position={[0.135, 0.03, -0.055]} scale={0.02} />
-        </group>
-        {/* arms */}
-        <mesh ref={m.uR} geometry={geo.limb} material={skin} />
-        <mesh ref={m.fR} geometry={geo.limb} material={skin} />
-        <mesh ref={m.uL} geometry={geo.limb} material={skin} />
-        <mesh ref={m.fL} geometry={geo.limb} material={skin} />
-        <mesh ref={m.hand} geometry={geo.sph} material={skin} scale={[0.065, 0.05, 0.055]} />
-        <mesh ref={m.tool} geometry={shard} material={shardM} />
-        {/* skill halo: more orbiting fragments + rings each step along the chain */}
-        <group ref={m.halo} position={[0, 2.2 + L, 0]}>
-          {Array.from({ length: 8 }, (_, k) => <mesh key={k} ref={(e) => { m.shards.current![k] = e; }} geometry={shard} material={shardM} scale={0.045 + 0.004 * i} />)}
-          {i > 1 && <mesh geometry={ringG} material={ringM} scale={0.26} rotation={[Math.PI / 2.2, 0, 0]} />}
-          {i > 3 && <mesh geometry={ringG} material={ringM} scale={0.36} rotation={[Math.PI / 3, 0.6, 0]} />}
-          {i > 5 && <mesh geometry={ringG} material={ringM} scale={0.46} rotation={[0.3, 0.2, 1.1]} />}
-        </group>
-      </group>
-    </group>
-  );
-}
+const STRIKES = 5, FL = 5, G = 7;
+const ST = 1.45, SL = 1.05;                      // teacher (Heidelbergensis) and learner (young Erectus) scales
+const XT = -0.95, XL = 0.85;                     // creature origins; teacher faces +x, learner faces -x
+const tNow = () => (world.reduced ? 0 : world.time);
+// world point of a creature-local point
+const tw = (x: number, y: number, z: number, out: THREE.Vector3) => out.set(XT + ST * x, ST * y, ST * z);
+const lw = (x: number, y: number, z: number, out: THREE.Vector3) => out.set(XL - SL * x, SL * y, -SL * z);
 
 export default function Teaching() {
   const scene = useScene();
-  const S = useMemo<Shared>(() => ({ s: 0, w: 1, tm: 0, hand: Array.from({ length: N }, () => new THREE.Vector3()), lit: new Array(N).fill(0) }), []);
-  const orb = useMemo(() => ({ m: null as THREE.Mesh | null, h: null as THREE.Mesh | null }), []);
-  const tmp = useMemo(() => new THREE.Vector3(), []);
+  const q = world.quality;
+  const hT = useRef<CreatureHandle>(null), hL = useRef<CreatureHandle>(null);
+  const flakes = useRef<THREE.InstancedMesh>(null), orb = useRef<THREE.Mesh>(null), orbG = useRef<THREE.Mesh>(null), trail = useRef<THREE.Points>(null);
+  const dum = useMemo(() => new THREE.Object3D(), []);
+  const A = useMemo(() => new THREE.Vector3(), []), B = useMemo(() => new THREE.Vector3(), []), C = useMemo(() => new THREE.Vector3(), []);
   const R = useMemo(() => {
-    const geo = { limb: taperGeo(0.72), sph: new THREE.SphereGeometry(1, 18, 12), foot: new THREE.SphereGeometry(1, 10, 8) };
-    const shard = new THREE.OctahedronGeometry(1, 0); shard.scale(0.7, 1.15, 0.45);
-    const ringG = new THREE.TorusGeometry(1, 0.03, 6, 48);
-    const shardM = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 1.6, 0.8), toneMapped: false, transparent: true });
-    const ringM = makeRim('#ffc07a', 0.7, 1.0);
-    const halo = makeGlowMat('#ffc080', 2);
-    const lg = new THREE.BufferGeometry();
-    lg.setAttribute('position', new THREE.BufferAttribute(new Float32Array((N - 1) * 6), 3));
-    lg.setAttribute('color', new THREE.BufferAttribute(new Float32Array((N - 1) * 6), 3));
-    const lm = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    const r = rng(33);
+    const fl = Array.from({ length: STRIKES * FL * 2 }, () => ({ v: new THREE.Vector3((r() - 0.5) * 2, 0.6 + r() * 1.5, (r() - 0.5) * 1.6), s: 0.02 + r() * 0.025, sp: new THREE.Vector3((r() - 0.5) * 12, (r() - 0.5) * 12, (r() - 0.5) * 12) }));
+    const flakeGeo = new THREE.TetrahedronGeometry(1, 0); flakeGeo.scale(1, 0.24, 0.7);
+    const flake = makeSkin('#34312c', '#fff2dc', { flat: true, rimPow: 1.4 });
+    const floor = new THREE.ShaderMaterial({
+      transparent: true, uniforms: { uAlpha: { value: 1 } },
+      vertexShader: 'varying vec3 vW; varying float vD; void main(){ vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; vec4 mv=viewMatrix*w; vD=-mv.z; gl_Position=projectionMatrix*mv; }',
+      fragmentShader: `${GLSL_NOISE} uniform float uAlpha; varying vec3 vW; varying float vD;
+        void main(){
+          vec2 p = vW.xz;
+          float n = n3(vec3(p*3., 0.))*.5 + n3(vec3(p*14., 1.))*.3 + n3(vec3(p*60., 2.))*.2;
+          float pool = exp(-dot(p*vec2(.45,.9), p*vec2(.45,.9))*.6);
+          vec3 c = vec3(.07,.062,.06)*(.35 + n*.9)*(.1 + pool*1.4);
+          c = mix(c, vec3(.012,.011,.016), smoothstep(3., 10., vD));
+          gl_FragColor = vec4(c, uAlpha); }`,
+    });
+    // the 'transmission' accent: a warm orb carrying each strike from teacher to learner, with a short comet tail
+    const orbM = new THREE.MeshBasicMaterial({ color: new THREE.Color(5, 2.2, 0.6), toneMapped: false, transparent: true });
+    const glow = makeGlowMat('#ff9a30', 2.2);
+    const TR = 28;
     const tg = new THREE.BufferGeometry();
     tg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(TR * 3), 3));
     tg.setAttribute('aA', new THREE.BufferAttribute(new Float32Array(TR), 1));
     const tm = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uAlpha: { value: 1 } },
-      vertexShader: 'attribute float aA; varying float vA; void main(){ vA=aA; vec4 mv=modelViewMatrix*vec4(position,1.); gl_PointSize=(90.*aA)/-mv.z; gl_Position=projectionMatrix*mv; }',
-      fragmentShader: 'uniform float uAlpha; varying float vA; void main(){ float d=length(gl_PointCoord-.5)*2.; float a=max(0.,1.-d); gl_FragColor=vec4(vec3(2.,1.3,.6)*a*a*vA*uAlpha,1.); }',
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, uniforms: { uAlpha: { value: 1 } },
+      vertexShader: 'attribute float aA; varying float vA; void main(){ vA=aA; vec4 mv=modelViewMatrix*vec4(position,1.); gl_PointSize=(34.*aA)/-mv.z; gl_Position=projectionMatrix*mv; }',
+      fragmentShader: 'uniform float uAlpha; varying float vA; void main(){ float d=length(gl_PointCoord-.5)*2.; float a=max(0.,1.-d); gl_FragColor=vec4(vec3(2.6,1.0,.25)*a*a*vA*uAlpha,1.); }',
     });
-    const orbM = new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 2.8, 1.5), toneMapped: false });
-    const haze = makeGlowMat('#ff9a50', 1.6);
-    return { geo, shard, ringG, shardM, ringM, halo, lg, lm, tg, tm, orbM, haze };
+    return { fl, flakeGeo, flake, floor, orbM, glow, tg, tm, TR };
   }, []);
-  useEffect(() => () => {
-    Object.values(R.geo).forEach((g) => g.dispose()); R.shard.dispose(); R.ringG.dispose(); R.shardM.dispose(); R.ringM.dispose(); R.halo.dispose();
-    R.lg.dispose(); R.lm.dispose(); R.tg.dispose(); R.tm.dispose(); R.orbM.dispose(); R.haze.dispose();
-  }, [R]);
-
-  const orbAt = (s: number, out: THREE.Vector3) => {
-    const i = Math.min(N - 2, Math.max(0, Math.floor(s))), f = Math.min(1, Math.max(0, s - i));
-    const e = f * f * (3 - 2 * f);
-    out.lerpVectors(S.hand[i], S.hand[i + 1], e); out.y += 0.3 * Math.sin(Math.PI * e) + 0.0;
-    return out;
+  useEffect(() => () => { R.flakeGeo.dispose(); R.flake.dispose(); R.floor.dispose(); R.orbM.dispose(); R.glow.dispose(); R.tg.dispose(); R.tm.dispose(); }, [R]);
+  const orbAt = (u: number, out: THREE.Vector3) => { // arc from the teacher's hammer to the learner's
+    out.lerpVectors(A, B, u); out.y += Math.sin(Math.PI * u) * 0.55; return out;
   };
 
   useFrame((st) => {
     if (!scene.active) return;
-    const w = scene.weight, t = scene.t, tm = world.reduced ? 0 : world.time;
-    const s = smoothstep(0.06, 0.94, t) * (N - 1);
-    S.s = s; S.w = w; S.tm = tm;
-    const lp = R.lg.attributes.position as THREE.BufferAttribute, lc = R.lg.attributes.color as THREE.BufferAttribute;
-    for (let i = 0; i < N - 1; i++) {
-      const a = S.hand[i], b = S.hand[i + 1];
-      lp.setXYZ(i * 2, a.x, a.y, a.z); lp.setXYZ(i * 2 + 1, b.x, b.y, b.z);
-      const c = smoothstep(i, i + 1, s) * w * 0.35; lc.setXYZ(i * 2, c, c * 0.6, c * 0.25); lc.setXYZ(i * 2 + 1, c, c * 0.6, c * 0.25);
+    const t = scene.t, w = scene.weight, tm = tNow();
+    const prog = range(0.1, 0.9, t) * STRIKES;
+    const k = Math.min(STRIKES - 1, Math.floor(prog)), f = prog - k;
+    const lag = 0.45;                                             // the learner repeats each blow shortly after
+    const pl = prog - lag, kl = Math.max(0, Math.floor(pl)), fl2 = pl - kl;
+    const cT = strikeCurve(f, prog > 0.01 && prog < STRIKES ? 1 : 0);
+    const cL = strikeCurve(Math.max(0, fl2), pl > 0.01 && pl < STRIKES ? 1 : 0);
+    const hTm = hT.current, hLm = hL.current;
+    if (hTm) {
+      setKnap(hTm.state, cT.raise, cT.hit, tm, 1, 0.9, 0.85);
+      hTm.state.headPitch = -0.2 + 0.03 * Math.sin(tm * 0.7); hTm.state.headYaw = 0; hTm.state.mouth = 0;
+      hTm.look.w = w; hTm.look.keyK = 0.4 + cT.hit * 0.9; hTm.look.rimK = 0.6; hTm.look.sss = 0.5; hTm.look.amb = 0.14;
     }
-    lp.needsUpdate = true; lc.needsUpdate = true; R.lm.opacity = w;
-    orbAt(Math.min(s, N - 1.0001), tmp);
-    if (orb.m) { orb.m.position.copy(tmp); orb.m.scale.setScalar(0.09 * w); }
-    if (orb.h) { orb.h.position.copy(tmp); orb.h.quaternion.copy(st.camera.quaternion); orb.h.scale.setScalar(2.0); R.halo.uniforms.uAlpha.value = w; }
+    if (hLm) {
+      // the learner watches the teacher's hands, then tries it
+      const watch = 1 - smoothstep(0.0, 0.5, fl2) * (pl > 0 ? 1 : 0);
+      setKnap(hLm.state, cL.raise * (pl > 0 ? 1 : 0.0), cL.hit, tm + 1.7, -1, 0.55, 0.85);
+      hLm.state.headPitch = -0.22 + 0.04 * watch; hLm.state.headYaw = 0; hLm.state.mouth = 0;
+      hLm.look.w = w; hLm.look.keyK = 0.38 + cL.hit * 0.9; hLm.look.rimK = 0.6; hLm.look.sss = 0.5; hLm.look.amb = 0.14;
+    }
+    R.floor.uniforms.uAlpha.value = w; R.flake.uniforms.uAlpha.value = w; R.flake.uniforms.uHotAmt.value = 0;
+    if (hTm) tw(hTm.state.pLx, hTm.state.pLy + 0.05, hTm.state.pLz, A);
+    if (hLm) lw(hLm.state.pRx, hLm.state.pRy + 0.05, hLm.state.pRz, B);
+    // the warm orb: leaves the teacher's core at each blow, lands on the learner's core as the learner repeats it
+    const phaseU = f >= 0.72 ? Math.min(1, (f - 0.72) / (1 - 0.72 + lag)) : 0;
+    const flight = (k > 0 || f > 0.72) && prog < STRIKES + lag ? (f >= 0.72 ? phaseU : (f < lag * 0.9 ? Math.min(1, (f + 0.28) / (0.28 + lag)) : 0)) : 0;
+    const u = smoothstep(0, 1, flight);
+    orbAt(u, C);
+    const vis = flight > 0.001 && flight < 0.999 ? 1 : 0;
+    if (orb.current) { orb.current.position.copy(C); orb.current.scale.setScalar(0.035 * w * vis * (0.8 + 0.2 * Math.sin(tm * 20))); }
+    if (orbG.current) { orbG.current.position.copy(C); orbG.current.quaternion.copy(st.camera.quaternion); orbG.current.scale.setScalar(0.9); R.glow.uniforms.uAlpha.value = 0.8 * w * vis; }
     const tp = R.tg.attributes.position as THREE.BufferAttribute, ta = R.tg.attributes.aA as THREE.BufferAttribute;
-    for (let i = 0; i < TR; i++) { orbAt(Math.min(Math.max(0, s - i * 0.03), N - 1.0001), tmp); tp.setXYZ(i, tmp.x, tmp.y, tmp.z); ta.setX(i, (1 - i / TR) * 0.8); }
+    for (let i = 0; i < R.TR; i++) {
+      const uu = Math.max(0, u - i * 0.012); orbAt(uu, dum.position); tp.setXYZ(i, dum.position.x, dum.position.y, dum.position.z);
+      ta.setX(i, vis * (1 - i / R.TR) * 0.8);
+    }
     tp.needsUpdate = true; ta.needsUpdate = true; R.tm.uniforms.uAlpha.value = w;
-    R.shardM.opacity = w; R.haze.uniforms.uAlpha.value = 0.06 * w;
+    // flakes from both knapping sites
+    const F = flakes.current;
+    if (F) {
+      for (let i = 0; i < STRIKES * FL * 2; i++) {
+        const site = i % 2, idx = Math.floor(i / 2), fk = Math.floor(idx / FL), a = R.fl[i];
+        const tau = (site === 0 ? prog : pl) - fk - 0.72;
+        if (tau < 0 || (idx % FL) >= Math.max(3, Math.floor(FL * Math.max(0.6, q)))) { dum.scale.setScalar(0); dum.position.set(0, -9, 0); } else {
+          const P0 = site === 0 ? A : B, dir = site === 0 ? -1 : 1;
+          const T = tau * 1.7, rest = a.s * 0.3;
+          const tl = (a.v.y + Math.sqrt(a.v.y * a.v.y + 2 * G * Math.max(0.01, P0.y - rest))) / G;
+          const Tm = Math.min(T, tl);
+          const y = T < tl ? P0.y + a.v.y * T - 0.5 * G * T * T : rest;
+          dum.position.set(P0.x + dir * Math.abs(a.v.x) * Tm * 0.7, y, P0.z + a.v.z * Tm * 0.5);
+          dum.rotation.set(a.sp.x * Tm, a.sp.y * Tm, a.sp.z * Tm);
+          dum.scale.setScalar(a.s * w * Math.min(1, tau * 20));
+        }
+        dum.updateMatrix(); F.setMatrixAt(i, dum.matrix);
+      }
+      F.instanceMatrix.needsUpdate = true;
+    }
+    void lerp;
   });
 
   return (
     <group>
-      <mesh material={R.haze} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, -1.4]} scale={[7.5, 3.0, 1]}><planeGeometry args={[2, 2]} /></mesh>
-      {Array.from({ length: N }, (_, i) => <Person key={i} i={i} S={S} geo={R.geo} shard={R.shard} ringG={R.ringG} shardM={R.shardM} ringM={R.ringM} />)}
-      <lineSegments geometry={R.lg} material={R.lm} frustumCulled={false} />
-      <points geometry={R.tg} material={R.tm} frustumCulled={false} />
-      <mesh ref={(m) => { orb.m = m; }} material={R.orbM}><sphereGeometry args={[1, 16, 12]} /></mesh>
-      <mesh ref={(m) => { orb.h = m; }} material={R.halo}><planeGeometry args={[1.4, 1.4]} /></mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} material={R.floor}><circleGeometry args={[14, 40]} /></mesh>
+      <instancedMesh ref={flakes} args={[R.flakeGeo, R.flake, STRIKES * FL * 2]} frustumCulled={false} />
+      <points ref={trail} geometry={R.tg} material={R.tm} frustumCulled={false} />
+      <mesh ref={orb} material={R.orbM}><sphereGeometry args={[1, 16, 12]} /></mesh>
+      <mesh ref={orbG} material={R.glow}><planeGeometry args={[1, 1]} /></mesh>
+      <group position={[XT, 0, 0]}><group scale={ST}>
+        <Creature ref={hT} rig="biped" preset="heidelbergensis" look={{ rimDir: [-0.5, 0.5], keyDir: [0.6, 0.55, 0.6], gloss: 0.15 }} palette={{ rim: '#f2e6d8', key: '#e8dccb', skin: '#8f7a6c' }} />
+      </group></group>
+      <group position={[XL, 0, 0]} rotation={[0, Math.PI, 0]}><group scale={SL}>
+        <Creature ref={hL} rig="biped" preset="erectus" look={{ rimDir: [0.5, 0.5], keyDir: [-0.6, 0.55, 0.6], gloss: 0.15 }} palette={{ rim: '#f2e6d8', key: '#e8dccb', skin: '#806a5c' }} />
+      </group></group>
     </group>
   );
 }
 
-export const teachingCamera = (t: number) => ({ pos: [-0.2 + t * 0.4, 1.45, 5.0] as [number, number, number], look: [0.0, 1.1, -0.7] as [number, number, number], fov: 50 });
+export const teachingCamera = (t: number) => ({ pos: [-0.05 + Math.sin(t * 1.5) * 0.25, 0.95, 6.3] as [number, number, number], look: [-0.05, 0.68, 0] as [number, number, number], fov: 36 });

@@ -3,7 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { lerp, smoothstep } from '../../world/util';
-import { Figure, ambientTime, makePose } from './common';
+import { Primate, ambientTime, fruitMaterial, neutral, reach } from './common';
+import type { CreatureHandle } from './common';
 
 const A_X = -2.1, B_X = 3.2, WALL_X = 1.3, FRUIT_X = -0.4;
 
@@ -26,8 +27,11 @@ function Bubble({ meshRef, col }: { meshRef: React.RefObject<THREE.Mesh | null>;
 
 export default function TheoryOfMind() {
   const scene = useScene();
-  const pA = useMemo(makePose, []);
-  const pB = useMemo(makePose, []);
+  const hA = useRef<CreatureHandle>(null);
+  const hB = useRef<CreatureHandle>(null);
+  const fruitMat = useMemo(() => fruitMaterial(), []);
+  const wallEdges = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(0.1, 2.4, 1.6)), []);
+  const wallMat = useMemo(() => new THREE.LineBasicMaterial({ color: new THREE.Color(0.45, 0.55, 0.8), toneMapped: false, transparent: true }), []);
   const gA = useRef<THREE.Group>(null);
   const gB = useRef<THREE.Group>(null);
   const fruit = useRef<THREE.Mesh>(null);
@@ -46,7 +50,7 @@ export default function TheoryOfMind() {
     g.translate(0, -len / 2, 0); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI); // apex at origin, opening toward -x
     return g;
   }, []);
-  useEffect(() => () => { coneGeo.dispose(); }, [coneGeo]);
+  useEffect(() => () => { coneGeo.dispose(); wallEdges.dispose(); wallMat.dispose(); fruitMat.dispose(); }, [coneGeo, wallEdges, wallMat, fruitMat]);
 
   useFrame((state) => {
     if (!scene.active) return;
@@ -57,24 +61,40 @@ export default function TheoryOfMind() {
     const act = smoothstep(0.78, 0.95, t);
     const bLook = smoothstep(0.62, 0.8, t); // dominant glances away at the end
 
-    // subordinate A: faces right; notices fruit, thinks, then sneaks over
-    pA.headYaw = 0; pA.headPitch = 0.2 * notice - 0.1 * act;
-    pA.lean = 0.1 + 0.25 * act; pA.aL = [-0.2 - 0.9 * act, 0.15, -0.3 - 0.8 * act]; pA.aR = [-0.2, -0.15, -0.3];
-    pA.glow = think * 0.8 + infer * 0.4; pA.tail = 0; pA.eye = 1;
-    pB.headYaw = lerp(0, -0.7, bLook); pB.lean = 0.05; pB.aL = [0.15, 0.2, -0.2]; pB.aR = [0.15, -0.2, -0.2];
-    pB.glow = 0.15; pB.tail = 0;
-    const ax = lerp(A_X, FRUIT_X - 0.9, act);
-    if (gA.current) { gA.current.position.set(ax, 0, 0.2); gA.current.rotation.y = Math.PI / 2; gA.current.scale.setScalar(1.35); }
-    if (gB.current) { gB.current.position.set(B_X, 0, 0); gB.current.rotation.y = -Math.PI / 2; gB.current.scale.setScalar(1.8); }
+    // subordinate A: faces right; notices the fruit, sits up to think (hand to chin), then drops to all fours and sneaks over
+    const sitA = think * (1 - act);
+    const ax = lerp(A_X, FRUIT_X - 0.95, act);
+    const a = hA.current, b = hB.current;
+    if (a) {
+      const pm = a.state.pm; neutral(pm);
+      pm.sit = sitA;
+      pm.tilt = -0.15 * sitA;
+      const chin = smoothstep(0.3, 0.5, t) * (1 - act);
+      reach(pm.hand, 1, a.state.headX + 0.06, a.state.headY - 0.14, 0.1, chin);
+      pm.gripL = 0.5; pm.brow = 0.4 + 0.5 * think;
+      a.state.headPitch = -0.2 * notice * (1 - think) + 0.1 * think; a.state.alert = 0.3 + 0.5 * notice;
+      a.state.crouch = 0.4 * act;
+      if (act < 0.01) { a.override.walk = 0; a.override.phase = 0; } else { a.override.walk = undefined; a.override.phase = undefined; }
+      a.look.w = w; a.look.splashK = 0.2 + 0.5 * think;
+    }
+    // dominant B: seated, facing left; glances away at the end
+    if (b) {
+      const pm = b.state.pm; neutral(pm);
+      pm.sit = 1; pm.tilt = -0.05; pm.gripL = pm.gripR = 0.4; pm.brow = 0.1;
+      b.state.headYaw = lerp(0, 0.8, bLook); b.state.headPitch = 0.05; b.override.walk = 0; b.override.phase = 0;
+      b.look.w = w;
+    }
+    if (gA.current) { gA.current.position.set(ax, 0, 0.2); gA.current.scale.setScalar(1.5); }
+    if (gB.current) { gB.current.position.set(B_X, 0, 0); gB.current.rotation.y = Math.PI; gB.current.scale.setScalar(1.7); }
+    wallMat.opacity = w * 0.7;
+    fruitMat.uniforms.uW.value = w; fruitMat.uniforms.uGlow.value = 0.25 + 0.25 * Math.sin(tm * 3) + 0.4 * think;
 
     // fruit: glows, is carried at the end
     if (fruit.current) {
       const carried = smoothstep(0.92, 1, t);
-      fruit.current.position.set(lerp(FRUIT_X, ax + 0.7, carried), lerp(0.28, 0.75, carried), 0.2);
-      fruit.current.scale.setScalar(0.17 * (1 + 0.1 * Math.sin(tm * 3)));
-      (fruit.current.material as THREE.MeshBasicMaterial).opacity = w;
+      fruit.current.position.set(lerp(FRUIT_X, ax + 0.9, carried), lerp(0.2, 0.7, carried), 0.2);
+      fruit.current.scale.setScalar(0.2 * (1 + 0.04 * Math.sin(tm * 3)));
     }
-    if (wall.current) (wall.current.material as THREE.MeshBasicMaterial).opacity = w * 0.95;
     // dominant's view cone, stopped by the wall
     if (cone.current) {
       const len = B_X - 0.4 - WALL_X - 0.05;
@@ -124,20 +144,16 @@ export default function TheoryOfMind() {
 
   return (
     <group>
-      <group ref={gA}><Figure tail={false} pose={pA} rim="#ffddb8" rimGlow={2.2} /></group>
-      <group ref={gB}><Figure tail={false} pose={pB} rim="#cfe2ff" rimGlow={1.8} eyeColor="#dbeaff" /></group>
-      <mesh ref={fruit}>
-        <sphereGeometry args={[1, 16, 12]} />
-        <meshBasicMaterial color={[3, 0.5, 0.3]} toneMapped={false} transparent />
+      <group ref={gA}><Primate ref={hA} preset="primate" rim="#ffddb8" /></group>
+      <group ref={gB}><Primate ref={hB} preset="ape" rim="#cfe2ff" palette={{ base: '#4a4440', belly: '#8a8078' }} /></group>
+      <mesh ref={fruit} material={fruitMat}>
+        <sphereGeometry args={[1, 28, 20]} />
       </mesh>
       <mesh ref={wall} position={[WALL_X, 1.2, 0.2]}>
-        <boxGeometry args={[0.08, 2.4, 1.6]} />
-        <meshBasicMaterial color={[0.12, 0.15, 0.22]} toneMapped={false} transparent />
+        <boxGeometry args={[0.1, 2.4, 1.6]} />
+        <meshBasicMaterial color={[0.015, 0.02, 0.03]} toneMapped={false} />
       </mesh>
-      <mesh position={[WALL_X, 1.2, 0.2]}>
-        <boxGeometry args={[0.1, 2.43, 1.63]} />
-        <meshBasicMaterial color={[0.5, 0.6, 0.8]} wireframe toneMapped={false} transparent opacity={0.35} />
-      </mesh>
+      <lineSegments position={[WALL_X, 1.2, 0.2]} geometry={wallEdges} material={wallMat} />
       <mesh ref={cone} geometry={coneGeo}>
         <meshBasicMaterial color={[0.55, 0.75, 1.3]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
       </mesh>

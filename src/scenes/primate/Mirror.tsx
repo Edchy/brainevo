@@ -1,10 +1,11 @@
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { eventPos, lerp, near, smoothstep } from '../../world/util';
-import { Figure, ambientTime, makePose } from './common';
-import type { Arm, Pose } from './common';
+import { Primate, ambientTime, neutral, reach } from './common';
+import type { CreatureHandle } from './common';
+import type { PrimatePose } from '../shared/creatures/rig';
 
 const MZ = -2.4; // mirror plane z
 const MY = 2.0;
@@ -17,38 +18,39 @@ void main(){
   float sheen = smoothstep(.015,.0,abs(vUv.x*.8+vUv.y-.95+sin(uTime*.2)*.05)) *.5;
   float vig = smoothstep(.75,.1,length(q*vec2(1.,1.3)));
   float a = (.02+vig*.035+diag*.02+sheen*.1)*uOp;
-  vec3 c = vec3(.7,.8,1.)*(.6+sheen*.6) + vec3(1.8,1.7,1.5)*uWake*vig*.5;
-  a += uWake*vig*.25*uOp;
+  vec3 c = vec3(.7,.8,1.)*(.6+sheen*.6) + vec3(1.8,1.7,1.5)*uWake*vig*.3;
+  a += uWake*vig*.07*uOp;
   gl_FragColor = vec4(c*a, a);
 }`;
 
-function mirrorPose(src: Pose, dst: Pose) {
-  const flip = (a: Arm): Arm => [a[0], -a[1], a[2]];
-  dst.aL = flip(src.aR); dst.aR = flip(src.aL);
-  dst.lean = src.lean; dst.headPitch = src.headPitch; dst.headYaw = -src.headYaw;
-  dst.mark = src.mark;
+interface MP { wave: number; touch: number; head: number; side: 1 | -1; hx: number; hy: number }
+/** seated ape: right hand tests the mirror with a wave, then goes to the marked brow. `side` swaps hands for the reflection */
+function poseApe(h: CreatureHandle, p: MP) {
+  const pm: PrimatePose = h.state.pm;
+  neutral(pm);
+  pm.sit = 1; pm.tilt = -0.08 + 0.1 * p.wave;
+  const s = p.side;
+  const swing = Math.sin(p.wave * 9) * 0.1;
+  // wave: hand in front of the face, rocking; touch: hand on the forehead mark
+  reach(pm.hand, s, 0.55 + swing, 1.2 + 0.15 * p.wave, 0.22 * s, Math.max(p.wave, p.touch));
+  reach(pm.hand, s, lerp(0.55 + swing, p.hx + 0.1, p.touch), lerp(1.2 + 0.15 * p.wave, p.hy + 0.1, p.touch), lerp(0.22, 0.05, p.touch) * s, Math.max(p.wave, p.touch));
+  pm.gripL = pm.gripR = 0.35 + 0.4 * p.touch;
+  pm.brow = 0.2 + 0.4 * p.head - 0.3 * p.touch;
+  h.state.headPitch = -0.05 + 0.1 * p.head + 0.12 * p.touch;
+  h.state.headYaw = 0; h.override.walk = 0; h.override.phase = 0;
 }
 
 export default function Mirror() {
   const scene = useScene();
-  const ape = useMemo(makePose, []);
-  const refl = useMemo(makePose, []);
-  const tmpP = useMemo(makePose, []);
+  const hApe = useRef<CreatureHandle>(null);
+  const hRef = useRef<CreatureHandle>(null);
   const gApe = useRef<THREE.Group>(null);
   const gRef = useRef<THREE.Group>(null);
+  const mkA = useRef<THREE.Mesh>(null);
+  const mkR = useRef<THREE.Mesh>(null);
   const glass = useRef<THREE.ShaderMaterial>(null);
   const frame = useRef<THREE.MeshBasicMaterial>(null);
   const pulse = useRef<THREE.Mesh>(null);
-
-  const pose = (p: Pose, wave: number, touch: number, head: number) => {
-    // test-waving arm swings, then the hand goes to the marked forehead
-    const sx = -0.3 - 1.3 * wave;
-    p.aR = [lerp(sx, -1.35, touch), lerp(-0.2, 0.05, touch), lerp(-0.4 - 0.4 * wave, -2.3, touch)];
-    p.aL = [0.1, 0.15, -0.2];
-    p.lean = 0.08 + 0.08 * wave;
-    p.headPitch = -0.05 + 0.1 * head + 0.25 * touch;
-    p.headYaw = 0;
-  };
 
   useFrame(() => {
     if (!scene.active) return;
@@ -58,31 +60,32 @@ export default function Mirror() {
     const touch = smoothstep(0.7, 0.86, t);
     const markOn = smoothstep(0.02, 0.14, t);
     const wv = (x: number) => Math.max(0, Math.sin(x * 20)) * (1 - smoothstep(0.62, 0.7, t)) * smoothstep(0.1, 0.18, t);
-
-    pose(ape, wv(t), touch, 0);
-    ape.mark = markOn * (1 + touch * 0.8);
-    ape.glow = touch * 0.6 + beat * 0.3;
-    ape.tail = 0;
-
-    // the reflection first behaves like a stranger: delayed, offset, bigger gestures; then it locks to the ape
-    const lag = lerp(0.12, 0, rec);
-    const stranger = 1 - rec;
-    pose(tmpP, wv(t - lag) * (1 + 0.5 * stranger), touch, stranger);
-    mirrorPose(tmpP, refl);
-    refl.mark = ape.mark;
-    refl.headYaw = (stranger * 0.5) * Math.sin(t * 25);
-    refl.headPitch += stranger * 0.12 * Math.sin(t * 17);
-    refl.eye = lerp(0.15, 1, rec);
-    refl.glow = rec * 0.8 + beat * 1.2;
-    refl.alpha = lerp(0.55, 1, rec);
-    refl.tail = 0;
-    // lean offset for stranger reading
-    refl.lean += stranger * 0.12;
-
-    if (gApe.current) { gApe.current.position.set(0, 0, 0); gApe.current.rotation.y = Math.PI; gApe.current.scale.setScalar(1.3); }
+    const A = hApe.current, R = hRef.current;
+    if (A && R) {
+      poseApe(A, { wave: wv(t), touch, head: 0, side: -1, hx: A.state.headX, hy: A.state.headY });
+      A.look.w = w;
+      // the reflection first behaves like a stranger: delayed, offset, bigger gestures; then it locks to the ape
+      const lag = lerp(0.12, 0, rec);
+      const stranger = 1 - rec;
+      poseApe(R, { wave: wv(t - lag) * (1 + 0.5 * stranger), touch, head: stranger, side: 1, hx: R.state.headX, hy: R.state.headY });
+      R.state.headYaw = stranger * 0.45 * Math.sin(t * 25);
+      R.state.headPitch += stranger * 0.1 * Math.sin(t * 17);
+      R.state.pm.tilt += stranger * 0.1;
+      R.look.w = w * lerp(0.5, 1, rec);
+      R.look.splashK = 0.2 + 0.8 * rec;
+      A.look.splashK = 0.2 + 0.4 * touch;
+      // the recognition spark: the mark on the brow flares as the reflection becomes "me"
+      for (const [m, h] of [[mkA.current, A], [mkR.current, R]] as const) {
+        if (!m) continue;
+        m.position.set(h.state.headX + 0.13, h.state.headY + 0.13, 0.0);
+        m.scale.setScalar(0.0001 + 0.02 * markOn * w * (1 + 1.2 * touch + 0.8 * beat * (h === R ? 1 : 0.5)));
+      }
+    }
+    if (gApe.current) { gApe.current.position.set(0, 0, 0); gApe.current.rotation.y = Math.PI / 2 - 0.6; gApe.current.scale.setScalar(1.5); }
     if (gRef.current) {
-      gRef.current.position.set(stranger * 0.12 * Math.sin(t * 9), 0, 2 * MZ);
-      gRef.current.rotation.y = 0; gRef.current.scale.setScalar(1.7);
+      gRef.current.position.set(0, 0, 2 * MZ);
+      gRef.current.rotation.y = -(Math.PI / 2 - 0.6); gRef.current.scale.setScalar(1.5);
+      gRef.current.position.x = (1 - rec) * 0.12 * Math.sin(t * 9);
     }
     if (glass.current) {
       glass.current.uniforms.uOp.value = w;
@@ -94,14 +97,20 @@ export default function Mirror() {
       const k = smoothstep(0.38, 0.62, t);
       const kk = (k * 1.6) % 1;
       pulse.current.scale.setScalar(0.4 + kk * 3.2);
-      (pulse.current.material as THREE.MeshBasicMaterial).opacity = w * (k > 0.02 && k < 0.99 ? (1 - kk) * 0.3 : 0) + beat * 0;
+      (pulse.current.material as THREE.MeshBasicMaterial).opacity = w * (k > 0.02 && k < 0.99 ? (1 - kk) * 0.12 : 0);
     }
   });
 
   return (
     <group>
-      <group ref={gApe}><Figure tail={false} pose={ape} rim="#ffddb8" rimGlow={2.3} /></group>
-      <group ref={gRef}><Figure tail={false} pose={refl} rim="#d6e6ff" rimGlow={2.2} eyeColor="#dbeaff" /></group>
+      <group ref={gApe}>
+        <Primate ref={hApe} preset="ape" rim="#ffddb8" />
+        <mesh ref={mkA}><sphereGeometry args={[1, 12, 10]} /><meshBasicMaterial color={[4.5, 1.1, 0.25]} toneMapped={false} /></mesh>
+      </group>
+      <group ref={gRef}>
+        <Primate ref={hRef} preset="ape" rim="#d6e6ff" palette={{ base: '#46403c', belly: '#8a8680' }} />
+        <mesh ref={mkR}><sphereGeometry args={[1, 12, 10]} /><meshBasicMaterial color={[4.5, 1.1, 0.25]} toneMapped={false} /></mesh>
+      </group>
       {/* mirror */}
       <mesh position={[0, MY, MZ]} renderOrder={8}>
         <planeGeometry args={[6.2, 4.2]} />
@@ -111,7 +120,7 @@ export default function Mirror() {
       {[[0, 2.15, 6.5, 0.14], [0, -2.15, 6.5, 0.14], [3.18, 0, 0.14, 4.44], [-3.18, 0, 0.14, 4.44]].map(([x, y, sw, sh], i) => (
         <mesh key={i} position={[x, MY + y, MZ - 0.02]}>
           <boxGeometry args={[sw, sh, 0.12]} />
-          <meshBasicMaterial ref={i === 0 ? frame : undefined} color={[0.3, 0.32, 0.38]} toneMapped={false} transparent />
+          <meshBasicMaterial ref={i === 0 ? frame : undefined} color={[0.1, 0.11, 0.14]} toneMapped={false} transparent />
         </mesh>
       ))}
       <mesh ref={pulse} position={[0, 2.1, MZ + 0.02]}>
@@ -123,7 +132,7 @@ export default function Mirror() {
 }
 
 export const mirrorCamera = (t: number) => ({
-  pos: [lerp(2.6, 1.2, t), lerp(2.0, 2.3, t), lerp(5.0, 4.0, t)] as [number, number, number],
-  look: [0, 1.9, -2.6] as [number, number, number],
+  pos: [lerp(5.2, 4.4, t), lerp(2.0, 2.1, t), lerp(5.4, 4.6, t)] as [number, number, number],
+  look: [-0.4, 1.45, -2.8] as [number, number, number],
   fov: 50,
 });

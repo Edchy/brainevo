@@ -52,12 +52,12 @@ export const lifeScenes: SceneDef[] = [
     mood: () => ({ bg: '#030617', bloom: 1.5 }),
   },
   {
-    id: 'life-worm', from: 'bilateral-symmetry-ganglia', to: 'cephalization', lead: 0.55, tail: 0.4, fade: 0.5, Component: Worm,
-    camera: (t) => ({ pos: [-0.3 + t * 1.2, 6.4, 2.8], look: [t * 1.2, 0, 0], fov: 55 }),
+    id: 'life-worm', from: 'bilateral-symmetry-ganglia', to: 'cephalization', lead: 0.3, tail: 0.4, fade: 0.4, Component: Worm,
+    camera: (t) => ({ pos: [-0.3 + t * 1.2, 4.4, 2.2], look: [t * 1.2, 0, 0], fov: 55 }),
     mood: () => ({ bg: '#030a0b', bloom: 1.3 }),
   },
   {
-    id: 'life-cambrian', from: 'cambrian-explosion-eyes', to: 'cambrian-explosion-eyes', lead: 0.45, tail: 0.9, fade: 0.45, Component: Cambrian,
+    id: 'life-cambrian', from: 'cambrian-explosion-eyes', to: 'cambrian-explosion-eyes', lead: 0.45, tail: 0.55, fade: 0.3, Component: Cambrian,
     camera: (t) => ({ pos: [0, 0.4, 8.5 - 2.5 * Math.sin(Math.min(1, t * 1.6) * Math.PI * 0.5) + 2.5 * Math.max(0, (t - 0.65) / 0.35)], look: [0, 0.4, 0], fov: 55 }),
     mood: (t) => ({
       bg: t > 0.9 ? '#03050b' : '#020609',

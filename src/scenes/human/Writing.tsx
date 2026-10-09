@@ -4,137 +4,158 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, range } from '../../world/util';
-import { GLSL_UTIL, PBuf, pointMat, tickU } from './common';
+import { GLSL_UTIL } from './common';
 
-type P2 = [number, number];
-const GLYPHS: P2[][][] = [
-  [[[-.4, -.5], [0, .5], [.4, -.5]], [[-.2, -.1], [.2, -.1]]],
-  [[[.3, .5], [-.3, .5], [-.3, -.5], [.3, -.5]], [[-.3, 0], [.2, 0]]],
-  [Array.from({ length: 13 }, (_, i) => [Math.cos((i / 12) * 6.283) * 0.4, Math.sin((i / 12) * 6.283) * 0.5] as P2)],
-  [[[-.3, .5], [-.3, -.5]], [[-.3, 0], [.3, .5]], [[-.3, 0], [.3, -.5]]],
-  [[[-.4, -.5], [-.4, .5], [0, 0], [.4, .5], [.4, -.5]]],
-  [[[-.4, .5], [.4, .5]], [[0, .5], [0, -.5]]],
-  [[[-.3, .5], [-.3, -.5], [.3, -.5]]],
-  [[[-.35, .5], [0, 0], [.35, .5]], [[0, 0], [0, -.5]]],
-  [[[-.3, .5], [-.3, -.5]], [[-.3, .5], [.25, .3], [-.3, 0], [.3, -.25], [-.3, -.5]]],
-];
-function sampleGlyph(g: P2[][], u: number): P2 {
-  let total = 0;
-  const lens: number[] = [];
-  for (const s of g) { let l = 0; for (let i = 1; i < s.length; i++) l += Math.hypot(s[i][0] - s[i - 1][0], s[i][1] - s[i - 1][1]); lens.push(l); total += l; }
-  let d = u * total;
-  for (let k = 0; k < g.length; k++) {
-    if (d <= lens[k] || k === g.length - 1) {
-      const s = g[k];
-      let acc = d;
-      for (let i = 1; i < s.length; i++) {
-        const l = Math.hypot(s[i][0] - s[i - 1][0], s[i][1] - s[i - 1][1]);
-        if (acc <= l || i === s.length - 1) { const f = Math.min(1, acc / (l || 1)); return [s[i - 1][0] + (s[i][0] - s[i - 1][0]) * f, s[i - 1][1] + (s[i][1] - s[i - 1][1]) * f]; }
-        acc -= l;
-      }
-    }
-    d -= lens[k];
-  }
-  return [0, 0];
+// A clay tablet in raking light. First wedges are pressed into it row by row (cuneiform), then the same clay carries a
+// handful of simple strokes: the first letters. Everything is one shader: relief height-field -> normals -> light.
+const TW = 2.1, TH = 1.62;
+
+const FS = /* glsl */ `${GLSL_UTIL}
+uniform float uW,uTime,uE1,uE2,uAng;
+varying vec2 vUv;
+float sdRB(vec2 p, vec2 b, float r){ vec2 q=abs(p)-b+r; return length(max(q,0.))+min(max(q.x,q.y),0.)-r; }
+float sdSeg(vec2 p, vec2 a, vec2 b){vec2 pa=p-a, ba=b-a; float h=clamp(dot(pa,ba)/dot(ba,ba),0.,1.); return length(pa-ba*h);}
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+
+// one wedge: broad head at o, tapering to a point along angle a; returns pressed depth 0..1
+float wedge(vec2 p, vec2 o, float a, float len, float w){
+  vec2 q = rot(a)*(p-o);
+  float t = q.x/len;
+  float m = step(0.,t)*step(t,1.);
+  float hw = w*.5*(1.-t*.92);
+  float d = abs(q.y)-hw;
+  float prof = smoothstep(.012,-.012,d);                // sharp-walled impression
+  float deep = (1.-t*.55)*smoothstep(0.,.14,t+.1);
+  return prof*m*deep; 
 }
-
-const TABLET_FS = /* glsl */ `${GLSL_UTIL}
-uniform float uW,uFade; varying vec2 vUv;
-float rbox(vec2 p, vec2 b, float r){ vec2 q=abs(p)-b+r; return length(max(q,0.))+min(max(q.x,q.y),0.)-r; }
+float cuneiform(vec2 p, out float fresh){
+  float cols=7., rows=7.;
+  vec2 g=(p+vec2(${(TW - 0.28).toFixed(2)},${(TH - 0.3).toFixed(2)}))/vec2(${(2 * (TW - 0.28)).toFixed(2)},${(2 * (TH - 0.3)).toFixed(2)})*vec2(cols,rows);
+  fresh=0.;
+  if(g.x<0.||g.x>=cols||g.y<0.||g.y>=rows) return 0.;
+  vec2 id=floor(g), f=fract(g)-.5;
+  float row=rows-1.-id.y;                                   // read top to bottom
+  float hs=h21(id+3.7);
+  if(hs<.16 || (row>=rows-1. && id.x>3.)) return 0.;         // gaps, short last line
+  float order=(row*cols+id.x)/(rows*cols);
+  float on=smoothstep(order*.95, order*.95+.05, uE1);
+  float cell=.48; vec2 pc=f*cell*1.0;
+  float n=1.+floor(h21(id+11.3)*3.99);
+  float acc=0.;
+  for(int k=0;k<4;k++){
+    if(float(k)>=n) break;
+    float fk=float(k);
+    float r1=h21(id+fk*7.1+1.), r2=h21(id+fk*3.3+5.), r3=h21(id+fk*5.9+9.);
+    bool hz = r3<.55, vt = r3>=.55 && r3<.85;
+    float ang = hz ? 0. : (vt ? -1.5708 : (r3<.93 ? -.7854 : .7854));
+    ang += (h21(id+fk+20.)-.5)*.05;
+    vec2 o = hz ? vec2(-.2+r1*.05, (mod(fk,3.)-1.)*.12 + (r2-.5)*.02)
+           : (vt ? vec2(-.13+fk*.09+r1*.02, .17+(r2-.5)*.02)
+                 : vec2(-.12+fk*.07, .06-fk*.06));
+    float L=.3+.05*r2, W=.1;
+    acc=max(acc, wedge(pc,o,ang,L,W));
+  }
+  // freshly pressed: a moment of warm shine
+  fresh = on*exp(-max(uE1-order*.95-.05,0.)*30.)*step(order*.95,uE1)*smoothstep(0.,.3,acc);
+  return acc*on;
+}
+float glyph(int id, vec2 p){   // letters on [-.5,.5]^2, stroke distance
+  float d=1e3;
+  if(id==0){ d=min(sdSeg(p,vec2(-.38,-.45),vec2(0.,.45)),sdSeg(p,vec2(0.,.45),vec2(.38,-.45))); d=min(d,sdSeg(p,vec2(-.18,-.05),vec2(.2,-.05))); }
+  else if(id==1){ d=min(sdSeg(p,vec2(-.3,.45),vec2(-.3,-.45)),sdSeg(p,vec2(-.3,.45),vec2(.25,.28))); d=min(d,sdSeg(p,vec2(.25,.28),vec2(-.3,.0))); d=min(d,sdSeg(p,vec2(-.3,.0),vec2(.3,-.2))); d=min(d,sdSeg(p,vec2(.3,-.2),vec2(-.3,-.45))); }
+  else if(id==2){ d=abs(length(p*vec2(1.,.9))-.38); }
+  else if(id==3){ d=min(sdSeg(p,vec2(-.32,.45),vec2(-.32,-.45)),sdSeg(p,vec2(-.32,.0),vec2(.32,.45))); d=min(d,sdSeg(p,vec2(-.32,.0),vec2(.32,-.45))); }
+  else if(id==4){ d=min(sdSeg(p,vec2(-.4,-.4),vec2(-.4,.4)),sdSeg(p,vec2(-.4,.4),vec2(0.,-.1))); d=min(d,sdSeg(p,vec2(0.,-.1),vec2(.4,.4))); d=min(d,sdSeg(p,vec2(.4,.4),vec2(.4,-.4))); }
+  else if(id==5){ d=min(sdSeg(p,vec2(-.42,.4),vec2(.42,.4)),sdSeg(p,vec2(0.,.4),vec2(0.,-.45))); d=min(d,sdSeg(p,vec2(-.28,-.1),vec2(.28,.1))); }
+  else if(id==6){ d=min(sdSeg(p,vec2(-.3,.45),vec2(-.3,-.4)),sdSeg(p,vec2(-.3,-.4),vec2(.32,-.4))); d=min(d,sdSeg(p,vec2(-.3,.1),vec2(.2,.1))); }
+  else if(id==7){ d=min(sdSeg(p,vec2(-.38,.45),vec2(0.,.0)),sdSeg(p,vec2(.38,.45),vec2(0.,.0))); d=min(d,sdSeg(p,vec2(0.,.0),vec2(0.,-.45))); }
+  else { d=min(sdSeg(p,vec2(-.3,.45),vec2(-.3,-.45)),sdSeg(p,vec2(-.3,.45),vec2(.22,.3))); d=min(d,sdSeg(p,vec2(.22,.3),vec2(-.3,.05))); d=min(d,sdSeg(p,vec2(-.3,.05),vec2(.32,-.45))); }
+  return d;
+}
+float letters(vec2 p, out float fresh){
+  // two rows of five, centred
+  fresh=0.;
+  vec2 g=(p-vec2(-.0,.0))/vec2(.62,.7);
+  vec2 id=floor(g+vec2(2.5,1.));
+  if(id.x<0.||id.x>4.||id.y<0.||id.y>1.) return 0.;
+  vec2 f=fract(g+vec2(2.5,1.))-.5;
+  int gi=int(mod(id.x*2.+id.y*5.+id.y*3.,9.));
+  float d=glyph(gi,f*1.15);
+  float order=(id.y>.5?0.:.5)+id.x*.1;
+  float on=smoothstep(order*.8, order*.8+.08, uE2);
+  float w=.065;
+  float prof=smoothstep(w,w-.035,d);
+  fresh=on*exp(-max(uE2-order*.8-.08,0.)*25.)*step(order*.8,uE2)*prof;
+  return prof*on*(1.-.25*h21(id));
+}
+float H(vec2 p, float d, out float fresh, out float fresh2){
+  float cu=cuneiform(p,fresh);
+  float le=letters(p,fresh2);
+  float cuA=1.-uE2;                   // wedges soften away as letters appear
+  float h = fbm(vec3(p*1.4,2.))*.2 + fbm(vec3(p*9.,6.))*.06 + vnoise(vec3(p*55.,3.))*.012;
+  h += (1.-smoothstep(.0,.7,-d))*-.06;                   // pillow: crowned centre, falling to the edge
+  h -= .05*exp(-pow((fract((p.y+${(TH-0.3).toFixed(2)})/${(2*(TH-0.3)/7).toFixed(4)})-.0)*7.,2.))*step(abs(p.x),${(TW-0.25).toFixed(2)})*step(abs(p.y),${(TH-0.25).toFixed(2)})*cuA*.0;
+  h -= cu*.22*cuA + le*.2*uE2;
+  // ruled guide lines between rows, barely there
+  float rule=exp(-pow((fract((p.y+${TH.toFixed(2)})*(7./(2.*${(TH - 0.3).toFixed(2)}))+.5)-.5)*40.,2.))*.0;
+  return h-rule;
+}
 void main(){
-  vec2 p=(vUv-.5)*vec2(3.9,3.0);
-  float d=rbox(p,vec2(1.85,1.4),.25);
-  float body=1.-smoothstep(-.01,.01,d);
-  float n=fbm(vec3(p*3.,2.));
-  vec3 c=vec3(.5,.28,.15)*(.08+.12*n)*(1.-smoothstep(-.4,0.,d)*.4);
-  c+=vec3(1.,.8,.6)*exp(-pow(d+.015,2.)*2500.)*.9;
-  gl_FragColor=vec4(c,body*uW*uFade);
+  vec2 p=(vUv-.5)*vec2(${(TW * 2 * 1.1).toFixed(3)},${(TH * 2 * 1.1).toFixed(3)});
+  float d=sdRB(p,vec2(${TW.toFixed(2)},${TH.toFixed(2)}),.38);
+  d+=(fbm(vec3(p*2.,1.))-.5)*.07;
+  float inside=1.-smoothstep(-.004,.006,d);
+  float e=.01; float f0,f1,f2,f3,f4,f5;
+  float h0=H(p,d,f0,f1);
+  float hx=H(p+vec2(e,0.),d,f2,f3), hy=H(p+vec2(0.,e),d,f4,f5);
+  vec3 n=normalize(vec3((h0-hx)/e*.75,(h0-hy)/e*.75,1.));
+  // pillow normal tilt toward the rim
+  vec2 gd=vec2(sdRB(p+vec2(.02,0.),vec2(${TW.toFixed(2)},${TH.toFixed(2)}),.38)-sdRB(p-vec2(.02,0.),vec2(${TW.toFixed(2)},${TH.toFixed(2)}),.38), sdRB(p+vec2(0.,.02),vec2(${TW.toFixed(2)},${TH.toFixed(2)}),.38)-sdRB(p-vec2(0.,.02),vec2(${TW.toFixed(2)},${TH.toFixed(2)}),.38));
+  n=normalize(n+vec3(-gd*.6*smoothstep(-.45,0.,d)*1.5,0.));
+  vec3 L=normalize(vec3(cos(uAng)*.8,sin(uAng)*.75,.55));
+  float dif=max(dot(n,L),0.);
+  float sp=pow(max(dot(reflect(-L,n),vec3(0.,0.,1.)),0.),30.);
+  // sun-dried clay: warm, uneven, flecked with grit
+  float tone=fbm(vec3(p*2.4,9.));
+  vec3 clay=mix(vec3(.62,.27,.09), vec3(.95,.5,.2), tone);
+  clay*=.75+.5*fbm(vec3(p*14.,4.));
+  float grit=step(.965,h21(floor(p*140.)))*.4;
+  clay+=vec3(.6,.55,.5)*grit*.3;
+  // wedge floors are a touch darker and cooler (compressed clay)
+  float pressed=smoothstep(-.03,-.14,h0-.0);
+  float ao=.55+.45*smoothstep(-.35,.0,h0-.02);
+  vec3 col=clay*(.07+1.0*dif)*ao + vec3(1.,.8,.6)*sp*.06;
+  col+=vec3(2.4,1.1,.35)*(max(f0,f1))*.5;
+  col*=.5+.5*smoothstep(1.9,.3,length(p*vec2(.8,1.)));
+  // rim light on the crown of the edge
+  col+=vec3(1.1,.62,.3)*exp(-pow((d+.015)/.02,2.))*.2;
+  gl_FragColor=vec4(col,inside*uW);
 }`;
 
 export default function Writing() {
   const scene = useScene();
-  const { geo, mat, tab } = useMemo(() => {
-    const b = new PBuf(91);
-    const r = b.r;
-    const q = world.quality;
-    const rot = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(-0.18, 0.22, 0.03));
-    const v = new THREE.Vector3();
-    const rows = 5, cols = 7, M = rows * cols, per = Math.max(10, Math.floor(80 * q));
-    for (let m = 0; m < M; m++) {
-      const row = Math.floor(m / cols), col = m % cols;
-      const hx = (col - (cols - 1) / 2) * 0.46 + (r() - 0.5) * 0.04, hy = ((rows - 1) / 2 - row) * 0.42 + (r() - 0.5) * 0.03;
-      const nw = 1 + Math.floor(r() * 2.2);
-      const angs = [0, Math.PI / 2, Math.PI / 4, -Math.PI / 4];
-      const g = GLYPHS[m % GLYPHS.length];
-      for (let k = 0; k < per; k++) {
-        const w = k % nw;
-        const ang = angs[(m + w * 2) % 4] + (r() - 0.5) * 0.15;
-        const u = ((k / nw) | 0) / Math.ceil(per / nw);
-        const L = 0.26;
-        const ox = (w - (nw - 1) / 2) * 0.06;
-        const lx = hx + ox + Math.cos(ang) * u * L, ly = hy + Math.sin(ang) * u * L;
-        v.set(lx, ly, 0.02 + (1 - u) * 0.03).applyMatrix4(rot);
-        const [gx, gy] = sampleGlyph(g, (k + 0.5) / per);
-        b.add(v.x, v.y + 0.3, v.z, [2.0, 1.2, 0.5], m / M, { aL: [gx, gy, m / M], aU: [u] });
-      }
-    }
-    const mat = pointMat({
-      decl: 'attribute vec3 aL; attribute float aU; uniform float uE1,uE2;',
-      uniforms: { uE1: { value: 0 }, uE2: { value: 0 } },
-      size: 0.8,
-      body: `
-      // scattered glyph-dust: slowly swirling cloud
-      float an = aSeed.x*6.283 + uTime*.12*(.5+aSeed.y);
-      float rad = 1.5 + 3.8*pow(aSeed.y,.7);
-      vec3 S = vec3(cos(an)*rad*1.5, (aSeed.z-.5)*4.5, sin(an)*rad*.8 - 1.);
-      S.y += sin(uTime*.4+aSeed.x*20.)*.15;
-      float e1 = smoothstep(aSeed.z*.5, aSeed.z*.5+.5, uE1);
-      float e2 = smoothstep(aSeed.x*.5, aSeed.x*.5+.5, uE2);
-      // ribbon of letters
-      float gi = aL.z;
-      float s = fract(gi*1.0 + uE2*.35 + uTime*.015) ;
-      float fx = -6. + 12.*s;
-      vec3 R = vec3(fx, 1.5 + sin(s*8.+uE2*5.)*.55, cos(s*6.+uE2*3.)*.9 - .5);
-      R.xy += aL.xy*.38;
-      R.y += sin(uTime*1.3+gi*30.+aSeed.x)*.015;
-      float ribbonA = smoothstep(0.,.12,s)*(1.-smoothstep(.88,1.,s));
-      vec3 W = p;
-      p = mix(S, W, e1);
-      p = mix(p, R, e2);
-      float press = exp(-pow((e1-.92)*9.,2.))*(1.-e2);
-      float tw = pow(.5+.5*sin(uTime*2.+aSeed.x*40.),4.);
-      col = mix(vec3(1.2,.9,1.8), vec3(2.0,1.15,.45), e1);
-      col = mix(col, vec3(.7,1.5,2.0), e2);
-      a = (.03 + .55*e1*(1.-e2)) * (1.+press*2.) * (.8+.5*tw);
-      a = mix(a, .8*ribbonA*(.8+.4*tw), e2);
-      size = mix(.4, .3+.35*(1.-aU)*e1, e1) + press*.3;
-      `,
-    });
-    const tab = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false,
-      uniforms: { uW: { value: 0 }, uFade: { value: 1 } },
-      vertexShader: 'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-      fragmentShader: TABLET_FS,
-    });
-    return { geo: b.build(), mat, tab };
-  }, []);
-  useEffect(() => () => { geo.dispose(); mat.dispose(); tab.dispose(); }, [geo, mat, tab]);
+  const mat = useMemo(() => new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    uniforms: { uW: { value: 0 }, uTime: { value: 0 }, uE1: { value: 0 }, uE2: { value: 0 }, uAng: { value: 2.2 } },
+    vertexShader: 'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+    fragmentShader: FS,
+  }), []);
+  useEffect(() => () => mat.dispose(), [mat]);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!scene.active) return;
     const f = world.stationF;
     const e73 = eventPos('writing'), e74 = eventPos('alphabet');
-    tickU(mat, scene, state.gl.getPixelRatio());
-    const e2 = range(e73 + 0.5, e74 - 0.08, f);
-    mat.uniforms.uE1.value = range(e73 - 0.65, e73 + 0.15, f);
-    mat.uniforms.uE2.value = e2;
-    tab.uniforms.uW.value = scene.weight * range(e73 - 0.3, e73 - 0.05, f);
-    tab.uniforms.uFade.value = 1 - Math.min(1, e2 * 1.6);
+    const u = mat.uniforms;
+    u.uW.value = scene.weight * range(e73 - 0.7, e73 - 0.35, f);
+    u.uTime.value = world.reduced ? 0 : world.time;
+    u.uE1.value = range(e73 - 0.55, e73 + 0.15, f);
+    u.uE2.value = range(e73 + 0.55, e74 - 0.05, f);
+    u.uAng.value = 2.1 + Math.sin(scene.t * 3.0) * 0.18 + (world.reduced ? 0 : Math.sin(world.time * 0.15) * 0.03);
   });
   return (
-    <group>
-      <mesh position={[0, 0.3, -0.02]} rotation={[-0.18, 0.22, 0.03]} material={tab}><planeGeometry args={[3.9, 3.0]} /></mesh>
-      <points geometry={geo} material={mat} frustumCulled={false} />
-    </group>
+    <mesh material={mat} position={[1.3, 0.3, 0]} rotation={[-0.1, 0.16, 0.025]}>
+      <planeGeometry args={[TW * 2 * 1.1, TH * 2 * 1.1]} />
+    </mesh>
   );
 }

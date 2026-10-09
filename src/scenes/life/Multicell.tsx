@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, rng, smoothstep } from '../../world/util';
-import { Backdrop, NOISE, Plankton, POINT_FRAG, makeGlass, pxScale, timeNow, useDispose } from './common';
+import { Backdrop, NOISE, Plankton, POINT_FRAG, pxScale, timeNow, useDispose } from './common';
+import { AquaCreature } from '../shared/creatures/AquaCreature';
+import type { AquaHandle } from '../shared/creatures/AquaCreature';
 
 const SR = 2.3;
 
@@ -72,9 +74,8 @@ export default function Multicell() {
         vC=vec3(.4,1.,.8); vA=uW*.5*mix(.2,1.,1.-isTip); }`,
     fragmentShader: /* glsl */ `varying vec3 vC; varying float vA; void main(){ gl_FragColor=vec4(vC*vA,1.); }`,
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
-  const shellMat = useMemo(() => makeGlass('#73ffb8', { rim: 1.1, fill: 0.03, power: 2.5, noise: 3 }), []);
-  const innerMat = useMemo(() => makeGlass('#ffd27a', { rim: 1.4, fill: 0.5, power: 1.6, noise: 5 }), []);
-  useDispose(geo, hair, cellMat, hairMat, shellMat, innerMat);
+  const col = useRef<AquaHandle>(null);
+  useDispose(geo, hair, cellMat, hairMat);
 
   // loose choanoflagellate-like singles drifting in the background (visible early)
   useFrame((state) => {
@@ -82,30 +83,35 @@ export default function Multicell() {
     const t = scene.t, w = scene.weight, time = timeNow(), px = pxScale(state);
     const A = smoothstep(0.1, 0.62, t);
     const pulse = near(eventPos('multicellularity'), 0.6);
+    const shell = smoothstep(0.5, 0.85, t);
     for (const m of [cellMat, hairMat]) {
       const u = m.uniforms;
-      u.uTime.value = time; u.uA.value = A; u.uSpin.value = world.stationF * 0.5 + time * 0.25; u.uSpec.value = smoothstep(0.62, 0.9, t); u.uPx.value = px; u.uW.value = w * (1 + pulse * 0.6);
+      u.uTime.value = time; u.uA.value = A; u.uSpin.value = world.stationF * 0.5 + time * 0.25; u.uSpec.value = smoothstep(0.62, 0.9, t); u.uPx.value = px;
+      u.uW.value = w * (1 + pulse * 0.6) * (m === cellMat ? 1 - 0.7 * shell : 1 - 0.8 * shell);
     }
-    shellMat.uniforms.uW.value = w * smoothstep(0.5, 0.8, t); shellMat.uniforms.uTime.value = time;
-    innerMat.uniforms.uW.value = w * smoothstep(0.7, 0.95, t); innerMat.uniforms.uTime.value = time;
+    const c = col.current;
+    if (c) {
+      c.look.w = w * shell; c.state.grow = smoothstep(0.66, 0.95, t); c.look.glowK = 0.9 + pulse * 0.8;
+      c.state.time = time;
+    }
   });
 
   return (
     <group position={[0, 0.4, 0]}>
       <Backdrop color="#2fbf8a" caustics={0.4} shafts={0.35} haze={0.1} />
       <Plankton count={700} box={[20, 12, 9]} color="#a8ffd6" size={0.05} dir={[0.0, 0.05, 0]} />
-      <mesh material={shellMat} scale={SR * 1.06} frustumCulled={false}>
-        <icosahedronGeometry args={[1, 5]} />
-      </mesh>
-      <mesh material={innerMat} scale={0.55} position={[0.5, 0.3, 0.2]} frustumCulled={false}>
-        <icosahedronGeometry args={[1, 4]} />
-      </mesh>
-      <mesh material={innerMat} scale={0.4} position={[-0.7, -0.5, 0.5]} frustumCulled={false}>
-        <icosahedronGeometry args={[1, 4]} />
-      </mesh>
+      <SpinGroup>
+        <AquaCreature ref={col} kind="colony" params={{ radius: SR * 1.01, cells: 8 }} />
+      </SpinGroup>
       <lineSegments geometry={hair} material={hairMat} frustumCulled={false} />
       <points geometry={geo} material={cellMat} frustumCulled={false} />
     </group>
   );
 }
 void NOISE;
+
+function SpinGroup({ children }: { children: React.ReactNode }) {
+  const g = useRef<THREE.Group>(null);
+  useFrame(() => { if (g.current) g.current.rotation.y = world.stationF * 0.5 + timeNow() * 0.25; });
+  return <group ref={g}>{children}</group>;
+}

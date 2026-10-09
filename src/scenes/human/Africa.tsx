@@ -5,7 +5,7 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, range, smoothstep } from '../../world/util';
 import { EarthSphere, llToVec, useEarthMats } from './Earth';
-import { PBuf, pointMat, tickU } from './common';
+import { LBuf, PBuf, lineMat, pointMat, tickU } from './common';
 
 type LL = [number, number];
 // [waypoints, start, end] -- stylised dispersal corridors, in order of rough timing
@@ -20,16 +20,16 @@ export default function Africa() {
   const scene = useScene();
   const { mat, atmo } = useEarthMats();
   const root = useRef<THREE.Group>(null);
-  const { geo, pm } = useMemo(() => {
+  const { geo, pm, lgeo, lm } = useMemo(() => {
     const b = new PBuf(51);
     const r = b.r;
     ROUTES.forEach((rt, ri) => {
       const curve = new THREE.CatmullRomCurve3(rt.pts.map(([la, lo]) => new THREE.Vector3(...llToVec(la, lo, 1))), false, 'centripetal');
-      const n = Math.floor(1100 * world.quality);
+      const n = Math.floor(800 * world.quality);
       for (let i = 0; i < n; i++) {
         const s = i / n;
         const v = curve.getPoint(s).normalize();
-        const spread = 0.012 + 0.03 * Math.sin(s * Math.PI);
+        const spread = 0.004 + 0.012 * Math.sin(s * Math.PI);
         v.x += (r() - 0.5) * spread; v.y += (r() - 0.5) * spread; v.z += (r() - 0.5) * spread;
         v.normalize().multiplyScalar(1.012 + r() * 0.012);
         b.add(v.x, v.y, v.z, rt.col, ri, { aR: [s, rt.a, rt.b] });
@@ -40,6 +40,25 @@ export default function Africa() {
       const v = new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).normalize().multiplyScalar(14 + r() * 20);
       b.add(v.x, v.y, v.z, [0.7, 0.8, 1.2], 9, { aR: [0, 0, 0] });
     }
+    // fine route lines hugging the globe, drawn out by the migration's progress
+    const lb = new LBuf(52);
+    ROUTES.forEach((rt, ri) => {
+      const curve = new THREE.CatmullRomCurve3(rt.pts.map(([la, lo]) => new THREE.Vector3(...llToVec(la, lo, 1))), false, 'centripetal');
+      const N = 220;
+      let prev = curve.getPoint(0).normalize().multiplyScalar(1.004);
+      for (let i = 1; i <= N; i++) {
+        const cur = curve.getPoint(i / N).normalize().multiplyScalar(1.004);
+        lb.seg([prev.x, prev.y, prev.z], [cur.x, cur.y, cur.z], (i - 1) / N, i / N, rt.col, ri, { aR: [rt.a, rt.b] });
+        prev = cur;
+      }
+    });
+    const lm = lineMat({
+      decl: 'attribute vec2 aR; uniform float uProg;', uniforms: { uProg: { value: 0 } },
+      body: `
+      float pr = clamp((uProg - aR.x)/(aR.y - aR.x), 0., 1.);
+      float d = pr - aG;
+      a = step(0., d)*step(.0001, pr)*(.22 + .35*exp(-max(d,0.)*5.));`,
+    });
     const pm = pointMat({
       decl: 'attribute vec3 aR; uniform float uProg;',
       uniforms: { uProg: { value: 0 } },
@@ -60,9 +79,9 @@ export default function Africa() {
       }
       `,
     });
-    return { geo: b.build(), pm };
+    return { geo: b.build(), pm, lgeo: lb.build(), lm };
   }, []);
-  useEffect(() => () => { geo.dispose(); pm.dispose(); }, [geo, pm]);
+  useEffect(() => () => { geo.dispose(); pm.dispose(); lgeo.dispose(); lm.dispose(); }, [geo, pm, lgeo, lm]);
 
   useFrame((state) => {
     if (!scene.active) return;
@@ -72,6 +91,7 @@ export default function Africa() {
     mat.uniforms.uW.value = scene.weight; atmo.uniforms.uW.value = scene.weight;
     tickU(pm, scene, state.gl.getPixelRatio());
     pm.uniforms.uProg.value = prog;
+    tickU(lm, scene); lm.uniforms.uProg.value = prog;
     const g = root.current;
     if (g) {
       const lon = 22 + smoothstep(0, 1, prog) * 105;
@@ -85,6 +105,7 @@ export default function Africa() {
   return (
     <group ref={root}>
       <EarthSphere mat={mat} atmo={atmo} />
+      <lineSegments geometry={lgeo} material={lm} frustumCulled={false} />
       <points geometry={geo} material={pm} frustumCulled={false} />
     </group>
   );

@@ -4,106 +4,133 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, range } from '../../world/util';
-import { LBuf, PBuf, lineMat, pointMat, tickU, type V3 } from './common';
+import { GLSL_UTIL } from './common';
 
-// One engraved piece of ochre (after the cross-hatched Blombos stones): a slab edge, then the pattern scratched in line by line.
-const HW = 2.3, HH = 1.45;
+// One engraved piece of ochre (after the cross-hatched Blombos stones): a slab of iron-rich stone, then the pattern
+// scratched in line by line. Fully shader-modelled: relief, bevelled edge, pale scratched grooves, ochre red body.
+const HW = 2.3, HH = 1.45, PAD = 1.12;
+
+const FS = /* glsl */ `${GLSL_UTIL}
+uniform float uW,uRev,uTime;
+varying vec2 vUv;
+float sdRB(vec2 p, vec2 b, float r){ vec2 q=abs(p)-b+r; return length(max(q,0.))+min(max(q.x,q.y),0.)-r; }
+// slab outline: rounded rectangle, wavy, with a chipped corner
+float slab(vec2 p){
+  float d = sdRB(p, vec2(${HW.toFixed(2)},${HH.toFixed(2)}), .22);
+  d += (fbm(vec3(p*1.7,3.))-.5)*.16 + (fbm(vec3(p*9.,5.))-.5)*.03;
+  d = max(d, -(sdRB(p-vec2(${HW.toFixed(2)},${HH.toFixed(2)})*vec2(1.,1.), vec2(.0), .0) - .0)*0. + d);
+  float chip = length(p-vec2(${(HW - 0.1).toFixed(2)},${(-HH + 0.05).toFixed(2)})) - .38;
+  return max(d, -chip + .0) ;
+}
+// engraving: lattice of diagonal grooves within three bands. returns groove strength 0..1 and reveal mask via .y
+vec2 engrave(vec2 p){
+  float g=0., rv=0.;
+  float xl=-${(HW - 0.3).toFixed(2)}, xr=${(HW - 0.3).toFixed(2)};
+  for(int b=0;b<3;b++){
+    float y0 = b==0?.62:(b==1?-.28:-1.18);
+    float y1 = b==0?1.12:(b==1?.52:-.38);
+    vec2 q=p;
+    q.x += (fbm(vec3(p*3.5,float(b)))-.5)*.035; q.y += (fbm(vec3(p*3.5+9.,float(b)))-.5)*.035;
+    float inB = step(y0,q.y)*step(q.y,y1)*step(xl,q.x)*step(q.x,xr);
+    float sp=.4;
+    float s1 = (q.x+q.y)/sp, s2=(q.x-q.y)/sp;
+    float w = .045; // groove half width in lattice units
+    float l1 = abs(fract(s1)-.5), l2 = abs(fract(s2)-.5);
+    float gr = max(smoothstep(.5-w*1.6,.5,.5-l1*1.0+.0)*0., 0.);
+    float c1 = 1.-smoothstep(.0,.055,.5-l1), c2 = 1.-smoothstep(.0,.055,.5-l2);
+    // two-stage reveal: the line being scratched glows, then settles
+    float order = .08 + float(b)*.0 + ((q.x-xl)/(xr-xl))*.78;
+    float on = smoothstep(order, order+.03, uRev);
+    float fr = (1.-smoothstep(.0,.03,abs(q.y-y0)-.006)) + (1.-smoothstep(.0,.03,abs(q.y-y1)-.006));
+    float line = max(c1,c2)*inB + fr*step(xl,q.x)*step(q.x,xr);
+    g = max(g, line*on);
+    rv = max(rv, line*exp(-max(uRev-order,0.)*28.)*step(order,uRev));
+  }
+  return vec2(g, rv);
+}
+float Hh(vec2 p, float d){
+  float h = fbm(vec3(p*1.4,2.))*.45 + fbm(vec3(p*6.,7.))*.11 + vnoise(vec3(p*30.,1.))*.015;
+  h += smoothstep(-.09,0.,d)*-.35 ;                 // bevelled edge falls away
+  h -= engrave(p).x*.3;
+  return h;
+}
+void main(){
+  vec2 p=(vUv-.5)*vec2(${(HW * 2 * PAD).toFixed(3)},${(HH * 2 * PAD).toFixed(3)});
+  float d = slab(p);
+  float inside = 1.-smoothstep(-.004,.006,d);
+  float e=.012;
+  float h0=Hh(p,d);
+  float hx=Hh(p+vec2(e,0.),d), hy=Hh(p+vec2(0.,e),d);
+  vec3 n=normalize(vec3((h0-hx)/e*.7,(h0-hy)/e*.7,1.));
+  vec3 L=normalize(vec3(-.55,.6,.62));
+  float dif=max(dot(n,L),0.);
+  float spec=pow(max(dot(reflect(-L,n),vec3(0.,0.,1.)),0.),22.);
+  vec2 en=engrave(p);
+  // stone body: oxidised red-brown with iron speckle, banded by the strata
+  float band = fbm(vec3(p.x*.8,p.y*5.5,4.));
+  vec3 base = mix(vec3(.46,.1,.035), vec3(.82,.24,.06), smoothstep(.3,.75,band));
+  base *= .65+.6*fbm(vec3(p*5.,8.));
+  float fleck = step(.93, h21(floor(p*95.)))*.5;
+  base += vec3(.5,.45,.35)*fleck*.5;
+  // the scratch exposes paler, drier ochre under the skin
+  vec3 scratch = vec3(1.0,.55,.16);
+  vec3 alb = mix(base, scratch, en.x*.8);
+  float ao = .55+.45*smoothstep(-.4,.2,h0-.2);
+  vec3 col = alb*(.12+.9*dif+en.x*.35)*ao + vec3(1.,.8,.55)*spec*.12*(1.-en.x*.5);
+  // fresh scratch glows for a moment
+  col += vec3(2.2,1.2,.4)*en.y*.8;
+  // thin rim light along the bevelled rim
+  float rim = exp(-pow((d+.012)/.014,2.));
+  col += vec3(1.1,.55,.25)*rim*.35*smoothstep(-.4,.5,dot(normalize(vec2(-.5,.6)),normalize(p+1e-4)))*.0 + vec3(1.2,.7,.4)*rim*.25;
+  // soft vignette within the slab so it sits in the dark
+  col *= .55+.45*smoothstep(1.35,.1,length(p*vec2(.7,1.)));
+  gl_FragColor=vec4(col, inside*uW);
+}`;
 
 export default function Ochre() {
   const scene = useScene();
   const root = useRef<THREE.Group>(null);
-  const { lGeo, lMat, pGeo, pMat } = useMemo(() => {
-    const lb = new LBuf(31);
-    const pb = new PBuf(32);
-    const r = lb.r;
-    const edgeC: V3 = [2.0, 1.75, 1.45], lineC: V3 = [2.4, 2.1, 1.7];
-    // slab edge: a softened, slightly irregular rectangle
-    const N = 120;
-    const pts: [number, number][] = [];
-    for (let i = 0; i < N; i++) {
-      const a = (i / N) * Math.PI * 2;
-      const c = Math.cos(a), s = Math.sin(a);
-      const k = 1 / Math.pow(Math.pow(Math.abs(c), 7) + Math.pow(Math.abs(s), 7), 1 / 7);
-      const w = 1 + 0.008 * Math.sin(a * 5 + 1) + 0.005 * Math.sin(a * 11);
-      pts.push([c * k * HW * w, s * k * HH * w]);
-    }
-    for (let i = 0; i < N; i++) {
-      const A = pts[i], B = pts[(i + 1) % N];
-      const g = (i / N) * 0.05;
-      lb.seg([A[0], A[1], 0], [B[0], B[1], 0], g, g, edgeC, 0);
-      if (i % 4 === 0) pb.add(A[0], A[1], 0, [2.2, 1.9, 1.5], g, { aK: [1] });
-    }
-    // engraved bands: three strips of diamond cross-hatching, scratched in left to right
-    const bands: [number, number][] = [[0.62, 1.12], [-0.28, 0.52], [-1.18, -0.38]];
-    const sp = 0.4;
-    const xl = -HW + 0.28, xr = HW - 0.28;
-    const jit = () => (r() - 0.5) * 0.02;
-    bands.forEach(([y0, y1], bi) => {
-      // frame lines of the band
-      for (const y of [y0, y1]) {
-        const g = 0.2 + (bi * 0.06);
-        lb.seg([xl + jit(), y + jit(), 0], [xr + jit(), y + jit(), 0], g, g, lineC, 1);
-      }
-      const hgt = y1 - y0;
-      for (const dir of [1, -1]) {
-        for (let x0 = xl - hgt; x0 <= xr + hgt; x0 += sp) {
-          // line from (x0, y0) rising to (x0 + dir*hgt, y1), clipped to the slab span
-          let ax = x0, ay = y0, bx = x0 + dir * hgt, by = y1;
-          const clip = (px: number, py: number, qx: number, qy: number): [number, number, number, number] | null => {
-            let t0 = 0, t1 = 1; const dx = qx - px;
-            if (Math.abs(dx) < 1e-6) return px >= xl && px <= xr ? [px, py, qx, qy] : null;
-            const ta = (xl - px) / dx, tb = (xr - px) / dx;
-            t0 = Math.max(t0, Math.min(ta, tb)); t1 = Math.min(t1, Math.max(ta, tb));
-            if (t0 >= t1) return null;
-            return [px + dx * t0, py + (qy - py) * t0, px + dx * t1, py + (qy - py) * t1];
-          };
-          const cl = clip(ax, ay, bx, by);
-          if (!cl) continue;
-          [ax, ay, bx, by] = cl;
-          const gx = ((ax + bx) / 2 - xl) / (xr - xl);
-          const g = 0.3 + gx * 0.5 + (dir > 0 ? 0 : 0.05) + r() * 0.04;
-          lb.seg([ax + jit(), ay + jit(), 0], [bx + jit(), by + jit(), 0], g, g, [lineC[0] * (0.8 + r() * 0.4), lineC[1] * (0.8 + r() * 0.4), lineC[2]], 2);
-        }
-      }
-      // light caught at the diamond vertices on the band's mid-line
-      for (let x = xl + sp / 2; x < xr; x += sp) {
-        const g = 0.3 + ((x - xl) / (xr - xl)) * 0.5 + 0.05;
-        pb.add(x, (y0 + y1) / 2, 0.01, [2.4, 2.1, 1.7], g, { aK: [0] });
-      }
+  const { mat, dust } = useMemo(() => {
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      uniforms: { uW: { value: 0 }, uRev: { value: 0 }, uTime: { value: 0 } },
+      vertexShader: 'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader: FS,
     });
-    // ochre dust drifting off the stone
-    for (let i = 0; i < 80; i++) {
-      const a = r() * 6.283, rad = 0.9 + r() * 1.3;
-      pb.add(Math.cos(a) * rad * HW * 0.9, Math.sin(a) * rad * HH * 0.9, (r() - 0.5) * 0.8, [1.6, 1.0, 0.6], 0.2 + r() * 0.6, { aK: [2] });
+    // fine ochre dust drifting off the stone (a few motes only)
+    const n = Math.floor(70 * world.quality);
+    const pos = new Float32Array(n * 3), sd = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * 6.283, rad = 0.6 + Math.random() * 0.9;
+      pos[i * 3] = Math.cos(a) * rad * HW; pos[i * 3 + 1] = Math.sin(a) * rad * HH; pos[i * 3 + 2] = 0.05 + Math.random() * 0.3;
+      sd[i * 3] = Math.random(); sd[i * 3 + 1] = Math.random(); sd[i * 3 + 2] = Math.random();
     }
-    const lMat = lineMat({
-      decl: 'uniform float uRev;', uniforms: { uRev: { value: 0 } },
-      body: `
-      float on = smoothstep(aG, aG+.05, uRev);
-      float fl = .85 + .15*sin(uTime*1.4 + aSeed.x*30.);
-      a = on * fl * (aSeed.w < .5 ? 1.0 : aSeed.w < 1.5 ? .9 : .75);`,
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('aS', new THREE.BufferAttribute(sd, 3));
+    const dm = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uW: { value: 0 }, uTime: { value: 0 }, uRev: { value: 0 }, uPx: { value: 1 } },
+      vertexShader: `attribute vec3 aS; uniform float uTime,uW,uRev,uPx; varying float vA;
+      void main(){ vec3 p=position; float ph=fract(uTime*.03+aS.x); p.y+=ph*1.0; p.x+=sin(uTime*.3+aS.y*20.)*.08;
+        vec4 mv=modelViewMatrix*vec4(p,1.); gl_Position=projectionMatrix*mv; gl_PointSize=clamp((1.+aS.z*1.5)*uPx*60./max(-mv.z,.1)*.35,1.,5.);
+        vA=uW*uRev*smoothstep(0.,.2,ph)*(1.-ph)*.5; }`,
+      fragmentShader: 'varying float vA; void main(){ float d=length(gl_PointCoord-.5)*2.; if(d>1.)discard; gl_FragColor=vec4(vec3(1.7,.6,.15),exp(-d*d*3.)*vA); }',
     });
-    const pMat = pointMat({
-      decl: 'attribute float aK; uniform float uRev;', uniforms: { uRev: { value: 0 } }, size: 1.2,
-      body: `
-      float on = smoothstep(aSeed.w, aSeed.w+.05, uRev);
-      float tw = pow(.5+.5*sin(uTime*(.6+aSeed.y)+aSeed.z*50.), 3.);
-      if (aK > 1.5) { p.y += mod(uTime*.05 + aSeed.x*3., 1.2) - .3; p.x += sin(uTime*.2+aSeed.z*20.)*.1; a = on*.35*(.4+tw); size = .35; }
-      else if (aK > .5) { a = on*.9; size = .45; }
-      else { a = on*(.6+.7*tw); size = .55 + .4*tw; }`,
-    });
-    return { lGeo: lb.build(), lMat, pGeo: pb.build(), pMat };
+    return { mat, dust: { g, m: dm } };
   }, []);
-  useEffect(() => () => { lGeo.dispose(); pGeo.dispose(); lMat.dispose(); pMat.dispose(); }, [lGeo, pGeo, lMat, pMat]);
+  useEffect(() => () => { mat.dispose(); dust.g.dispose(); dust.m.dispose(); }, [mat, dust]);
 
   useFrame((state) => {
     if (!scene.active) return;
     const e = eventPos('ochre-symbolic-thought');
     const rev = range(e - 0.6, e - 0.05, world.stationF);
-    tickU(lMat, scene); tickU(pMat, scene, state.gl.getPixelRatio());
-    lMat.uniforms.uRev.value = rev; pMat.uniforms.uRev.value = rev;
+    const tm = world.reduced ? 0 : world.time;
+    mat.uniforms.uW.value = scene.weight; mat.uniforms.uRev.value = rev; mat.uniforms.uTime.value = tm;
+    dust.m.uniforms.uW.value = scene.weight; dust.m.uniforms.uRev.value = rev; dust.m.uniforms.uTime.value = tm;
+    dust.m.uniforms.uPx.value = state.gl.getPixelRatio();
     if (root.current) {
-      root.current.rotation.y = -0.38 + scene.t * 0.5;
+      root.current.rotation.y = -0.34 + scene.t * 0.42;
       root.current.rotation.x = 0.1;
       root.current.rotation.z = 0.05;
       root.current.position.set(0.9, 0.35, 0);
@@ -111,8 +138,8 @@ export default function Ochre() {
   });
   return (
     <group ref={root}>
-      <lineSegments geometry={lGeo} material={lMat} frustumCulled={false} />
-      <points geometry={pGeo} material={pMat} frustumCulled={false} />
+      <mesh material={mat}><planeGeometry args={[HW * 2 * PAD, HH * 2 * PAD]} /></mesh>
+      <points geometry={dust.g} material={dust.m} frustumCulled={false} />
     </group>
   );
 }

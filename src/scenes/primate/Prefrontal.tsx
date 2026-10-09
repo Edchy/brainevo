@@ -3,44 +3,9 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
-import { eventPos, lerp, near, rng, smoothstep } from '../../world/util';
+import { eventPos, lerp, near, smoothstep } from '../../world/util';
 import { ambientTime } from './common';
-
-const BRAIN_V = /* glsl */ `
-attribute vec4 aD; // xyz dir, w part id
-attribute float aS;
-uniform float uGrow, uLit, uTime, uOp, uWave;
-varying vec3 vC; varying float vA;
-void main(){
-  vec3 d = aD.xyz; float part = aD.w;
-  vec3 p; float front = 0.;
-  float gy = sin(d.x*9.+sin(d.y*6.)*1.5)*sin(d.y*8.+d.z*5.)*sin(d.z*7.+d.x*3.);
-  if(part<.5){
-    front = smoothstep(.15,.95,d.x);
-    float r = 1.+.055*gy;
-    vec3 rad = vec3(2.3,1.5,1.35);
-    p = d*rad*r;
-    p.x += front*uGrow*.55; p.y += front*uGrow*.12*d.y; p.z *= 1.+front*uGrow*.12;
-    if(d.y<-.35) p.y *= .75; // temporal underside
-  } else if(part<1.5){
-    p = d*vec3(.85,.55,.8)+vec3(-1.45,-1.12,0.); p += .02*sin(d*40.);
-  } else {
-    p = vec3(-.2+d.x*.18,-1.1-abs(d.y)*.9, d.z*.18)+vec3(0.,-.2,0.)+vec3(.5,0.,0.)*d.y*.0;
-  }
-  float tw = .5+.5*sin(uTime*2.2+aS*40.);
-  float wave = exp(-pow((p.x-uWave)*1.1,2.));
-  float lit = front*uLit*(.55+.45*tw);
-  vec3 base = vec3(.72,.8,1.0)*max(.05,.1+.14*tw+gy*.45);
-  if(part>.5) base = vec3(.6,.68,.8)*.16;
-  vec3 gold = vec3(2.4,2.1,1.6);
-  vC = base + gold*lit*.7 + vec3(1.,1.1,1.3)*wave*uLit*.5;
-  vA = uOp*(part<.5? .6:.4);
-  vec4 mv = modelViewMatrix*vec4(p,1.);
-  gl_PointSize = (1.4+lit*2.0+wave*1.2)*(.7+aS*.6)*30./ -mv.z;
-  gl_Position = projectionMatrix*mv;
-}`;
-const BRAIN_F = /* glsl */ `varying vec3 vC; varying float vA;
-void main(){ float g = smoothstep(.5,.0,length(gl_PointCoord-.5)); gl_FragColor = vec4(vC*g*vA, g*vA); }`;
+import { Brain, stageGrow, useBrainCtl } from '../shared/brain';
 
 const LOOP_V = /* glsl */ `
 attribute vec3 aP0; attribute vec3 aP1; attribute vec3 aP2; attribute float aPh;
@@ -48,7 +13,7 @@ uniform float uTime, uOp, uLit, uGrow;
 varying float vA;
 void main(){
   float u = fract(aPh + uTime*.16);
-  vec3 p0=aP0, p2=aP2; p0.x += uGrow*.55*.8;
+  vec3 p0=aP0, p2=aP2; 
   vec3 p = (1.-u)*(1.-u)*p0 + 2.*(1.-u)*u*aP1 + u*u*p2;
   float head = smoothstep(0.,.1,u)*(1.-smoothstep(.85,1.,u));
   vA = head*uOp*uLit;
@@ -62,26 +27,14 @@ void main(){ float g = smoothstep(.5,.0,length(gl_PointCoord-.5)); gl_FragColor 
 export default function Prefrontal() {
   const scene = useScene();
   const grp = useRef<THREE.Group>(null);
-  const bm = useRef<THREE.ShaderMaterial>(null);
   const lm = useRef<THREE.ShaderMaterial>(null);
+  const brain = useBrainCtl({ grow: stageGrow('primate') * 0.97, tissue: '#d8d0cc' });
+  const regs = useMemo(() => [
+    { at: 'prefrontal' as const, color: '#ffc23c', i: 0 },
+    { at: 'frontal' as const, color: '#ff9a1c', i: 0 },
+  ], []);
+  brain.regions = regs;
 
-  const brainGeo = useMemo(() => {
-    const r = rng(5);
-    const nC = Math.floor(6500 * world.quality), nB = Math.floor(900 * world.quality), nS = Math.floor(160 * world.quality);
-    const n = nC + nB + nS;
-    const aD = new Float32Array(n * 4), aS = new Float32Array(n), pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      const part = i < nC ? 0 : i < nC + nB ? 1 : 2;
-      const th = r() * Math.PI * 2, c = 2 * r() - 1, s = Math.sqrt(1 - c * c);
-      aD.set([s * Math.cos(th), c, s * Math.sin(th), part], i * 4);
-      aS[i] = r();
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    g.setAttribute('aD', new THREE.BufferAttribute(aD, 4));
-    g.setAttribute('aS', new THREE.BufferAttribute(aS, 1));
-    return g;
-  }, []);
   const loopGeo = useMemo(() => {
     const defs = [
       [[1.7, 0.7, 0.45], [0.7, 2.5, 0.8], [-0.5, 1.35, 0.7]],
@@ -107,7 +60,7 @@ export default function Prefrontal() {
     g.setAttribute('aPh', new THREE.BufferAttribute(ph, 1));
     return g;
   }, []);
-  useEffect(() => () => { brainGeo.dispose(); loopGeo.dispose(); }, [brainGeo, loopGeo]);
+  useEffect(() => () => { loopGeo.dispose(); }, [loopGeo]);
 
   useFrame(() => {
     if (!scene.active) return;
@@ -117,7 +70,12 @@ export default function Prefrontal() {
     const grow = smoothstep(0.1, 0.75, t);
     const lit = smoothstep(0.05, 0.6, t) * (0.85 + 0.3 * beat);
     const wave = lerp(-2.6, 3.2, (t * 2.2) % 1);
-    for (const m of [bm.current, lm.current]) {
+    brain.alpha = scene.weight;
+    brain.grow = stageGrow('primate') * 0.95 + 0.05 * grow;
+    brain.shape = { frontal: 0.25 + 0.75 * grow, cx: 1.7 + 0.2 * grow, cerS: 0.95 };
+    regs[0].i = lit * (0.8 + 0.3 * Math.sin(tm * 2)) * 1.9;
+    regs[1].i = lit * 0.8 * smoothstep(0.3, 0.8, t);
+    for (const m of [lm.current]) {
       if (!m) continue;
       const u = m.uniforms;
       u.uTime.value = tm + t * 3; u.uOp.value = scene.weight; u.uGrow.value = grow; u.uLit.value = lit;
@@ -130,12 +88,8 @@ export default function Prefrontal() {
   });
 
   return (
-    <group ref={grp} scale={1.0} rotation={[0.08, 0, 0]}>
-      <points geometry={brainGeo} frustumCulled={false}>
-        <shaderMaterial ref={bm} transparent depthWrite={false} blending={THREE.AdditiveBlending}
-          vertexShader={BRAIN_V} fragmentShader={BRAIN_F}
-          uniforms={{ uGrow: { value: 0 }, uLit: { value: 0 }, uTime: { value: 0 }, uOp: { value: 0 }, uWave: { value: 0 } }} />
-      </points>
+    <group ref={grp} scale={1.3} rotation={[0.08, 0, 0]}>
+      <Brain ctl={brain} />
       <points geometry={loopGeo} frustumCulled={false}>
         <shaderMaterial ref={lm} transparent depthWrite={false} blending={THREE.AdditiveBlending}
           vertexShader={LOOP_V} fragmentShader={LOOP_F}

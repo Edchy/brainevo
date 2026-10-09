@@ -6,6 +6,7 @@ import { world } from '../../world/store';
 import { eventPos, range, rng, smoothstep } from '../../world/util';
 import Critter, { SHAPES } from './Critter';
 import { GLSL_NOISE, pointMaterial, pointScale, silhouetteMaterial } from './kit';
+import type { CreatureHandle } from '../shared/creatures/Creature';
 
 // K-Pg: one small mammal stands against the horizon. A single streak crosses the sky, the world flashes white, the horizon
 // burns, ash drifts, and then one soft beam of light returns to the animal while a few fireflies wake. That is all.
@@ -21,7 +22,7 @@ void main(){
   float y = vUv.y;
   vec3 col = vec3(.004,.006,.012);
   vec2 g = floor(vUv*vec2(260.,140.)); float r = h21(g);
-  float star = step(.9976,r)*(.5+.5*sin(uTime*2.+r*60.))*smoothstep(.3,.75,y);
+  vec2 cf = fract(vUv*vec2(260.,140.))-.5; float star = step(.9976,r)*smoothstep(.4,.05,length(cf))*(.5+.5*sin(uTime*2.+r*60.))*smoothstep(.3,.75,y);
   col += vec3(.8,.9,1.2)*star*(1.-uFire)*(1.-uAsh)*.8;
   float cl = fbm(vec2(vUv.x*5.+uTime*.03, y*3.-uTime*.05));
   // the burning horizon: a thin band of heat low in the frame, nothing above it
@@ -30,7 +31,7 @@ void main(){
   // quiet pre-dawn glow on the horizon during recovery
   col += vec3(.45,.6,.75)*exp(-y*14.)*uRec*.18;
   vec2 imp = vec2(.55,.4);
-  col += vec3(1.6,.9,.45)*exp(-length((vUv-imp)*vec2(1.8,1.))*9.)*uBlast*.8;
+  col += vec3(2.6,.95,.22)*exp(-length((vUv-imp)*vec2(1.8,1.))*11.)*uBlast*.9 + vec3(3.,2.4,1.6)*exp(-length((vUv-imp)*vec2(2.4,1.))*34.)*uBlast*.7;
   gl_FragColor = vec4(col*uW,1.);
 }`;
 const RIDGE_FRAG = /* glsl */ `
@@ -54,10 +55,10 @@ void main(){
   col += vec3(.5,.62,.8)*uRec*(.02+.02*n)*(1.-far);
   gl_FragColor = vec4(col*uW,1.);
 }`;
-const FLASH_FRAG = /* glsl */ `uniform float uFlash; varying vec2 vUv; void main(){ float d = length(vUv-.5); gl_FragColor = vec4(vec3(2.0,1.8,1.5)*uFlash*(1.-.5*d), 1.); }`;
+const FLASH_FRAG = /* glsl */ `uniform float uFlash; varying vec2 vUv; void main(){ float d = length(vUv-.5); gl_FragColor = vec4(vec3(2.6,1.85,1.05)*uFlash*(1.-.5*d), 1.); }`;
 const RING_FRAG = /* glsl */ `
 uniform float uR, uA; varying vec2 vUv;
-void main(){ float r = length(vUv-.5)*2.; float a = smoothstep(.05,0.,abs(r-uR))*uA; gl_FragColor = vec4(vec3(1.5,1.2,.9)*a,1.); }`;
+void main(){ float r = length(vUv-.5)*2.; float a = smoothstep(.05,0.,abs(r-uR))*uA; gl_FragColor = vec4(vec3(2.4,1.1,.4)*a,1.); }`;
 const BEAM_FRAG = /* glsl */ `uniform float uA; varying vec2 vUv; ${GLSL_NOISE}
 void main(){ float across = pow(max(1.-abs(vUv.x-.5)*2.,0.),2.2); float along = smoothstep(0.,.35,vUv.y)*smoothstep(1.,.5,vUv.y);
   float f = .8+.2*fbm(vec2(vUv.y*4., 1.)); gl_FragColor = vec4(vec3(.8,.9,1.)*across*along*f*uA,1.); }`;
@@ -77,6 +78,14 @@ export default function KPg() {
   const hero = useRef<THREE.Group>(null);
   const blades = useRef<THREE.InstancedMesh>(null);
   const ring = useRef<THREE.Mesh>(null);
+  const rock = useRef<THREE.Mesh>(null);
+  const heroH = useRef<CreatureHandle>(null);
+  const gaze = useMemo(() => new THREE.Vector3(-10, 8, -30), []);
+  const rockMat = useMemo(() => new THREE.ShaderMaterial({
+    vertexShader: PLANE_VERT, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, side: THREE.DoubleSide,
+    uniforms: { uA: { value: 0 } },
+    fragmentShader: `uniform float uA; varying vec2 vUv; void main(){ vec2 q = vUv-.5; float d = length(q)*2.; float core = smoothstep(.34,.0,d); float halo = pow(smoothstep(1.,.0,d),2.4); float streak = smoothstep(.06,.0,abs(q.y))*smoothstep(1.,.0,abs(q.x)*2.); vec3 c = vec3(6.,5.,4.)*core + vec3(3.,1.1,.25)*halo*.9 + vec3(2.4,1.,.3)*streak*.5; gl_FragColor = vec4(c*uA,1.); }`,
+  }), []);
   const flashMesh = useRef<THREE.Mesh>(null);
 
   const sky = useMemo(() => mk(SKY_FRAG), []);
@@ -113,7 +122,7 @@ export default function KPg() {
         vec3 p = uHead - uDir*u*uLen + (vec3(aSeed.y,aSeed.z,aSeed.w)-.5)*(.1+u*1.2);
         vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv;
         gl_PointSize = mix(1.6,.3,u)*uScale/-mv.z*(1.+aSeed.w);
-        vCol = mix(vec3(2.2,2.0,1.8), vec3(1.6,.6,.2), pow(u,.6)); vA = uW*uAmt*(1.-u)*(1.-u)*.9;
+        vCol = mix(vec3(4.2,3.4,2.4), vec3(3.0,.95,.2), clamp(pow(u,.45)*1.6,0.,1.)); vA = uW*uAmt*(1.-u)*(1.-u)*.9;
       }`, { uAmt: { value: 0 }, uLen: { value: 22 }, uHead: { value: new THREE.Vector3() }, uDir: { value: new THREE.Vector3() } });
     return { g, m };
   }, []);
@@ -176,8 +185,8 @@ export default function KPg() {
   }, []);
 
   useEffect(() => () => {
-    [sky, ground, ridge, flashMat, ringMat, beamMat, heroMat, eyeMat, bladeMat, streak.g, streak.m, embers.g, embers.m, ash.g, ash.m, flies.g, flies.m].forEach((d) => d.dispose());
-  }, [sky, ground, ridge, flashMat, ringMat, beamMat, heroMat, eyeMat, bladeMat, streak, embers, ash, flies]);
+    [sky, ground, ridge, flashMat, ringMat, beamMat, heroMat, eyeMat, bladeMat, rockMat, streak.g, streak.m, embers.g, embers.m, ash.g, ash.m, flies.g, flies.m].forEach((d) => d.dispose());
+  }, [sky, ground, ridge, flashMat, ringMat, beamMat, heroMat, eyeMat, bladeMat, rockMat, streak, embers, ash, flies]);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const dir = useMemo(() => IMPACT.clone().sub(START).normalize(), []);
@@ -211,6 +220,14 @@ export default function KPg() {
     (streak.m.uniforms.uDir.value as THREE.Vector3).copy(dir);
     streak.m.uniforms.uAmt.value = approach > 0 && s < -0.55 ? Math.min(1, approach * 4) * 1.6 : 0;
     streak.m.uniforms.uLen.value = 8 + approach * 22;
+    const rk = rock.current!;
+    rk.position.copy(streak.m.uniforms.uHead.value as THREE.Vector3);
+    rk.quaternion.copy(state.camera.quaternion);
+    const alive = approach > 0 && s < -0.55 ? 1 : 0;
+    rk.visible = alive > 0;
+    rk.scale.setScalar(1.6 + approach * 3.6);
+    rockMat.uniforms.uA.value = w * Math.min(1, approach * 5);
+    gaze.copy(rk.position);
     for (const m of [streak.m, embers.m, ash.m, flies.m]) { m.uniforms.uW.value = w; m.uniforms.uScale.value = k; if (m.uniforms.uTime) m.uniforms.uTime.value = time; }
     embers.m.uniforms.uAmt.value = fire * 1.1;
     ash.m.uniforms.uAmt.value = ashA;
@@ -229,7 +246,7 @@ export default function KPg() {
     const hg = hero.current!;
     // looks up at the streak, then settles and sniffs the air
     hg.position.set(1.5, GROUND_Y + 0.72 * 1.35 * 1.9, -1.4);
-    hg.rotation.set(0, -0.25 + 0.1 * Math.sin(time * 0.3) * rec, 0.1 * (1 - smoothstep(-0.8, -0.5, s)) + 0.0);
+    hg.rotation.set(0, Math.PI - 0.25 + 0.1 * Math.sin(time * 0.3) * rec, 0.0);
 
     bladeMat.color.setRGB(0.1 * w, 0.115 * w, 0.14 * w).multiplyScalar(0.4 + rec * 1.2);
     const bm = blades.current!;
@@ -250,16 +267,17 @@ export default function KPg() {
       <group ref={root}>
         <mesh position={[0, 12, -40]} scale={[150, 34, 1]} material={ridge}><planeGeometry args={[1, 1]} /></mesh>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y, -18]} material={ground}><planeGeometry args={[110, 70]} /></mesh>
-        <mesh ref={ring} position={[IMPACT.x, IMPACT.y + 1.5, -29]} scale={[44, 22, 1]} material={ringMat}><planeGeometry args={[1, 1]} /></mesh>
+        <mesh ref={ring} position={[IMPACT.x, IMPACT.y + 1.2, -29]} scale={[80, 5, 1]} material={ringMat}><planeGeometry args={[1, 1]} /></mesh>
         <mesh position={[1.4, GROUND_Y + 6, -3]} rotation={[0, 0, -0.18]} scale={[5.5, 15, 1]} material={beamMat}><planeGeometry args={[1, 1]} /></mesh>
         <points geometry={streak.g} material={streak.m} frustumCulled={false} />
+        <mesh ref={rock} material={rockMat} renderOrder={4}><planeGeometry args={[4, 4]} /></mesh>
         <points geometry={embers.g} material={embers.m} frustumCulled={false} />
         <points geometry={ash.g} material={ash.m} frustumCulled={false} />
         <points geometry={flies.g} material={flies.m} frustumCulled={false} />
         <instancedMesh ref={blades} args={[undefined, undefined, bladeData.length]} material={bladeMat} frustumCulled={false}>
           <coneGeometry args={[1, 1, 4]} />
         </instancedMesh>
-        <group ref={hero} scale={1.9}><Critter mat={heroMat} shape={SHAPES.mammal} walk={0} alert={0.6} eyeMat={eyeMat} /></group>
+        <group ref={hero} scale={1.9}><Critter handleRef={heroH} mat={heroMat} shape={SHAPES.mammal} walk={0} alert={0.6} eyeMat={eyeMat} lookAt={gaze} /></group>
       </group>
       <mesh ref={flashMesh} material={flashMat} renderOrder={999} frustumCulled={false}><planeGeometry args={[1, 1]} /></mesh>
     </group>

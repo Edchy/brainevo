@@ -38,7 +38,32 @@ export default function MiddleEar() {
     fragmentShader: DRUM_FRAG, side: THREE.DoubleSide, toneMapped: false, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     uniforms: { uW: { value: 1 }, uAmp: { value: 0 } },
   }), []);
-  const boneMat = useMemo(() => silhouetteMaterial('#fff0dc', '#020202', 2.6, 2.1, [-0.5, 0.8]), []);
+  const boneMat = useMemo(() => new THREE.ShaderMaterial({
+    toneMapped: false,
+    uniforms: { uW: { value: 1 }, uK: { value: 2 } },
+    vertexShader: /* glsl */ `varying vec3 vN; varying vec3 vV; varying vec3 vP;
+      void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); vP = position; gl_Position = projectionMatrix*mv; }`,
+    // ivory bone: soft key from the upper left, a cool rim, a polished sheen and fine pitted relief
+    fragmentShader: /* glsl */ `uniform float uW, uK; varying vec3 vN; varying vec3 vV; varying vec3 vP;
+      float h3(vec3 p){ p = fract(p*.3183099+.1); p *= 17.; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+      float vn(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.-2.*f);
+        return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),
+                   mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z); }
+      void main(){
+        float h = vn(vP*55.)*.5 + vn(vP*140.)*.5;
+        vec3 n = normalize(vN);
+        n = normalize(n + vec3(dFdx(h), dFdy(h), 0.)*0.55);
+        vec3 v = normalize(vV);
+        vec3 L = normalize(vec3(-.55,.7,.55));
+        float nl = dot(n,L);
+        float diff = clamp((nl+.35)/1.35, 0., 1.);
+        vec3 ivory = vec3(.93,.86,.74)*(.9+.2*h);
+        float fr = pow(1.-max(dot(n,v),0.), 2.4);
+        float spec = pow(max(dot(reflect(-L,n),v),0.), 36.);
+        vec3 c = ivory*(.035+.95*diff*diff) + vec3(.55,.68,1.)*fr*(.35+.18*uK) + vec3(1.,.95,.88)*spec*.55;
+        gl_FragColor = vec4(c*uW, 1.);
+      }`,
+  }), []);
   const jawMat = useMemo(() => silhouetteMaterial('#8da2c8', '#000000', 3.0, 0.7), []);
 
   const geo = useMemo(() => ({
@@ -72,7 +97,7 @@ export default function MiddleEar() {
         vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv;
         float travel = fract(uPh*.04);
         float lit = exp(-pow((s-travel)*8.,2.)) * uAmp;
-        vCol = mix(vec3(.9,.95,1.1), vec3(1.15,.9,.8), s)*(1.+lit*2.2);
+        vCol = mix(vec3(.55,.62,.8), vec3(.4,.75,2.4), clamp(lit*1.4,0.,1.))*(1.+lit*1.4);
         vA = uW*(.2+lit*1.1);
         gl_PointSize = (.032+lit*.04)*uScale/-mv.z;
       }`, { uAmp: { value: 0 }, uPh: { value: 0 } });
@@ -94,7 +119,7 @@ export default function MiddleEar() {
         vec3 p = mix(mix(a,b,s), mix(b,c,s), s) + (vec3(aSeed.y,aSeed.z,aSeed.w)-.5)*.03;
         vec4 mv = modelViewMatrix*vec4(p,1.); gl_Position = projectionMatrix*mv;
         float lit = exp(-pow((fract(s - uPh*.16))*7.,2.)) + exp(-pow((fract(s - uPh*.16)-1.)*7.,2.));
-        vCol = vec3(1.,.97,.9)*(1.+lit*2.); vA = uW*uAmp*(.1+lit*.9);
+        vCol = mix(vec3(.6,.65,.8), vec3(.4,.8,2.6), clamp(lit,0.,1.))*(1.+lit*1.5); vA = uW*uAmp*(.1+lit*.9);
         gl_PointSize = (.03+lit*.04)*uScale/-mv.z;
       }`, { uAmp: { value: 0 }, uPh: { value: 0 } });
     return { g, m };
@@ -143,7 +168,7 @@ export default function MiddleEar() {
   });
 
   return (
-    <group position={[0, 0.3, 0]} scale={1.4}>
+    <group position={[0.4, 0.2, 0]} scale={1.65}>
       <mesh position={[-2, 0.2, -0.2]} material={waveMat}><planeGeometry args={[18, 9]} /></mesh>
       <mesh ref={drum} rotation={[0, Math.PI / 2 - 0.5, 0]} material={drumMat}><circleGeometry args={[0.95, 48]} /></mesh>
       <group ref={mal}><mesh geometry={geo.malleus} material={boneMat} rotation={[0, 0, -0.1]} /></group>

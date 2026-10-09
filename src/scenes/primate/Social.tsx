@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, lerp, near, rng, smoothstep } from '../../world/util';
-import { ambientTime } from './common';
+import { Primate, ambientTime, neutral, reach } from './common';
+import type { CreatureHandle } from './common';
 
 const NODE_V = /* glsl */ `
 attribute float aThr; attribute vec3 aCol; attribute float aR;
@@ -40,11 +41,13 @@ void main(){
 }`;
 const EDGE_F = /* glsl */ `varying float vA; varying vec3 vC; void main(){ gl_FragColor = vec4(vC*vA*1.6, vA); }`;
 
-const PALETTE = ['#ffb347', '#47d6c4', '#ff6fa8', '#8f9bff'];
+const PALETTE = ['#ffb347', '#fff2d6', '#ffcf80', '#ffb347'];
 
 export default function Social() {
   const scene = useScene();
   const grp = useRef<THREE.Group>(null);
+  const hA = useRef<CreatureHandle>(null);
+  const hB = useRef<CreatureHandle>(null);
   const nm = useRef<THREE.ShaderMaterial>(null);
   const em = useRef<THREE.ShaderMaterial>(null);
 
@@ -110,13 +113,32 @@ export default function Social() {
     const tm = ambientTime() + t * 4;
     for (const m of [nm.current, em.current]) {
       if (!m) continue;
-      m.uniforms.uGrow.value = grow; m.uniforms.uOp.value = scene.weight; m.uniforms.uTime.value = tm; m.uniforms.uBeat.value = beat;
+      m.uniforms.uGrow.value = grow; m.uniforms.uOp.value = scene.weight * 0.45; m.uniforms.uTime.value = tm; m.uniforms.uBeat.value = beat;
     }
     if (grp.current) grp.current.rotation.y = lerp(-0.6, 0.7, t);
+    // grooming: A sits behind B, parts the fur with one hand and strokes with the other; B leans into it
+    const a = hA.current, b = hB.current;
+    const stroke = Math.sin(tm * 2.2) * 0.5 + 0.5;
+    if (a) {
+      const pm = a.state.pm; neutral(pm);
+      pm.sit = 1; pm.tilt = -0.32;
+      reach(pm.hand, 1, 0.78 + 0.05 * stroke, 0.86 + 0.18 * stroke, 0.1, 1);
+      reach(pm.hand, -1, 0.72, 0.62 + 0.08 * (1 - stroke), -0.1, 1);
+      pm.gripL = 0.5; pm.gripR = 0.25 + 0.4 * stroke; pm.brow = 0.3;
+      a.state.headPitch = -0.4; a.state.headYaw = 0.1; a.override.walk = 0; a.override.phase = 0; a.look.w = scene.weight;
+    }
+    if (b) {
+      const pm = b.state.pm; neutral(pm);
+      pm.sit = 1; pm.tilt = 0.12 + 0.03 * Math.sin(tm * 0.8);
+      pm.gripL = pm.gripR = 0.4; pm.brow = -0.2; pm.tailPit = -0.3;
+      b.state.headPitch = -0.12; b.state.headYaw = -0.2; b.state.mouth = 0.12; b.override.walk = 0; b.override.phase = 0; b.look.w = scene.weight;
+    }
   });
 
   return (
-    <group ref={grp} scale={1.6}>
+    <group>
+    <group position={[0, 1.2, -7]} scale={2.6}>
+    <group ref={grp}>
       <lineSegments geometry={edgeGeo} frustumCulled={false}>
         <shaderMaterial ref={em} transparent depthWrite={false} blending={THREE.AdditiveBlending} vertexShader={EDGE_V} fragmentShader={EDGE_F}
           uniforms={{ uGrow: { value: 0 }, uOp: { value: 0 }, uTime: { value: 0 }, uBeat: { value: 0 } }} />
@@ -126,11 +148,15 @@ export default function Social() {
           uniforms={{ uGrow: { value: 0 }, uOp: { value: 0 }, uTime: { value: 0 }, uBeat: { value: 0 } }} />
       </points>
     </group>
+    </group>
+    <group position={[-0.9, 0, 0]} scale={1.6}><Primate ref={hA} preset="primate" rim="#ffddb8" /></group>
+    <group position={[0.35, 0, 0.1]} scale={1.5}><Primate ref={hB} preset="primate" rim="#fff0d8" palette={{ base: '#5a4c40', belly: '#9a8c7c' }} /></group>
+    </group>
   );
 }
 
 export const socialCamera = (t: number) => ({
-  pos: [Math.sin(t * 1.2) * 2, lerp(2.5, 1, t), lerp(13, 9.5, t)] as [number, number, number],
-  look: [-1.0, -0.3, 0] as [number, number, number],
+  pos: [lerp(-0.4, 0.6, t), 1.4, lerp(7.4, 6.4, t)] as [number, number, number],
+  look: [0, 0.95, 0] as [number, number, number],
   fov: 50,
 });

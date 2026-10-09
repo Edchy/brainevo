@@ -5,6 +5,8 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { near, eventPos, rng, smoothstep, range } from '../../world/util';
 import { pointMaterial, pointScale } from './kit';
+import Critter, { SHAPES } from './Critter';
+import type { CreatureHandle } from '../shared/creatures/Creature';
 
 interface Branch { pts: THREE.Vector3[]; depth: number; t0: number; chosen: boolean; leaf: boolean }
 
@@ -23,7 +25,7 @@ void main(){
   float ghost = mix(.5, .13, uChoose);
   float a = on*(ghost*(1.-ch) + ch*mix(.3, 1.4, uChoose)) + tip*1.1;
   vec3 ghostCol = mix(vec3(.75,.85,1.15), vec3(.9,.9,1.1), aInfo.w/5.);
-  vec3 goldCol = vec3(1.9,1.6,1.1);
+  vec3 goldCol = vec3(2.3,1.55,.4);
   vCol = mix(ghostCol, goldCol, ch*uChoose) + vec3(1.,.9,.9)*tip*.6;
   vA = uW*a*(.75+.25*shimmer)*(1.+uBeat*.4);
   gl_PointSize = aInfo.z*.8*(1.+tip*1.4)*uScale/-mv.z;
@@ -32,6 +34,8 @@ void main(){
 export default function Futures() {
   const scene = useScene();
   const agent = useRef<THREE.Mesh>(null);
+  const rat = useRef<CreatureHandle>(null);
+  const gaze = useMemo(() => new THREE.Vector3(0, 1, 0), []);
 
   const built = useMemo(() => {
     const r = rng(33);
@@ -67,7 +71,7 @@ export default function Futures() {
       }
       return pts;
     };
-    grow(new THREE.Vector3(0, -2.6, 0), up, 0, 0, true);
+    grow(new THREE.Vector3(0.5, -2.3, 0), up, 0, 0, true);
     // reveal times: each branch grows from t0 over 0.22
     const per = Math.max(10, Math.floor(26 * Math.max(0.6, world.quality)));
     const total = branches.length * per + branches.filter((b) => b.leaf).length;
@@ -121,12 +125,21 @@ export default function Futures() {
     const prog = smoothstep(0.7, 1.0, t);
     built.chosenCurve.getPoint(prog, a.position);
     a.scale.setScalar((0.9 + 0.15 * Math.sin(time * 5)) * (1 + beat * 0.4));
+    // the animal watches the chosen future climb: head follows the glowing agent, ears up, nose working
+    gaze.copy(a.position); gaze.y += 0.6;
+    const r = rat.current;
+    if (r) { r.look.w = w; r.state.alert = 0.4 + 0.5 * smoothstep(0.1, 0.6, t); r.state.sniff = 0.6; r.override.walk = 0; }
     agentMat.color.setRGB(2.6 * w, 2.4 * w, 2.0 * w);
   });
 
   return (
     <group>
       <points geometry={built.g} material={built.m} frustumCulled={false} />
+      <group position={[-0.55, -2.34 + 0.72 * 1.35 * 1.0, 0.3]} scale={1.0}><Critter handleRef={rat} shape={SHAPES.mammal} walk={0} lookAt={gaze} /></group>
+      <mesh position={[0, -2.33, 0.3]} rotation={[-Math.PI / 2, 0, 0]} scale={[3.2, 1.1, 1]}>
+        <circleGeometry args={[1, 48]} />
+        <meshBasicMaterial color={[0.07, 0.065, 0.05]} toneMapped={false} />
+      </mesh>
       <mesh ref={agent} material={agentMat}><sphereGeometry args={[0.12, 14, 12]} /></mesh>
     </group>
   );

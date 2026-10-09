@@ -3,99 +3,103 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
-import { lerp, rng, smoothstep } from '../../world/util';
-import { Bust, makeGlowMat, makeRim, type BustCtl } from './common';
+import { lerp, smoothstep } from '../../world/util';
+import { GLSL_NOISE, makeGlowMat } from './common';
+import { Coals, Embers, Flame, newFlameCtl } from './flame';
+import { Creature } from '../shared/creatures/Creature';
+import type { CreatureHandle } from '../shared/creatures/Creature';
 
-const NB = 6, RAD = 3.1;
 const tNow = () => (world.reduced ? 0 : world.time);
+const FIRE = new THREE.Vector3(0, 0.55, 0);
+interface Fig { x: number; z: number; sc: number; preset: 'erectus' | 'heidelbergensis'; crouch: number; reach: number; from: number }
+const FIGS: Fig[] = [
+  { x: -1.95, z: -0.55, sc: 1.18, preset: 'erectus', crouch: 1, reach: 0.95, from: 0.1 },
+  { x: 1.75, z: -0.8, sc: 1.05, preset: 'erectus', crouch: 0.92, reach: 0.85, from: 0.24 },
+  { x: 2.0, z: 0.75, sc: 1.1, preset: 'heidelbergensis', crouch: 0, reach: 0.0, from: 0.55 },
+];
 
 export default function Fire() {
   const scene = useScene();
-  const q = world.quality;
-  const busts = useMemo<BustCtl[]>(() => Array.from({ length: NB }, () => ({ int: 1, alpha: 1 })), []);
-  const bg = useRef<Array<THREE.Group | null>>([]);
-  const meat = useRef<THREE.Mesh>(null), light = useRef<THREE.Mesh>(null);
+  const ctl = useMemo(newFlameCtl, []);
+  const hs = useRef<(CreatureHandle | null)[]>([]);
+  const gs = useRef<(THREE.Group | null)[]>([]);
+  const halo = useRef<THREE.Mesh>(null);
+  const tgt = useMemo(() => new THREE.Vector3(), []);
+  const v = useMemo(() => new THREE.Vector3(), []);
   const R = useMemo(() => {
-    const r = rng(14);
-    const mkPts = (n: number) => {
-      const sd = new Float32Array(n * 4);
-      for (let i = 0; i < n * 4; i++) sd[i] = r();
-      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); g.setAttribute('aS', new THREE.BufferAttribute(sd, 4));
-      return g;
-    };
-    const flameG = mkPts(Math.floor(900 * q)), emberG = mkPts(Math.floor(110 * q));
-    const common = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending } as const;
-    const flameM = new THREE.ShaderMaterial({
-      ...common, uniforms: { uT: { value: 0 }, uF: { value: 0 }, uAlpha: { value: 1 } },
-      vertexShader: `attribute vec4 aS; uniform float uT,uF,uAlpha; varying vec3 vC; varying float vA;
-        void main(){ float k=fract(aS.x+uT*(.55+aS.y*.5)); float a=aS.z*6.2831; float rr=(1.-k*.85)*.7*aS.w*uF;
-          float sway=sin(uT*3.+aS.x*20.)*.06*k;
-          vec3 p=vec3(cos(a)*rr+sway,.15+k*3.0*uF*(.7+aS.y*.6),sin(a)*rr);
-          vC=mix(vec3(3.2,3.0,2.6),mix(vec3(2.4,1.6,.9),vec3(.9,.45,.25),smoothstep(.35,1.,k)),smoothstep(0.,.4,k));
-          vA=(1.-k)*smoothstep(0.,.08,k)*uF*uAlpha;
-          vec4 mv=modelViewMatrix*vec4(p,1.); gl_PointSize=(1.-k*.7)*(360./-mv.z)*(.5+aS.y*.5)*uF; gl_Position=projectionMatrix*mv; }`,
-      fragmentShader: 'varying vec3 vC; varying float vA; void main(){ float d=length(gl_PointCoord-.5)*2.; float a=max(0.,1.-d); gl_FragColor=vec4(vC*a*a*vA*.24,1.); }',
+    const ground = new THREE.ShaderMaterial({
+      transparent: true,
+      uniforms: { uF: { value: 0 }, uAlpha: { value: 1 } },
+      vertexShader: 'varying vec3 vW; varying float vD; void main(){ vec4 w = modelMatrix*vec4(position,1.); vW = w.xyz; vec4 mv = viewMatrix*w; vD = -mv.z; gl_Position = projectionMatrix*mv; }',
+      fragmentShader: `${GLSL_NOISE}
+        uniform float uF, uAlpha; varying vec3 vW; varying float vD;
+        void main(){
+          vec2 p = vW.xz;
+          float n = n3(vec3(p*2.2, 0.))*.5 + n3(vec3(p*9., 1.))*.3 + n3(vec3(p*40., 2.))*.2;
+          float d = length(p);
+          float lit = uF/(1. + pow(d/1.5, 2.)) ;
+          vec3 c = vec3(.012,.013,.02)*(.6 + n*.8);
+          c += vec3(1.,.4,.12)*lit*(.12 + n*.9)*.3;
+          c = mix(c, vec3(.004,.004,.008), smoothstep(5., 14., vD));
+          gl_FragColor = vec4(c, uAlpha); }`,
     });
-    const emberM = new THREE.ShaderMaterial({
-      ...common, uniforms: { uT: { value: 0 }, uF: { value: 0 }, uAlpha: { value: 1 } },
-      vertexShader: `attribute vec4 aS; uniform float uT,uF,uAlpha; varying float vA;
-        void main(){ float k=fract(aS.x+uT*(.07+aS.y*.07)); float a=aS.z*6.2831;
-          vec3 p=vec3(cos(a)*(.2+k*aS.w*1.4)+sin(uT+aS.x*30.)*.25*k,.3+k*(3.+aS.y*2.),sin(a)*(.2+k*aS.w*1.4)+cos(uT*.8+aS.y*30.)*.25*k);
-          vA=(1.-k)*smoothstep(0.,.04,k)*(.5+.5*sin(uT*9.+aS.w*40.))*uF*uAlpha;
-          vec4 mv=modelViewMatrix*vec4(p,1.); gl_PointSize=(70./-mv.z)*(.5+aS.y); gl_Position=projectionMatrix*mv; }`,
-      fragmentShader: 'varying float vA; void main(){ float d=length(gl_PointCoord-.5)*2.; float a=max(0.,1.-d); gl_FragColor=vec4(vec3(3.,2.0,1.1)*a*a*vA,1.); }',
-    });
-    const floor = makeGlowMat('#ffc890', 1.5), halo = makeGlowMat('#ffd0a0', 2.2);
-    const logM = makeRim('#ffa060', 0.08, 1.8), spit = makeRim('#c9a070', 0.2, 1.5);
-    const logG = new THREE.CylinderGeometry(0.05, 0.06, 0.9, 6);
-    const meatM = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.2, .2, .2), toneMapped: false });
-    return { flameG, emberG, flameM, emberM, floor, halo, logM, spit, logG, meatM };
-  }, [q]);
-  useEffect(() => () => { R.flameG.dispose(); R.emberG.dispose(); R.flameM.dispose(); R.emberM.dispose(); R.floor.dispose(); R.halo.dispose(); R.logM.dispose(); R.spit.dispose(); R.logG.dispose(); R.meatM.dispose(); }, [R]);
-  const cooked = useMemo(() => new THREE.Color(), []);
-  const c0 = useMemo(() => new THREE.Color(1.3, 0.18, 0.15), []);
-  const c1 = useMemo(() => new THREE.Color(0.35, 0.16, 0.07), []);
+    const halo = makeGlowMat('#ff7a28', 2.0), floor = makeGlowMat('#ff8a3a', 1.4);
+    return { ground, halo, floor };
+  }, []);
+  useEffect(() => () => { R.ground.dispose(); R.halo.dispose(); R.floor.dispose(); }, [R]);
 
-  useFrame(() => {
+  useFrame((st) => {
     if (!scene.active) return;
     const w = scene.weight, t = scene.t, tm = tNow();
-    const F = smoothstep(0.08, 0.3, t);
-    const flick = 0.85 + 0.15 * Math.sin(tm * 11) * Math.sin(tm * 7.3);
-    R.flameM.uniforms.uT.value = tm; R.flameM.uniforms.uF.value = F * flick; R.flameM.uniforms.uAlpha.value = w;
-    R.emberM.uniforms.uT.value = tm; R.emberM.uniforms.uF.value = F; R.emberM.uniforms.uAlpha.value = w;
-    R.floor.uniforms.uAlpha.value = w * F * flick * 0.4; R.halo.uniforms.uAlpha.value = w * F * 0.45;
-    if (light.current) light.current.scale.setScalar(lerp(3, 10, smoothstep(0.1, 0.9, t)));
-    for (let i = 0; i < NB; i++) {
-      const appear = smoothstep(0.12 + i * 0.07, 0.24 + i * 0.07, t);
-      const g = bg.current[i]; if (g) g.scale.setScalar(Math.max(0.0001, appear));
-      busts[i].alpha = w * appear * (Math.sin((i / NB) * Math.PI * 2 + 0.2) > 0.55 ? 0 : 1); busts[i].int = (0.05 + 0.75 * F * flick) * (0.85 + 0.15 * Math.sin(tm * 3 + i));
-    }
-    if (meat.current) {
-      const cook = smoothstep(0.35, 0.8, t);
-      cooked.copy(c0).lerp(c1, cook); R.meatM.color.copy(cooked).multiplyScalar(0.6 + (1 - cook) * 0.5 + F * 0.3);
-      meat.current.visible = false;
-    }
+    const F = smoothstep(0.05, 0.3, t);
+    const flick = 0.84 + 0.16 * Math.sin(tm * 11.3) * Math.sin(tm * 7.1 + 1.) + 0.05 * Math.sin(tm * 23.);
+    ctl.F = F; ctl.flick = flick; ctl.alpha = w;
+    R.ground.uniforms.uF.value = F * flick * w; R.ground.uniforms.uAlpha.value = w;
+    R.halo.uniforms.uAlpha.value = w * F * (0.16 + 0.05 * flick); R.floor.uniforms.uAlpha.value = w * F * flick * 0.22;
+    if (halo.current) { halo.current.position.set(0, 0.9, -0.2); halo.current.quaternion.copy(st.camera.quaternion); halo.current.scale.setScalar(4. + F * 1.2); }
+    FIGS.forEach((f, i) => {
+      const h = hs.current[i], g = gs.current[i];
+      if (!h || !g) return;
+      const appear = smoothstep(f.from, f.from + 0.14, t);
+      const enter = f.preset === 'heidelbergensis' ? smoothstep(0.55, 0.85, t) : 1;
+      const x = f.preset === 'heidelbergensis' ? lerp(f.x + 2.4, f.x, enter) : f.x;
+      g.position.set(x, 0, f.z);
+      g.rotation.y = Math.atan2(-(FIRE.z - f.z), FIRE.x - x);
+      g.scale.setScalar(f.sc);
+      g.visible = appear > 0.01;
+      const stand = f.preset === 'heidelbergensis';
+      h.override.phase = undefined;
+      h.state.crouch = stand ? 0 : f.crouch;
+      h.state.reach = f.reach * (0.85 + 0.15 * Math.sin(tm * 0.7 + i * 2));
+      h.state.armsFree = 0; h.state.reachY = -0.3; h.state.gripL = 0.1; h.state.gripR = 0.1;
+      h.state.propR = stand ? 3 : 0; h.state.gripR = stand ? 0.7 : 0.1; h.state.rollR = stand ? 1.45 : 0;
+      h.state.mouth = 0;
+      // light from the fire in view space (so each face is lit from where the flames are)
+      g.getWorldPosition(v); tgt.copy(FIRE).sub(v); const d = tgt.length();
+      tgt.transformDirection(st.camera.matrixWorldInverse).normalize();
+      const k = F * flick * Math.min(1.5, 1.3 / (0.45 + d * d * 0.22));
+      h.look.keyDir = [tgt.x, tgt.y - 0.25, tgt.z]; h.look.keyK = k; h.look.amb = 0.035 + 0.04 * F;
+      h.look.rimDir = [tgt.x, Math.max(0.1, tgt.y + 0.4)]; h.look.rimK = 0.5 + 1.8 * F * flick * (tgt.z < 0 ? 1 : 0.35);
+      h.look.sss = 0.9; h.look.w = w * appear;
+    });
   });
 
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} material={R.floor} ref={light}><planeGeometry args={[1, 1]} /></mesh>
-      <mesh position={[0, 0.7, 0.2]} material={R.halo}><planeGeometry args={[5.5, 5.5]} /></mesh>
-      {[0, 1, 2, 3].map((i) => (
-        <mesh key={i} geometry={R.logG} material={R.logM} position={[Math.cos(i * 1.57 + 0.4) * 0.28, 0.14, Math.sin(i * 1.57 + 0.4) * 0.28]} rotation={[Math.PI / 2 - 0.2, 0, i * 1.57 + 0.4 + Math.PI / 2]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} material={R.ground}><circleGeometry args={[16, 48]} /></mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} material={R.floor}><planeGeometry args={[7, 7]} /></mesh>
+      <mesh ref={halo} material={R.halo} renderOrder={1}><planeGeometry args={[1, 1]} /></mesh>
+      <Coals ctl={ctl} />
+      <Flame ctl={ctl} height={1.95} width={1.0} tongues={8} />
+      <Embers ctl={ctl} count={190} rise={4.0} />
+      {FIGS.map((f, i) => (
+        <group key={i} ref={(g) => { gs.current[i] = g; }} position={[f.x, 0, f.z]}>
+          <Creature ref={(h) => { hs.current[i] = h; }} rig="biped" preset={f.preset} lookAt={FIRE}
+            palette={{ key: '#ff8a3c', rim: '#ff9a50', base: f.preset === 'erectus' ? '#2c1e16' : '#3a2a20' }} look={{ gloss: 0.35, groundAO: 0.8 }} />
+        </group>
       ))}
-      <points geometry={R.flameG} material={R.flameM} frustumCulled={false} />
-      <points geometry={R.emberG} material={R.emberM} frustumCulled={false} />
-      {busts.map((b, i) => {
-        const a = (i / NB) * Math.PI * 2 + 0.2, sc = 0.8 + ((i * 37) % 10) / 45;
-        return (
-          <group key={i} ref={(g) => { bg.current[i] = g; }} position={[Math.cos(a) * RAD * (0.9 + (i % 3) * 0.1), 0, Math.sin(a) * RAD * (0.9 + (i % 3) * 0.1)]} rotation={[0, Math.PI - a, 0]}>
-            <Bust ctl={b} scale={sc} color="#ffd2a8" headScale={i < 3 ? 0.92 : 1.05} />
-          </group>
-        );
-      })}
     </group>
   );
 }
 
-export const fireCamera = (t: number) => ({ pos: [Math.sin(t * 2.2 - 1.1) * 1.4 - 0.4, 1.3, 4.6 - t * 0.4] as [number, number, number], look: [0.3, 1.15, 0] as [number, number, number], fov: 50 });
+export const fireCamera = (t: number) => ({ pos: [Math.sin(t * 2.2 - 1.1) * 0.7, 1.05, 4.3 - t * 0.3] as [number, number, number], look: [0.15, 0.8, 0] as [number, number, number], fov: 44 });

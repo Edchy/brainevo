@@ -14,7 +14,7 @@ import ReptileBrain from './ReptileBrain';
 
 export const vertebrateScenes: SceneDef[] = [
   {
-    id: 'v-chordate', from: 'chordates-notochord-nerve-cord', to: 'chordates-notochord-nerve-cord', lead: 1.0, tail: 0.45, fade: 0.35,
+    id: 'v-chordate', from: 'chordates-notochord-nerve-cord', to: 'chordates-notochord-nerve-cord', lead: 0.6, tail: 0.45, fade: 0.35,
     Component: Chordate,
     camera: (t) => ({ pos: [-0.6 + t * 1.4, 0.05 - t * 0.1, 7 - t * 2.4], look: [0, -0.5, 0], fov: 55 }),
     mood: (t) => ({ bg: t < 0.2 ? '#03050b' : '#021019', bloom: 1.1 + smoothstep(0.3, 0.6, t) * 0.5 }),
@@ -62,7 +62,7 @@ export const vertebrateScenes: SceneDef[] = [
     mood: (t) => ({ bg: t < 0.3 ? '#03121a' : '#0a0d14', bloom: 0.7 + smoothstep(0.5, 0.9, t) * 0.2 }),
   },
   {
-    id: 'v-egg', from: 'amniotes-first-eggs', to: 'amniotes-first-eggs', lead: 0.45, tail: 0.45, fade: 0.35,
+    id: 'v-egg', from: 'amniotes-first-eggs', to: 'amniotes-first-eggs', lead: 0.45, tail: 0.25, fade: 0.3,
     Component: Egg,
     camera: (t) => ({ pos: [0, 0.8, 8.4 - t * 1.2], look: [0, -0.1, 0], fov: 52 }),
     mood: () => ({ bg: '#06040a', bloom: 1.1 }),

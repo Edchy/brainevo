@@ -14,10 +14,10 @@ const FLOOR_FRAG = /* glsl */ `
 uniform float uW, uHeat, uX; varying vec3 vWp; ${GLSL_NOISE}
 void main(){
   float d = length((vWp.xz - vec2(uX, -1.)) * vec2(.55, 1.15));
-  float pool = exp(-d*d*.55) * (.015 + uHeat*.2);
+  float pool = exp(-d*d*.55) * (.015 + uHeat*.34);
   float n = fbm(vWp.xz*.8);
   float far = smoothstep(2., -14., vWp.z);
-  vec3 c = vec3(1.,.74,.5)*pool*(.7+.5*n) + vec3(.012,.014,.02)*(1.-far);
+  vec3 c = vec3(1.,.5,.16)*pool*(.7+.5*n) + vec3(.012,.014,.02)*(1.-far);
   gl_FragColor = vec4(c*uW,1.);
 }`;
 const FLOOR_VERT = /* glsl */ `varying vec3 vWp; void main(){ vec4 w = modelMatrix*vec4(position,1.); vWp=w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`;
@@ -33,7 +33,7 @@ export default function Cynodont() {
   }), []);
   const cyno = useRef<THREE.Group>(null);
   const cold = useMemo(() => new THREE.Color('#7f93c0'), []);
-  const hot = useMemo(() => new THREE.Color('#ffd2a0'), []);
+  const hot = useMemo(() => new THREE.Color('#ffb36e'), []);
 
   const motes = useMemo(() => {
     const n = Math.floor(70 * world.quality); const r = rng(5);

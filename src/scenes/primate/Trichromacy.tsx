@@ -4,7 +4,9 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, rng, smoothstep } from '../../world/util';
-import { ambientTime } from './common';
+import { Primate, ambientTime, neutral, reach } from './common';
+import type { CreatureHandle } from './common';
+import { silhouetteMaterial, taperedTube } from '../mammal/kit';
 
 const VERT = /* glsl */ `
 attribute vec3 aCol; attribute float aKind; attribute float aSeed;
@@ -37,10 +39,11 @@ void main(){
     lit = .75+.25*abs(vN.z);
     c *= lit;
   } else { // fruit
-    float l = clamp(dot(normalize(vN), normalize(vec3(-.4,.7,.6)))*.5+.5,0.,1.);
-    c *= .35+.9*l;
-    float rim = pow(1.-abs(vN.z),3.);
-    c += vCol*rim*.6;
+    vec3 nn = normalize(vN);
+    float l = clamp(dot(nn, normalize(vec3(-.4,.7,.6)))*.5+.5,0.,1.);
+    float fr = pow(1.-abs(nn.z),2.6);
+    float sp = pow(max(dot(reflect(-normalize(vec3(-.4,.7,.6)), nn), vec3(0.,0.,1.)),0.), 48.);
+    c = vCol*(.14+.9*l*l) + vec3(.9,.1,.04)*fr*.35 + vec3(1.)*sp*1.0;
   }
   // true trichromat colour vs red-green dichromat simulation
   vec3 d = vec3(dot(c,vec3(.625,.375,0.)), dot(c,vec3(.7,.3,0.)), dot(c,vec3(0.,.3,.7)));
@@ -50,7 +53,7 @@ void main(){
   if(vKind>.5){ float l2 = clamp(dot(normalize(vN), normalize(vec3(-.4,.7,.6)))*.5+.5,0.,1.); d = vec3(.05,.07,.055)*(.6+.9*l2); }
   float sx = vNdc*.5+.5; float k = smoothstep(uWipe-.03, uWipe+.03, sx);
   vec3 full = c;
-  if(vKind>.5) full *= 1.0 + uPulse*1.0 + 1.6; // fruit pops (bloom)
+  if(vKind>.5) full *= 1.0 + uPulse*0.35; // fruit pops (bloom)
   vec3 outc = mix(full, d, k);
   float seam = exp(-pow((sx-uWipe)*18.,2.));
   outc += seam*vec3(.9,1.1,1.6)*.3;
@@ -65,6 +68,10 @@ export default function Trichromacy() {
   const leaves = useRef<THREE.InstancedMesh>(null);
   const fruits = useRef<THREE.InstancedMesh>(null);
   const mats = useRef<THREE.ShaderMaterial[]>([]);
+  const hm = useRef<CreatureHandle>(null);
+  const twigMat = useMemo(() => silhouetteMaterial('#d8e4ff', '#020304', 2.4, 1.2), []);
+  const twig = useMemo(() => taperedTube(new THREE.CatmullRomCurve3([new THREE.Vector3(1.3, 0.55, 0), new THREE.Vector3(1.45, 1.4, -0.1), new THREE.Vector3(2.4, 2.4, -0.3), new THREE.Vector3(4.4, 3.0, -0.6)]), 0.025, 0.07, 28, 8), []);
+  useEffect(() => () => { twig.dispose(); twigMat.dispose(); }, [twig, twigMat]);
 
   const data = useMemo(() => {
     const r = rng(99);
@@ -92,13 +99,13 @@ export default function Trichromacy() {
     const fm: THREE.Matrix4[] = [];
     const fc = new Float32Array(nF * 3), fs = new Float32Array(nF);
     for (let i = 0; i < nF; i++) {
-      if (i === 0) p.set(1.0, 0.1, -0.4); else p.set((r() - 0.5) * 9, (r() - 0.5) * 3.4, -1.2 - r() * 4);
+      if (i === 0) p.set(1.3, 0.1, 0.0); else p.set((r() - 0.5) * 9, (r() - 0.5) * 3.4, -1.2 - r() * 4);
       q.identity();
-      const sc = i === 0 ? 0.42 : 0.14 + r() * 0.06;
+      const sc = i === 0 ? 0.5 : 0.14 + r() * 0.06;
       s.set(sc, sc, sc);
       m.compose(p, q, s);
       fm.push(m.clone());
-      col.setRGB(0.95, 0.1 + r() * 0.1, 0.04);
+      col.setRGB(0.95, 0.04 + r() * 0.05, 0.02);
       fc.set([col.r, col.g, col.b], i * 3);
       fs[i] = r();
     }
@@ -131,6 +138,19 @@ export default function Trichromacy() {
     if (!scene.active) return;
     const beat = near(eventPos('trichromatic-vision'), 0.6);
     const wipe = -0.1 + smoothstep(0.2, 0.8, scene.t) * 1.2;
+    const h = hm.current;
+    const t = scene.t;
+    if (h) {
+      const pm = h.state.pm; neutral(pm);
+      const reachK = smoothstep(0.1, 0.5, t);
+      pm.sit = 0.85; pm.tilt = -0.12 + 0.08 * reachK;
+      // the hand opens toward the fruit, then closes around it
+      reach(pm.hand, 1, 0.8 + 0.05 * reachK, 0.8, 0.02, 0.5 + 0.5 * reachK);
+      pm.gripL = 0.1 + 0.7 * smoothstep(0.6, 0.85, t); pm.gripR = 0.3; pm.brow = 0.3 + 0.4 * reachK;
+      h.state.headPitch = 0.1; h.state.headYaw = 0.05; h.state.alert = 0.4;
+      h.override.walk = 0; h.override.phase = 0; h.look.w = scene.weight; h.look.splashK = 0.25;
+    }
+    twigMat.uniforms.uW.value = scene.weight;
     for (const m of mats.current) {
       if (!m) continue;
       m.uniforms.uTime.value = ambientTime();
@@ -146,6 +166,8 @@ export default function Trichromacy() {
       <instancedMesh ref={leaves} args={[leafGeo, undefined, data.nL]} frustumCulled={false}>
         <shaderMaterial ref={(m) => { if (m) mats.current[0] = m; }} vertexShader={VERT} fragmentShader={FRAG} uniforms={uniforms()} side={THREE.DoubleSide} />
       </instancedMesh>
+      <mesh geometry={twig} material={twigMat} />
+      <group position={[-0.75, -1.45, 0.1]} scale={2.1}><Primate ref={hm} preset="primate" rim="#ffe6c8" /></group>
       <instancedMesh ref={fruits} args={[fruitGeo, undefined, data.nF]} frustumCulled={false}>
         <shaderMaterial ref={(m) => { if (m) mats.current[1] = m; }} vertexShader={VERT} fragmentShader={FRAG} uniforms={uniforms()} />
       </instancedMesh>

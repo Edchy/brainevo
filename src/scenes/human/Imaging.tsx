@@ -1,56 +1,24 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, range } from '../../world/util';
-import { GLSL_UTIL, LBuf, PBuf, lineMat, pointMat, tickU } from './common';
-
-const SLICE_FS = /* glsl */ `${GLSL_UTIL}
-uniform float uW,uMix,uTime,uT,uPulse; varying vec2 vUv;
-float blob(vec2 p, vec2 c, float r, float ph){
-  float act = pow(.5+.5*sin(uTime*.9+ph*3.1+uT*14.), 2.);
-  float rad = r*(.55+.4*act);
-  return exp(-pow(dot(p-c,p-c)/(rad*rad),1.4))*(.35+.65*act);
-}
-void main(){
-  vec2 p=(vUv-.5)*2.; p.x*=1.18;
-  float ang=atan(p.y,p.x);
-  float rim=.8+.012*sin(ang*3.)+.025*fbm(vec3(p*2.,1.));
-  vec2 q=p*vec2(.95,.98);
-  float d=length(q*vec2(1.,.92))-rim;
-  // slightly narrower toward the front
-  d += .1*smoothstep(0.,1.,p.y)*abs(p.x);
-  float inside=1.-smoothstep(-.015,.015,d);
-  float ridge=abs(fbm(vec3(p*4.5,2.))-.5);
-  float sulciLine=1.-smoothstep(.0,.013,ridge);
-  float fissure=smoothstep(.012,.03,abs(p.x));
-  fissure=mix(1.,fissure,smoothstep(.62,.5,abs(p.y)));
-  float inner=smoothstep(-.02,-.14,d);
-  vec3 base=vec3(.012)*inside + vec3(.9,.92,1.)*sulciLine*.3*inner*fissure;
-  float v=0.;
-  v+=blob(p,vec2(-.32,.5),.2,0.)*.9;
-  v+=blob(p,vec2(.3,.55),.18,1.)*.7;
-  v+=blob(p,vec2(-.5,.08),.16,2.)*.8;
-  v+=blob(p,vec2(.52,.02),.15,3.)*.6;
-  v+=blob(p,vec2(0.,-.55),.28,4.)*1.1;
-  v+=blob(p,vec2(-.62,-.3),.14,5.)*.7;
-  v+=blob(p,vec2(.4,-.38),.16,6.)*.8;
-  v*=uMix*(.4+.5*uPulse);
-  v*=inside*fissure;
-  vec3 hot=vec3(1.,.96,.9)*v*1.5;
-  vec3 c=base+hot*smoothstep(.04,.3,v);
-  float rimGlow=exp(-pow(d*28.,2.))*.9;
-  c+=vec3(.9,.95,1.2)*rimGlow*(.5+.3*uMix);
-  // scan line
-  float sy=fract(uT*3.+uTime*.1)*2.-1.;
-  c+=vec3(1.)*exp(-pow((p.y-sy)*30.,2.))*.12*inside;
-  gl_FragColor=vec4(c,uW*(inside*.9+rimGlow));
-}`;
+import { LBuf, PBuf, lineMat, pointMat, tickU } from './common';
+import { Brain, useBrainCtl } from '../shared/brain';
 
 export default function Imaging() {
   const scene = useScene();
-  const { geo, mat, slice, lgeo, lmat } = useMemo(() => {
+  const brain = useBrainCtl({ grow: 1, holo: 1, holoColor: '#8fc4ff', tissue: '#cfc8c6' });
+  const hot = useMemo(() => [
+    { at: [0.55, 0.5, 0.3] as [number, number, number], r: 0.6, color: '#ff3a10', i: 0, sym: true },
+    { at: [-0.35, 0.85, 0.25] as [number, number, number], r: 0.55, color: '#ff8a10', i: 0, sym: true },
+    { at: [-0.85, 0.25, 0.2] as [number, number, number], r: 0.5, color: '#ffd020', i: 0, sym: true },
+    { at: [0.2, -0.1, 0.35] as [number, number, number], r: 0.45, color: '#ff5a10', i: 0, sym: true },
+  ], []);
+  brain.regions = hot;
+  const root = useRef<THREE.Group>(null);
+  const { geo, mat, lgeo, lmat } = useMemo(() => {
     const b = new PBuf(141);
     const CH = 5;
     const N = Math.floor(900 * world.quality);
@@ -71,19 +39,13 @@ export default function Imaging() {
       a = (.16+.7*head)*hero*env*(1.-uMix);
       size = .35+.5*head;`,
     });
-    const slice = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false,
-      uniforms: { uW: { value: 0 }, uMix: { value: 0 }, uTime: { value: 0 }, uT: { value: 0 }, uPulse: { value: 0 } },
-      vertexShader: 'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-      fragmentShader: SLICE_FS,
-    });
     const lb = new LBuf(142);
     const ring = (rad: number, z: number, c: [number, number, number]) => { const n = 90; for (let i = 0; i < n; i++) { const a0 = (i / n) * 6.283, a1 = ((i + 1) / n) * 6.283; lb.seg([Math.cos(a0) * rad, Math.sin(a0) * rad, z], [Math.cos(a1) * rad, Math.sin(a1) * rad, z], 0, 1, c); } };
     ring(2.9, -0.5, [.4, .8, 1.8]); ring(3.05, -0.5, [.3, .6, 1.4]); ring(3.6, -1.2, [.3, .5, 1.2]);
     const lmat = lineMat({ body: 'a=.5*uMix;', decl: 'uniform float uMix;', uniforms: { uMix: { value: 0 } } });
-    return { geo: b.build(), mat, slice, lgeo: lb.build(), lmat };
+    return { geo: b.build(), mat, lgeo: lb.build(), lmat };
   }, []);
-  useEffect(() => () => { geo.dispose(); lgeo.dispose(); mat.dispose(); slice.dispose(); lmat.dispose(); }, [geo, lgeo, mat, slice, lmat]);
+  useEffect(() => () => { geo.dispose(); lgeo.dispose(); mat.dispose(); lmat.dispose(); }, [geo, lgeo, mat, lmat]);
 
   useFrame((state) => {
     if (!scene.active) return;
@@ -92,14 +54,21 @@ export default function Imaging() {
     const mix = range(e79 + 0.2, e80 - 0.1, f);
     tickU(mat, scene, state.gl.getPixelRatio()); mat.uniforms.uMix.value = mix;
     tickU(lmat, scene); lmat.uniforms.uMix.value = mix;
-    const u = slice.uniforms;
-    u.uW.value = scene.weight * mix; u.uMix.value = mix; u.uT.value = scene.t;
-    u.uTime.value = world.reduced ? 0 : world.time; u.uPulse.value = near(e80, 0.5);
+    const tm = world.reduced ? 0 : world.time;
+    const pulse = near(e80, 0.5);
+    brain.alpha = scene.weight * Math.min(1, 0.25 + mix * 1.2);
+    brain.holo = 1 - 0.55 * mix;
+    brain.cut = mix > 0.15 ? 1 : 0; brain.cutAxis = 'sagittal'; brain.cutPos = 0.3 + 0.08 * Math.sin(scene.t * 6) * mix;
+    hot.forEach((h, i) => {
+      const act = Math.pow(0.5 + 0.5 * Math.sin(tm * 0.9 + i * 3.1 + scene.t * 14), 2);
+      h.i = mix * (0.35 + 0.9 * act) * (0.7 + 0.5 * pulse) * 1.1;
+    });
+    if (root.current) { root.current.rotation.y = -0.15 + 0.1 * Math.sin(tm * 0.2); }
   });
   return (
     <group>
       <points geometry={geo} material={mat} frustumCulled={false} />
-      <mesh position={[0, 0.1, 0]} rotation={[-0.25, 0.1, 0]} material={slice}><planeGeometry args={[4.6, 4.6]} /></mesh>
+      <group ref={root} position={[0, 0.15, 0]} rotation={[0.05, -0.15, 0]} scale={1.15}><Brain ctl={brain} /></group>
     </group>
   );
 }

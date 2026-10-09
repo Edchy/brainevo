@@ -2,6 +2,7 @@ import { MAT, PrimSet } from './sdf';
 import type { Palette, Look } from './sdf';
 import { GAITS, clamp, footCycle, hash1, ik2, mix, vnoise } from './rig';
 import type { Leg, RigState } from './rig';
+import { solvePrimate } from './primate';
 
 /** Everything that makes one four-legged mammal differ from another. Units are creature-local (shrew ~0.7 body, rat ~0.95). */
 export interface QuadParams {
@@ -25,6 +26,8 @@ export interface QuadParams {
   tailLen: number; tailR0: number; tailR1: number; tailSegs: number; tailRise: number; tailCurl: number; tailNaked: boolean;
   gait: keyof typeof GAITS; stride: number; lift: number; bob: number; wave: number;
   palette: Palette; look: Partial<Look>;
+  /** primate solver (sit/grasp/reach pose controls, digits, brow) instead of the plain quadruped */
+  primate?: boolean; eyeSide?: number; browR?: number;
 }
 
 const BASE: QuadParams = {
@@ -42,7 +45,7 @@ const BASE: QuadParams = {
 
 const P = (o: Partial<QuadParams>): QuadParams => ({ ...BASE, ...o });
 
-export type QuadPresetName = 'shrew' | 'cynodont' | 'rat' | 'primate';
+export type QuadPresetName = 'shrew' | 'cynodont' | 'rat' | 'primate' | 'ape' | 'prosimian';
 
 export const QUAD_PRESETS: Record<QuadPresetName, QuadParams> = {
   // low, long, sprawling-ish, long muzzle, no external ears, heavy tail: a Thrinaxodon/Cynognathus feel
@@ -77,17 +80,44 @@ export const QUAD_PRESETS: Record<QuadPresetName, QuadParams> = {
     earSize: 0.12, earW: 1.55, earTilt: 0.6, earBack: 0.35,
     tailNaked: true, whisker: 1.0, look: { fur: 0.75 },
   }),
-  // arboreal monkey on all fours: long limbs, plantigrade hands/feet, rounded head, long curling tail
+  // arboreal monkey: long grasping hands and feet, round head with a brow, forward eyes, long prehensile tail
   primate: P({
-    bodyLen: 0.85, chestR: 0.19, waistR: 0.15, hipR: 0.15, bodyW: 0.9, belly: 0.1, arch: 0.45, ext: 0.88,
-    front: [0.34, 0.33, 0.2], hind: [0.29, 0.28, 0.2], limbR: 0.9, digi: 0.0, sprawl: 0.15,
-    neckLen: 0.1, neckR: 0.12, neckUp: 0.5, skullR: 0.18, skullLen: 0.24, headDrop: 0.35,
-    muzzleLen: 0.09, muzzleR: 0.1, muzzleTipR: 0.075, noseR: 0.02, jaw: 1.1, eyeR: 0.036, eyeFwd: 0.34, eyeUp: 0.22,
-    earSize: 0.07, earW: 1.3, earTilt: 0.5, earBack: 0.0,
-    tailLen: 1.15, tailR0: 0.05, tailR1: 0.022, tailSegs: 3, tailRise: 0.25, tailCurl: -2.4,
-    gait: 'walk', stride: 0.75, lift: 0.06, bob: 0.014, wave: 0.02,
+    primate: true, eyeSide: 0.5, browR: 0.03,
+    bodyLen: 0.8, chestR: 0.17, waistR: 0.14, hipR: 0.15, bodyW: 0.88, belly: 0.1, arch: 0.4, ext: 0.88,
+    front: [0.36, 0.34, 0.24], hind: [0.36, 0.33, 0.26], limbR: 0.88, digi: 0.0, sprawl: 0.1,
+    neckLen: 0.07, neckR: 0.115, neckUp: 0.5, skullR: 0.185, skullLen: 0.21, headDrop: 0.3,
+    muzzleLen: 0.1, muzzleR: 0.085, muzzleTipR: 0.065, noseR: 0.02, jaw: 1.0, eyeR: 0.034, eyeFwd: 0.52, eyeUp: 0.2,
+    earSize: 0.075, earW: 1.1, earTilt: 0.5, earBack: 0.1,
+    tailLen: 1.25, tailR0: 0.068, tailR1: 0.028, tailSegs: 3, tailRise: 0.25, tailCurl: 1.6,
+    gait: 'walk', stride: 0.8, lift: 0.07, bob: 0.014, wave: 0.02,
     palette: { base: '#4a3f38', belly: '#8a7a6c', rim: '#ffe0b8', skin: '#8a6a5a', splash: '#ffd080', key: '#a09080', bone: '#e0d8c8' },
-    look: { fur: 0.7 },
+    look: { fur: 0.9, furScale: 1.1 },
+  }),
+  // great ape: tailless, heavy brow, long arms, big chest
+  ape: P({
+    primate: true, eyeSide: 0.5, browR: 0.04,
+    bodyLen: 0.85, chestR: 0.185, waistR: 0.14, hipR: 0.16, bodyW: 0.88, belly: 0.2, arch: 0.3, ext: 0.88,
+    front: [0.42, 0.4, 0.25], hind: [0.3, 0.28, 0.25], limbR: 1.02, digi: 0.0, sprawl: 0.2,
+    neckLen: 0.1, neckR: 0.13, neckUp: 0.4, skullR: 0.19, skullLen: 0.2, headDrop: 0.25,
+    muzzleLen: 0.12, muzzleR: 0.1, muzzleTipR: 0.08, noseR: 0.02, jaw: 1.1, eyeR: 0.032, eyeFwd: 0.5, eyeUp: 0.14,
+    earSize: 0.06, earW: 1.0, earTilt: 0.5, earBack: 0.1,
+    tailLen: 0, tailR0: 0.05, tailR1: 0.02, tailSegs: 3, tailRise: 0.1, tailCurl: 0,
+    gait: 'walk', stride: 0.85, lift: 0.07, bob: 0.014, wave: 0.02,
+    palette: { base: '#4a423b', belly: '#8d8174', rim: '#ffe0b8', skin: '#6e5548', splash: '#ffd080', key: '#a09080', bone: '#e0d8c8' },
+    look: { fur: 0.95, furScale: 1.0 },
+  }),
+  // small early primate: huge forward eyes, long leaping hind legs, thin grasping fingers, long tail
+  prosimian: P({
+    primate: true, eyeSide: 0.64, browR: 0.024,
+    bodyLen: 0.62, chestR: 0.155, waistR: 0.125, hipR: 0.16, bodyW: 0.9, belly: 0.1, arch: 0.5, ext: 0.84,
+    front: [0.3, 0.29, 0.21], hind: [0.36, 0.34, 0.27], limbR: 1.0, digi: 0.0, sprawl: 0.1,
+    neckLen: 0.05, neckR: 0.1, neckUp: 0.5, skullR: 0.16, skullLen: 0.17, headDrop: 0.3,
+    muzzleLen: 0.12, muzzleR: 0.07, muzzleTipR: 0.045, noseR: 0.016, jaw: 1.0, eyeR: 0.056, eyeFwd: 0.4, eyeUp: 0.2,
+    earSize: 0.12, earW: 1.2, earTilt: 0.45, earBack: 0.1,
+    tailLen: 1.15, tailR0: 0.06, tailR1: 0.022, tailSegs: 3, tailRise: 0.35, tailCurl: 0.8,
+    gait: 'walk', stride: 0.7, lift: 0.07, bob: 0.014, wave: 0.02,
+    palette: { base: '#3c322b', belly: '#b9ac99', rim: '#ffe6c4', skin: '#a08674', splash: '#ffd080', key: '#c0b2a2', bone: '#e0d8c8' },
+    look: { fur: 1.0, furScale: 1.3 },
   }),
 };
 
@@ -107,6 +137,7 @@ function standHeight(l1: number, l2: number, ankleY: number, dx: number, ext: nu
 
 /** Fill `ps` with the quadruped for this frame. Pure function of (params, state). */
 export function solveQuad(ps: PrimSet, Q: QuadParams, st: RigState) {
+  if (Q.primate) { solvePrimate(ps, Q, st); return; }
   ps.reset();
   const T = st.time, walk = st.walk, ph = st.phase;
   const gait = GAITS[Q.gait];

@@ -5,6 +5,7 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near } from '../../world/util';
 import { LBuf, PBuf, lineMat, pointMat, tickU } from './common';
+import { Brain, useBrainCtl } from '../shared/brain';
 
 const TG: [number, number][] = [[2.5, 0.1], [1.5, 1.0], [3.7, 0.9], [3.6, -0.8], [1.5, -0.8], [2.5, 0.1], [3.7, 0.9], [1.5, -0.8]];
 function path(s: number, out: [number, number]) {
@@ -22,14 +23,15 @@ function path(s: number, out: [number, number]) {
 const NT = 140;
 export default function Bci() {
   const scene = useScene();
+  const brain = useBrainCtl({ grow: 1, glass: 0.55, tissue: '#d5cdc9' });
+  const regs = useMemo(() => [{ at: 'motor' as const, color: '#ffb02a', i: 0 }, { at: 'prefrontal' as const, color: '#4aa8ff', i: 0 }], []);
+  brain.regions = regs;
   const { geo, mat, lgeo, lmat, tgeo, tmat, trail, tpos } = useMemo(() => {
     const b = new PBuf(151);
-    const r = b.r;
     const q = world.quality;
-    // 0: cortex sheet
-    for (let i = 0; i < 700 * q; i++) b.add(-5.2 + r() * 4.6, -1.25, (r() - 0.5) * 3.2, [1, 1, 1], 0, { aX: [r(), 0] });
+    // (cortex is the shared Brain)
     // 1: needle tips (10x10)
-    for (let ix = 0; ix < 6; ix++) for (let iz = 0; iz < 6; iz++) b.add(-4.6 + ix * 0.5, -1.0, -1.25 + iz * 0.5, [1, 1, 1], 1, { aX: [0, 0] });
+    for (let ix = 0; ix < 6; ix++) for (let iz = 0; iz < 6; iz++) b.add(-4.6 + ix * 0.5, 0.6, -1.25 + iz * 0.5, [1, 1, 1], 1, { aX: [0, 0] });
     // 3: data stream
     for (let i = 0; i < 700 * q; i++) b.add(0, 0, 0, [1, 1, 1], 3, { aX: [0, 0] });
     // 5: targets
@@ -64,7 +66,7 @@ export default function Bci() {
     // needles + plate + screen frame
     const lb = new LBuf(152);
     const c: [number, number, number] = [1.7, 1.3, .55];
-    for (let ix = 0; ix < 6; ix++) for (let iz = 0; iz < 6; iz++) lb.seg([-4.6 + ix * 0.5, 1.1, -1.25 + iz * 0.5], [-4.6 + ix * 0.5, -1.0, -1.25 + iz * 0.5], 0, 1, c);
+    for (let ix = 0; ix < 6; ix++) for (let iz = 0; iz < 6; iz++) lb.seg([-4.6 + ix * 0.5, 1.1, -1.25 + iz * 0.5], [-4.6 + ix * 0.5, 0.6, -1.25 + iz * 0.5], 0, 1, c);
     const pl: [number, number, number][] = [[-4.85, 1.1, -1.5], [-1.95, 1.1, -1.5], [-1.95, 1.1, 1.5], [-4.85, 1.1, 1.5]];
     for (let i = 0; i < 4; i++) lb.seg(pl[i], pl[(i + 1) % 4], 0, 1, [2.2, 1.6, .7]);
     const fr: [number, number, number][] = [[0.6, -1.5, 0], [4.6, -1.5, 0], [4.6, 1.7, 0], [0.6, 1.7, 0]];
@@ -92,6 +94,7 @@ export default function Bci() {
     const e = eventPos('brain-computer-interfaces');
     const pr = state.gl.getPixelRatio();
     const act = 0.35 + 0.65 * near(e, 0.8);
+    brain.alpha = scene.weight; regs[0].i = (0.4 + 1.3 * act) * (0.8 + 0.2 * Math.sin((world.reduced ? 0 : world.time) * 6)); regs[1].i = 0.4 * act;
     tickU(mat, scene, pr); mat.uniforms.uAct.value = act; mat.uniforms.uHit.value = near(e, 0.6);
     tickU(lmat, scene);
     tickU(tmat, scene, pr);
@@ -105,6 +108,7 @@ export default function Bci() {
   });
   return (
     <group>
+      <Brain ctl={brain} position={[-3.2, -0.45, 0]} scale={1.15} />
       <points geometry={geo} material={mat} frustumCulled={false} />
       <lineSegments geometry={lgeo} material={lmat} frustumCulled={false} />
       <points geometry={tgeo} material={tmat} frustumCulled={false} />

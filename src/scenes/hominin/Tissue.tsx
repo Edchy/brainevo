@@ -4,12 +4,18 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { lerp, rng, smoothstep } from '../../world/util';
-import { Brain, newBrain, Shell } from './common';
+import { Shell } from './common';
+import { Brain, stageGrow, useBrainCtl } from '../shared/brain';
 
 export default function Tissue() {
   const scene = useScene();
   const q = world.quality;
-  const brain = useMemo(newBrain, []);
+  const brain = useBrainCtl({ grow: stageGrow('hominin') * 0.9, tissue: '#d8cdc6' });
+  const regs = useMemo(() => [
+    { at: 'pallium' as const, color: '#ff8a1c', i: 0 },
+    { at: 'frontal' as const, color: '#ffb23c', i: 0 },
+  ], []);
+  brain.regions = regs;
   const shell = useMemo(() => ({ alpha: 0.3 }), []);
   const gutG = useMemo(() => ({ g: null as THREE.Group | null }), []);
   const brG = useMemo(() => ({ g: null as THREE.Group | null }), []);
@@ -57,7 +63,8 @@ export default function Tissue() {
     const w = scene.weight, t = scene.t, tm = world.reduced ? 0 : world.time;
     const k = smoothstep(0.1, 0.9, t);
     const bs = lerp(0.8, 1.35, k), gs = lerp(1.0, 0.45, k);
-    brain.s = bs; brain.alpha = w; brain.glow = 0.3 + k * 0.7; brain.motor = 0.2 + k * 0.4; brain.par = 0.2 + k * 0.4;
+    brain.size = bs * 0.85; brain.alpha = w; brain.grow = stageGrow('hominin') * (0.85 + 0.15 * k) + 0.1 * k;
+    regs[0].i = (0.15 + 0.6 * k) * (0.8 + 0.2 * Math.sin(tm * 3 + t * 8)); regs[1].i = 1.6 * k * (0.7 + 0.3 * Math.sin(tm * 2.1));
     shell.alpha = w * 0.25;
     if (gutG.g) { gutG.g.scale.setScalar(gs); gutG.g.rotation.y = tm * 0.25 + t * 2; }
     if (brG.g) brG.g.rotation.y = -0.5 + Math.sin(t * 3) * 0.15;
@@ -69,7 +76,7 @@ export default function Tissue() {
   return (
     <group>
       <group position={[-3.0, 0, 0]}><group ref={(g) => { gutG.g = g; }}><mesh geometry={R.geo} material={R.gutMat} frustumCulled={false} /></group></group>
-      <group position={[1.2, 0.1, 0]}><group ref={(g) => { brG.g = g; }}><Brain ctl={brain} /><Shell ctl={shell} scale={[1.45, 1.1, 1.0]} /></group></group>
+      <group position={[1.2, 0.1, 0]}><group ref={(g) => { brG.g = g; }}><Brain ctl={brain} /><Shell ctl={shell} scale={[2.9, 2.1, 2.1]} /></group></group>
       <mesh rotation={[Math.PI / 2, 0, 0]} material={R.ring} position={[0, 0, -1]}><torusGeometry args={[4.9, 0.012, 6, 120]} /></mesh>
       <points geometry={R.pg} material={R.pm} frustumCulled={false} />
     </group>

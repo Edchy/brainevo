@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { eventPos, near, range, rng, smoothstep } from '../../world/util';
-import { Backdrop, NOISE, Plankton, POINT_FRAG, makeGlass, pxScale, timeNow, useDispose } from './common';
+import { Backdrop, NOISE, Plankton, POINT_FRAG, makeBead, makeGlass, pxScale, timeNow, useDispose } from './common';
 
 const NCH = 9;
 const IONS = 16;
@@ -30,10 +30,10 @@ export default function Membrane() {
     return { headM: heads, tailM: tails };
   }, []);
 
-  const headMat = useMemo(() => makeGlass('#ffb86b', { rim: 0.8, fill: 0.12, power: 1.5 }), []);
-  const tailMat = useMemo(() => makeGlass('#5fa0ff', { rim: 0.15, fill: 0.04, power: 1 }), []);
-  const chMat = useMemo(() => makeGlass('#7fd0ff', { rim: 0.9, fill: 0.1, power: 1.6, noise: 3 }), []);
-  const recMat = useMemo(() => makeGlass('#d58bff', { rim: 1.6, fill: 0.55, power: 1.4, noise: 3 }), []);
+  const headMat = useMemo(() => makeBead('#ffb86b', { emis: 0.22, spec: 0.8, rim: 0.7 }), []);
+  const tailMat = useMemo(() => makeBead('#6a9be0', { emis: 0.04, spec: 0.15, rim: 0.25 }), []);
+  const chMat = useMemo(() => makeBead('#6fd6ee', { emis: 0.2, spec: 0.5, rim: 1.1, noise: 3 }), []);
+  const recMat = useMemo(() => makeBead('#c98cff', { emis: 0.35, spec: 0.6, rim: 1.3, noise: 3 }), []);
   const molMat = useMemo(() => makeGlass('#ffe28a', { rim: 2, fill: 1.8, power: 1 }), []);
   const heads = useRef<THREE.InstancedMesh>(null), tails = useRef<THREE.InstancedMesh>(null);
   const chs = useRef<THREE.InstancedMesh>(null), recs = useRef<THREE.InstancedMesh>(null), mols = useRef<THREE.InstancedMesh>(null);
@@ -89,7 +89,7 @@ export default function Membrane() {
     const ph2 = smoothstep(0.42, 0.55, t); // ion phase
     const volt = smoothstep(0.45, 0.65, t);
     for (const m of [headMat, tailMat, chMat, recMat, molMat]) { m.uniforms.uW.value = w; m.uniforms.uTime.value = time; }
-    chMat.uniforms.uW.value = w * (0.35 + 0.4 * ph2);
+    chMat.uniforms.uW.value = w * (0.6 + 0.4 * ph2);
     const spikeX = THREE.MathUtils.lerp(-11, 11, range(0.6, 0.95, t));
     fieldMat.uniforms.uW.value = w; fieldMat.uniforms.uTime.value = time; fieldMat.uniforms.uV.value = volt;
     fieldMat.uniforms.uSpike.value = t > 0.58 && t < 0.97 ? spikeX : -30;

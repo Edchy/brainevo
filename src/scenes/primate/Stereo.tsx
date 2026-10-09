@@ -4,10 +4,12 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, lerp, near, range, rng, smoothstep } from '../../world/util';
-import { ambientTime } from './common';
+import { Primate, ambientTime, neutral } from './common';
+import type { CreatureHandle } from './common';
 
 const HALF = 0.62; // cone half-angle (rad), ~35deg
-const EYE_X = 0.42;
+const EYE_X = 0.41;
+const HS = 5; // head scale: puts the primate's eyes EYE_X * 2 apart
 const CONE_LEN = 15;
 
 const CONE_V = /* glsl */ `varying vec3 vP; varying vec3 vN; varying vec3 vV;
@@ -49,6 +51,8 @@ export default function Stereo() {
   const eyeL = useRef<THREE.Mesh>(null);
   const eyeR = useRef<THREE.Mesh>(null);
   const target = useRef<THREE.Mesh>(null);
+  const hd = useRef<CreatureHandle>(null);
+  const hg = useRef<THREE.Group>(null);
   const ring = useRef<THREE.Mesh>(null);
   const ptsMat = useRef<THREE.ShaderMaterial>(null);
   const cmL = useRef<THREE.ShaderMaterial>(null);
@@ -122,18 +126,26 @@ export default function Stereo() {
       ring.current.scale.setScalar(0.4 + k * 3);
       (ring.current.material as THREE.MeshBasicMaterial).opacity = w * fuse * (1 - k) * 0.8;
     }
-    const eyeS = 0.09;
+    const h = hd.current;
+    if (h) {
+      const pm = h.state.pm; neutral(pm);
+      pm.sit = 1; pm.tilt = 0.05; pm.gripL = pm.gripR = 0.4; pm.brow = 0.5 * fuse;
+      h.state.headYaw = Math.sin(tm * 0.25) * 0.04; h.state.headPitch = 0.02;
+      h.override.walk = 0; h.override.phase = 0; h.look.w = w; h.look.splashK = 0.2 + 0.6 * fuse;
+      // creature faces -z; the eye midpoint (just ahead of the skull centre) sits at the origin where the view cones start
+      const ex = h.state.headX + 0.15, ey = h.state.headY + 0.03;
+      hg.current?.position.set(0, -HS * ey, HS * ex);
+    }
+    const eyeS = 0.05;
     if (eyeL.current) { eyeL.current.position.copy(eL); eyeL.current.scale.setScalar(eyeS); }
     if (eyeR.current) { eyeR.current.position.copy(eR); eyeR.current.scale.setScalar(eyeS); }
   });
 
   return (
     <group>
-      {/* head */}
-      <mesh position={[0, 0, 0.55]} scale={[0.95, 0.5, 0.9]}>
-        <sphereGeometry args={[1, 24, 16]} />
-        <meshBasicMaterial color="#010102" />
-      </mesh>
+      <group ref={hg} rotation={[0, Math.PI / 2, 0]} scale={HS}>
+        <Primate ref={hd} preset="primate" rim="#ffe6c4" />
+      </group>
       <mesh ref={eyeL}><sphereGeometry args={[1, 12, 10]} /><meshBasicMaterial color={[3, 3, 2.4]} toneMapped={false} /></mesh>
       <mesh ref={eyeR}><sphereGeometry args={[1, 12, 10]} /><meshBasicMaterial color={[3, 3, 2.4]} toneMapped={false} /></mesh>
       <mesh ref={coneL} geometry={coneGeo} renderOrder={3}>
@@ -166,6 +178,6 @@ export default function Stereo() {
 
 export const stereoCamera = (t: number) => ({
   pos: [lerp(5, 0.5, range(0, 1, t)), lerp(7, 10, smoothstep(0, 1, t)), lerp(9, 6, t)] as [number, number, number],
-  look: [0, 0, -5] as [number, number, number],
+  look: [0, 0, -3.4] as [number, number, number],
   fov: 55,
 });

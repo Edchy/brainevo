@@ -4,7 +4,9 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, range, rng, smoothstep } from '../../world/util';
-import { Backdrop, Plankton, TM, latheX, makeBodyMat, makeTubeMat } from './shared';
+import { Backdrop, Plankton, TM, makeBodyMat, makeTubeMat } from './shared';
+import { AquaCreature } from '../shared/creatures/AquaCreature';
+import type { AquaHandle } from '../shared/creatures/AquaCreature';
 
 const BOX: [number, number, number] = [20, 11, 8];
 const VTA = new THREE.Vector3(-1.9, -0.9, 0);
@@ -48,12 +50,11 @@ function cloudMat() {
 export default function Dopamine() {
   const scene = useScene();
   const fishG = useRef<THREE.Group>(null);
+  const fishH = useRef<AquaHandle>(null);
   const pellet = useRef<THREE.Mesh>(null);
   const vtaM = useRef<THREE.Mesh>(null);
   const S = useMemo(() => {
     const r = rng(18);
-    const fishGeo = latheX((x) => 0.5 * Math.pow(Math.max(0, 1 - Math.pow(Math.abs(x) / 1.6, x > 0 ? 2.2 : 1.7)), 0.6), -1.6, 1.6, 50, 24, 0.8);
-    const fishM = makeBodyMat('#7fe3ff', { rim: 1.5, base: 0.06, stripe: 0 });
     const pelletG = new THREE.SphereGeometry(0.14, 20, 14);
     const pelletM = makeBodyMat('#ffd27a', { rim: 3, base: 1.2 });
     const vtaG = new THREE.SphereGeometry(0.28, 28, 20);
@@ -91,10 +92,10 @@ export default function Dopamine() {
       const mid = VTA.clone().lerp(end, 0.5).add(new THREE.Vector3((r() - 0.5) * 0.8, (r() - 0.2) * 1.4, (r() - 0.5) * 0.8));
       axons.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([VTA.clone(), mid, end]), 60, 0.03, 8, false));
     }
-    return { fishGeo, fishM, pelletG, pelletM, vtaG, vtaMat, stG, bg, bM: burstMat(), cM: cloudMat(), axM, axons };
+    return { pelletG, pelletM, vtaG, vtaMat, stG, bg, bM: burstMat(), cM: cloudMat(), axM, axons };
   }, []);
   useEffect(() => () => {
-    S.fishGeo.dispose(); S.fishM.dispose(); S.pelletG.dispose(); S.pelletM.dispose(); S.vtaG.dispose(); S.vtaMat.dispose();
+    S.pelletG.dispose(); S.pelletM.dispose(); S.vtaG.dispose(); S.vtaMat.dispose();
     S.stG.dispose(); S.bg.dispose(); S.bM.dispose(); S.cM.dispose(); S.axM.dispose(); S.axons.forEach((a) => a.dispose());
   }, [S]);
 
@@ -110,11 +111,16 @@ export default function Dopamine() {
     const flood = Math.sin(Math.PI * range(0.36, 0.9, ph));
     const tm = TM();
     // fish
-    const fx = -5.2 + 2.6 * smoothstep(0, 0.34, ph);
+    const fx = 5.4 - 2.8 * smoothstep(0, 0.34, ph);
     const fishFade = smoothstep(0, 0.06, ph) * (1 - smoothstep(0.82, 0.98, ph)) * w;
-    S.fishM.uniforms.uOpacity.value = fishFade;
-    S.fishM.uniforms.uPhase.value = trial * 40 + tm * 3; S.fishM.uniforms.uAmp.value = 0.12;
-    if (fishG.current) { fishG.current.position.set(fx + 0.4 * eat, 2.4 + Math.sin(trial * 4) * 0.08, 0); }
+    const fh = fishH.current;
+    if (fh) {
+      fh.look.w = fishFade;
+      fh.state.phase = trial * 7 + tm * 0.6;
+      fh.state.beat = 0.8;
+      fh.state.mouth = Math.sin(Math.PI * range(0.3, 0.45, ph));
+    }
+    if (fishG.current) { fishG.current.position.set(fx - 0.5 * eat, 2.3 + Math.sin(trial * 4) * 0.08, 0); }
     S.pelletM.uniforms.uOpacity.value = w * (1 - eat) * smoothstep(0, 0.05, ph);
     if (pellet.current) pellet.current.scale.setScalar(1 + Math.sin(tm * 3) * 0.1 + (1 - eat) * 0.2);
     // circuit
@@ -133,8 +139,8 @@ export default function Dopamine() {
     <group>
       <Backdrop top="#241448" bottom="#02030a" ray={0.3} />
       <Plankton count={700} box={BOX} color="#8fb4ff" size={0.04} flow={-2} center={[0, 0, -2]} />
-      <group ref={fishG} scale={0.9}><mesh geometry={S.fishGeo} material={S.fishM} frustumCulled={false} /></group>
-      <mesh ref={pellet} geometry={S.pelletG} material={S.pelletM} position={[-2.5, 2.4, 0]} />
+      <group ref={fishG}><group scale={1.15} rotation={[0.2, Math.PI + 0.9, 0.12]}><AquaCreature ref={fishH} kind="lamprey" resolution={0.8} /></group></group>
+      <mesh ref={pellet} geometry={S.pelletG} material={S.pelletM} position={[2.4, 2.3, 0]} />
       <mesh ref={vtaM} geometry={S.vtaG} material={S.vtaMat} position={VTA} />
       <points geometry={S.stG} material={S.cM} frustumCulled={false} />
       <points geometry={S.bg} material={S.bM} frustumCulled={false} />

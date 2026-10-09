@@ -147,3 +147,34 @@ export function makeGlass(color: string, opts: { rim?: number; fill?: number; po
         gl_FragColor=vec4(c*uW,1.); }`,
   });
 }
+
+/** lit, depth-writing bead material (instancing aware): diffuse + specular + rim + optional noise, for molecules that should feel solid */
+export function makeBead(color: string, opts: { emis?: number; spec?: number; rim?: number; noise?: number } = {}) {
+  return new THREE.ShaderMaterial({
+    transparent: true, depthWrite: true,
+    uniforms: { uW: { value: 0 }, uTime: { value: 0 }, uGlow: { value: 0 }, uColor: { value: new THREE.Color(color) },
+      uEmis: { value: opts.emis ?? 0.12 }, uSpec: { value: opts.spec ?? 0.6 }, uRim: { value: opts.rim ?? 1 }, uNoise: { value: opts.noise ?? 0 } },
+    vertexShader: /* glsl */ `
+      varying vec3 vN; varying vec3 vV; varying vec3 vO;
+      void main(){ vO=position; vec3 n=normal;
+        #ifdef USE_INSTANCING
+          mat4 im=instanceMatrix; vec4 wp=modelMatrix*im*vec4(position,1.); n=mat3(modelMatrix*im)*normal;
+        #else
+          vec4 wp=modelMatrix*vec4(position,1.); n=mat3(modelMatrix)*normal;
+        #endif
+        vN=normalize(n); vV=normalize(cameraPosition-wp.xyz); gl_Position=projectionMatrix*viewMatrix*wp; }`,
+    fragmentShader: /* glsl */ `
+      uniform float uW,uTime,uGlow,uEmis,uSpec,uRim,uNoise; uniform vec3 uColor; varying vec3 vN; varying vec3 vV; varying vec3 vO;
+      ${NOISE}
+      void main(){
+        vec3 N=normalize(vN), V=normalize(vV); vec3 L=normalize(vec3(-.45,.75,.55));
+        float n=uNoise>0.?fbm(vO*uNoise+uTime*.08):.5;
+        vec3 base=uColor*(.62+.76*n);
+        float wrap=clamp((dot(N,L)+.45)/1.45,0.,1.);
+        vec3 c=base*(.08+.92*wrap)+base*uEmis*(1.+uGlow*2.5);
+        c+=vec3(1.)*pow(max(dot(reflect(-L,N),V),0.),48.)*uSpec;
+        c+=uColor*pow(1.-max(dot(N,V),0.),2.6)*uRim*.9;
+        c+=uColor*pow(max(dot(N,normalize(vec3(.5,-.6,.4))),0.),2.)*.12;
+        gl_FragColor=vec4(c,uW); }`,
+  });
+}

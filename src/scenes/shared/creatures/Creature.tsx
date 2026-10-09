@@ -18,6 +18,8 @@ export interface CreatureHandle {
   /** mutable look (light, rim, fur...) - written to the material on the next draw */
   look: Look;
   palette: Palette;
+  /** the live rig parameters (mutate in place, e.g. morphBiped; pass a stable `params={{}}` so they are a private copy) */
+  params: QuadParams | BipedParams;
   /** imperative gait override (takes priority over props); set fields to undefined to return to automatic */
   override: { phase?: number; walk?: number };
 }
@@ -92,8 +94,9 @@ export const Creature = forwardRef<CreatureHandle, CreatureProps>(function Creat
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rig, preset, props.params],
   );
-  const handle = useMemo<CreatureHandle>(() => ({ state: newRigState(), material, look: { ...DEFAULT_LOOK }, palette: { ...DEFAULT_PALETTE }, override: {} }), [material]);
+  const handle = useMemo<CreatureHandle>(() => ({ state: newRigState(), material, look: { ...DEFAULT_LOOK }, palette: { ...DEFAULT_PALETTE }, params: P, override: {} }), [material]); // eslint-disable-line react-hooks/exhaustive-deps
   useMemo(() => {
+    handle.params = P;
     Object.assign(handle.palette, DEFAULT_PALETTE, P.palette, props.palette);
     Object.assign(handle.look, DEFAULT_LOOK, P.look, props.look);
   }, [handle, P, props.palette, props.look]);

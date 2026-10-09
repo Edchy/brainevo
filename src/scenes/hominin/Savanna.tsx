@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, lerp, near, rng, smoothstep } from '../../world/util';
-import { newWalk, Walker, GLSL_NOISE } from './common';
+import { GLSL_NOISE } from './common';
+import { Creature } from '../shared/creatures/Creature';
+import type { CreatureHandle } from '../shared/creatures/Creature';
+import { BIPED_PRESETS, morphBiped } from '../shared/creatures/biped';
+import type { BipedParams } from '../shared/creatures/biped';
 
-export const walkerX = (t: number) => lerp(-7, 7, t);
+export const walkerX = (t: number) => lerp(-2.6, 2.6, t);
 const tNow = () => (world.reduced ? 0 : world.time);
 
 const treeVert = /* glsl */ `
@@ -31,7 +36,7 @@ uniform vec3 uCol, uFog; uniform float uAlpha;
 varying vec3 vN; varying float vY; varying float vDepth;
 void main(){
   float f = pow(1. - abs(normalize(vN).z), 2.);
-  vec3 c = uCol * (.05 + f * .45 + max(0., vY) * .05);
+  vec3 c = uCol * (.035 + f * .38 + max(0., vY) * .04);
   c = mix(c, uFog, smoothstep(8., 34., vDepth));
   gl_FragColor = vec4(c, uAlpha);
 }`;
@@ -47,7 +52,8 @@ function treeMat(col: string, acacia: number, canopy: number) {
 export default function Savanna() {
   const scene = useScene();
   const q = world.quality;
-  const walk = useMemo(newWalk, []);
+  const hero = useRef<CreatureHandle>(null);
+  const heroParams = useMemo(() => ({}), []);
   const walker = useRef<THREE.Group>(null);
   const R = useMemo(() => {
     const r = rng(11);
@@ -68,7 +74,20 @@ export default function Savanna() {
     };
     const forest = mk(nTree, false), ac = mk(nAc, true);
     const trunkG = new THREE.CylinderGeometry(0.07, 0.13, 1, 6); trunkG.translate(0, 0.5, 0);
-    const canG = new THREE.IcosahedronGeometry(1, 1);
+    // lumpy cloud canopy: several displaced blobs merged into one geometry
+    const blobs: THREE.BufferGeometry[] = [];
+    for (let b = 0; b < 7; b++) {
+      let g: THREE.BufferGeometry = new THREE.IcosahedronGeometry(1, 3); g.deleteAttribute('normal'); g.deleteAttribute('uv'); g = mergeVertices(g, 1e-4);
+      const rr = 0.5 + r() * 0.35, ox = (r() - 0.5) * 1.1, oy = (r() - 0.35) * 0.8, oz = (r() - 0.5) * 1.1;
+      const pa = g.attributes.position;
+      for (let i = 0; i < pa.count; i++) {
+        const x = pa.getX(i), y = pa.getY(i), z = pa.getZ(i);
+        const n = 1 + 0.12 * Math.sin(x * 5 + b) * Math.cos(z * 4 + y * 3);
+        pa.setXYZ(i, x * rr * n + ox, y * rr * n * 0.8 + oy, z * rr * n + oz);
+      }
+      g.computeVertexNormals(); blobs.push(g);
+    }
+    const canG = mergeGeometries(blobs)!; blobs.forEach((g) => g.dispose());
     const attach = (g: THREE.BufferGeometry, rs: Float32Array) => { const geo = g.clone(); geo.setAttribute('aR', new THREE.InstancedBufferAttribute(rs, 1)); return geo; };
     const geos = [attach(trunkG, forest.rs), attach(canG, forest.rs), attach(trunkG, ac.rs), attach(canG, ac.rs)];
     trunkG.dispose(); canG.dispose();
@@ -80,7 +99,7 @@ export default function Savanna() {
     const meshes = [inst(geos[0], mats[0], forest.trunkM), inst(geos[1], mats[1], forest.canM), inst(geos[2], mats[2], ac.trunkM), inst(geos[3], mats[3], ac.canM)];
 
     // grass
-    const nG = Math.floor(2600 * q);
+    const nG = Math.floor(6200 * q);
     const bg = new THREE.InstancedBufferGeometry();
     bg.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-.5, 0, 0, .5, 0, 0, -.36, .5, 0, .36, .5, 0, 0, 1, 0]), 3));
     bg.setIndex([0, 1, 2, 1, 3, 2, 2, 3, 4]);
@@ -102,9 +121,9 @@ export default function Savanna() {
         varying float vY; varying float vDepth; varying float vR;
         void main(){
           float vis = step(aR.x, mix(.28, 1., uDry));
-          float h = (.2 + aR.y * .3) * mix(.8, 1.2, uDry) * vis * uAlpha;
+          float h = (.14 + aR.y * .3) * mix(.8, 1.2, uDry) * vis * uAlpha;
           float a = aR.x * 62.8;
-          vec3 p = position; p.x *= .06 * (1. + uDry);
+          vec3 p = position; p.x *= .02 * (1. + uDry * .7);
           float sway = (sin(uTime * 1.5 + offset.x * .55 + offset.z * .3) * .28 + sin(uTime * 3.3 + offset.x * 2.1) * .07) * mix(.5, 1., uDry);
           vec3 w = vec3(cos(a) * p.x, p.y * h, sin(a) * p.x);
           w.x += sway * p.y * p.y * h;
@@ -205,12 +224,16 @@ export default function Savanna() {
     R.moteMat.uniforms.uDry.value = dry; R.moteMat.uniforms.uAlpha.value = w; R.moteMat.uniforms.uTime.value = tNow();
     const x = walkerX(t);
     if (walker.current) walker.current.position.x = x;
-    walk.phase = x * 3.5;
-    walk.u = lerp(0.2, 1, smoothstep(0.12, 0.8, t));
-    walk.alpha = w;
-    walk.stride = 0.55 + 0.45 * walk.u;
-    walk.hl = near(eventPos('bipedalism'), 0.6) * 0.9;
-    walk.int = 1.35 + near(eventPos('bipedalism'), 0.5) * 0.6;
+    const h = hero.current;
+    if (h) {
+      // Sahelanthropus stooped at the forest edge -> Ardipithecus upright on the open ground, straightening at 'bipedalism'
+      const p = h.params as BipedParams, up = smoothstep(0.1, 0.62, t);
+      morphBiped(p, BIPED_PRESETS.sahelanthropus, BIPED_PRESETS.ardipithecus, smoothstep(0.6, 0.9, t));
+      p.lean += (1 - up) * 0.08 - 0.03; p.kneeFlex += (1 - up) * 0.2 - 0.05; p.neckFwd += (1 - up) * 0.1;
+      h.look.w = w;
+      h.state.headYaw = Math.sin(tNow() * 0.4) * 0.25; h.state.headPitch = 0.1 * Math.sin(tNow() * 0.23) + 0.38 * (1 - up);
+      h.look.keyK = 0.75; h.look.amb = 0.3; h.look.rimK = 1.9 + near(eventPos('bipedalism'), 0.5) * 0.8;
+    }
   });
 
   return (
@@ -221,12 +244,12 @@ export default function Savanna() {
       <primitive object={R.grass} />
       <mesh position={[0, 1.6, -19]} material={R.hazeMat}><planeGeometry args={[160, 3.2]} /></mesh>
       <points geometry={R.mg} material={R.moteMat} frustumCulled={false} />
-      <group ref={walker} position={[-7, 0, 0]}><Walker ctl={walk} scale={1.55} color="#ffe2c4" /></group>
+      <group ref={walker} position={[-7, 0, 0]}><group scale={1.55}><Creature ref={hero} rig="biped" preset="sahelanthropus" params={heroParams} look={{ rimDir: [0.85, 0.3], keyDir: [-0.2, 0.3, 0.9] }} palette={{ rim: '#ffb070', key: '#a89078' }} /></group></group>
     </group>
   );
 }
 
 export const savannaCamera = (t: number) => {
   const x = walkerX(t);
-  return { pos: [x + 1.2, 1.3, 5] as [number, number, number], look: [x + 0.4, 1.25, 0] as [number, number, number], fov: 50 };
+  return { pos: [x - 0.4, 0.95, 3.2] as [number, number, number], look: [x - 0.85, 0.9, 0] as [number, number, number], fov: 46 };
 };

@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { eventPos, near, range, smoothstep } from '../../world/util';
 import { Backdrop, Plankton, makeBodyMat, makeTubeMat } from './shared';
+import { AquaCreature } from '../shared/creatures/AquaCreature';
+import type { AquaHandle } from '../shared/creatures/AquaCreature';
 
 const BOX: [number, number, number] = [20, 14, 8];
 type P = [number, number, number];
@@ -13,6 +15,7 @@ const path = (pts: P[], r: number) => new THREE.TubeGeometry(new THREE.CatmullRo
 export default function Synapsids() {
   const scene = useScene();
   const burst = useRef<THREE.Mesh>(null);
+  const sk = useRef<(AquaHandle | null)[]>([]);
   const S = useMemo(() => {
     const trunk = path([[0, -4, 0], [0, -2.6, 0], [0, -1.0, 0]], 0.1);
     const rep = [
@@ -58,6 +61,8 @@ export default function Synapsids() {
     set(S.trunkM, g1, 1.5); set(S.repM, g2, 1.0); set(S.synM, g2, 1.8 + n); set(S.mamM, g3, 2.0); set(S.repSubM, g2b, 1.0); set(S.synSubM, g2b, 1.8 + n);
     S.nodeM.uniforms.uOpacity.value = w * smoothstep(0.25, 0.35, t); S.nodeM.uniforms.uBoost.value = 0.6 + n * 2.5;
     S.ringGreen.uniforms.uOpacity.value = w * smoothstep(0.8, 0.95, t); S.ringBlue.uniforms.uOpacity.value = w * smoothstep(0.8, 0.95, t);
+    const sw = smoothstep(0.78, 0.95, t);
+    sk.current.forEach((a, i) => { if (a) { a.look.w = w * sw; a.state.mouth = 0.5 + 0.5 * Math.sin(t * 20 + i * 2); } });
     if (burst.current) burst.current.scale.setScalar(0.6 + ((t * 4) % 1) * 1.8);
     S.burstM.uniforms.uOpacity.value = w * n * (1 - smoothstep(0, 1, (t * 4) % 1)) * 0.7;
   });
@@ -65,16 +70,15 @@ export default function Synapsids() {
     <group>
       <Backdrop top="#10264a" bottom="#02030a" ray={0.2} rays={false} />
       <Plankton count={600} box={BOX} color="#9ec4ff" size={0.04} flow={2} center={[0, 0, -2]} />
-      <group position={[0, -0.6, 0]} scale={1.25}>
+      <group position={[1.4, -1.1, 0]} scale={1.15}>
         <mesh geometry={S.trunk} material={S.trunkM} frustumCulled={false} />
         {S.rep.map((g, i) => <mesh key={'r' + i} geometry={g} material={i === 0 ? S.repM : S.repSubM} frustumCulled={false} />)}
         {S.syn.map((g, i) => <mesh key={'s' + i} geometry={g} material={i === 0 ? S.synM : S.synSubM} frustumCulled={false} />)}
         <mesh geometry={S.mam} material={S.mamM} frustumCulled={false} />
         <mesh geometry={S.nodeG} material={S.nodeM} position={[0, -1.0, 0]} />
         <mesh ref={burst} geometry={S.burstG} material={S.burstM} position={[0, -1.0, 0]} />
-        <mesh geometry={S.ringG} material={S.ringBlue} position={[2.0, 3.2, 0]} />
-        <mesh geometry={S.ringG} material={S.ringGreen} position={[-2.0, 3.3, 0]} />
-        <mesh geometry={S.ringG} material={S.ringGreen} position={[-2.45, 3.3, 0]} />
+        <group position={[2.0, 3.55, 0.3]} scale={1.1}><AquaCreature ref={(a) => { sk.current[0] = a; }} kind="skull" params={{ diapsid: 0 }} resolution={0.8} /></group>
+        <group position={[-2.6, 3.7, 0.3]} scale={1.1} rotation={[0, Math.PI, 0]}><AquaCreature ref={(a) => { sk.current[1] = a; }} kind="skull" params={{ diapsid: 1 }} resolution={0.8} /></group>
       </group>
     </group>
   );

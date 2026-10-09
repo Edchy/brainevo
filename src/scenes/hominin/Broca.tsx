@@ -4,18 +4,24 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, lerp, near, smoothstep } from '../../world/util';
-import { Brain, makeGlowMat, newBrain, Shell } from './common';
+import { makeGlowMat, Shell } from './common';
+import { Brain, stageGrow, useBrainCtl } from '../shared/brain';
 
 const MOUTH = new THREE.Vector3(2.15, -0.55, 0);
 
 export default function Broca() {
   const scene = useScene();
-  const brain = useMemo(newBrain, []);
+  const brain = useBrainCtl({ grow: stageGrow('hominin') * 1.04, tissue: '#d8d0cc' });
+  const regs = useMemo(() => [
+    { at: 'broca' as const, color: '#ffa31c', i: 0 },
+    { at: 'motor' as const, color: '#ffd05a', i: 0 },
+  ], []);
+  brain.regions = regs;
   const shell = useMemo(() => ({ alpha: 0.4 }), []);
   const larynx = useMemo(() => ({ m: null as THREE.Mesh | null }), []);
   const R = useMemo(() => {
     const tract = new THREE.CatmullRomCurve3([new THREE.Vector3(0.1, -1.7, 0), new THREE.Vector3(0.15, -1.05, 0), new THREE.Vector3(0.45, -0.62, 0), new THREE.Vector3(1.1, -0.5, 0), MOUTH.clone()]);
-    const motor = new THREE.CatmullRomCurve3([new THREE.Vector3(1.05, 0.95, 0.3), new THREE.Vector3(1.55, 0.35, 0.3), new THREE.Vector3(2.0, -0.2, 0.15), MOUTH.clone().add(new THREE.Vector3(-0.08, 0.05, 0))]);
+    const motor = new THREE.CatmullRomCurve3([new THREE.Vector3(1.6, 1.3, 0.3), new THREE.Vector3(1.85, 0.55, 0.3), new THREE.Vector3(2.0, -0.2, 0.15), MOUTH.clone().add(new THREE.Vector3(-0.08, 0.05, 0))]);
     const mk = (c: THREE.CatmullRomCurve3, r: number) => new THREE.TubeGeometry(c, 140, r, 10);
     const tg = mk(tract, 0.075), mg = mk(motor, 0.025);
     const pulseMat = (col: [number, number, number]) => new THREE.ShaderMaterial({
@@ -56,7 +62,7 @@ export default function Broca() {
     const ev = near(eventPos('broca-vocal-tract'), 0.7);
     const on = smoothstep(0.3, 0.62, t);
     const ph = t * 60 + tm * 2;
-    brain.alpha = w; brain.s = 1.3; brain.broca = on * (0.7 + 0.3 * Math.sin(ph * 0.6)) + ev * 0.4; brain.motor = on * 0.3; brain.glow = 0.3; shell.alpha = w * 0.4;
+    brain.alpha = w; brain.size = 0.95; regs[0].i = (on * (0.8 + 0.3 * Math.sin(ph * 0.6)) + ev * 0.6) * 2.0; regs[1].i = on * 0.5 * (0.7 + 0.3 * Math.sin(ph * 0.9)); shell.alpha = w * 0.05;
     for (const m of [R.tm, R.mm]) { m.uniforms.uAlpha.value = w; m.uniforms.uPh.value = ph * 0.5; m.uniforms.uAmp.value = on; }
     R.waves.uniforms.uAlpha.value = w * on * 0.45; R.waves.uniforms.uPh.value = ph;
     R.skin.opacity = 0;
@@ -67,7 +73,7 @@ export default function Broca() {
 
   return (
     <group>
-      <group position={[0.45, 1.0, 0]}><Brain ctl={brain} /><Shell ctl={shell} scale={[1.5, 1.2, 1.1]} /></group>
+      <group position={[0.4, 1.2, 0]}><Brain ctl={brain} /><Shell ctl={shell} scale={[2.6, 1.9, 1.9]} /></group>
       <mesh geometry={R.tg} material={R.tm} frustumCulled={false} />
       <mesh geometry={R.mg} material={R.mm} frustumCulled={false} />
       <primitive object={R.faceLine} />

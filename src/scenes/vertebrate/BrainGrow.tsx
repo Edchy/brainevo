@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, range, rng, smoothstep } from '../../world/util';
-import { Backdrop, Plankton, TM, latheX, makeBodyMat, useBrain } from './shared';
+import { Backdrop, Plankton, TM, latheX, makeBodyMat } from './shared';
+import { Brain, stageGrow, useBrainCtl } from '../shared/brain';
 
 const BOX: [number, number, number] = [20, 11, 8];
 
@@ -31,7 +32,9 @@ export default function BrainGrow() {
   const grp = useRef<THREE.Group>(null);
   const eyeL = useRef<THREE.Mesh>(null);
   const eyeR = useRef<THREE.Mesh>(null);
-  const { geo, mat } = useBrain(220, 44);
+  const brain = useBrainCtl({ grow: 0, tissue: '#cfd9e2' });
+  const stemGlow = useMemo(() => [{ at: 'brainstem' as const, color: '#42e8ff', i: 0 }, { at: 'pallium' as const, color: '#42e8ff', i: 0 }], []);
+  brain.regions = stemGlow;
   const stage = useMemo(() => {
     const head = latheX((x) => 1.05 * Math.sqrt(Math.max(0, 1 - Math.pow((x - 0.2) / 3.3, 2))) * (x > 1.5 ? 0.9 : 1), -3.1, 3.5, 80, 44, 0.95);
     const headM = makeBodyMat('#58b8ff', { rim: 0.5, base: 0.01, stripe: 0 });
@@ -60,17 +63,10 @@ export default function BrainGrow() {
     if (!scene.active) return;
     const f = world.stationF;
     const s = range(p16 - 0.45, p17 + 0.15, f);
-    const u = mat.uniforms;
-    u.uSw.value = smoothstep(0.05, 0.4, s);
-    u.uFold.value = smoothstep(0.38, 0.78, s);
-    u.uHemi.value = smoothstep(0.6, 0.98, s);
-    u.uWr.value = smoothstep(0.55, 1, s);
-    u.uTime.value = TM();
-    u.uSig.value = f * 2.5;
-    u.uOpacity.value = scene.weight;
-    u.uRim.value = 0.9 + near(p17, 0.7) * 0.8;
-    u.uBase.value = 0.07;
-    u.uBoost.value = 1 + near(p17, 0.7) * 1.5;
+    brain.grow = smoothstep(0.02, 0.98, s) * stageGrow('fish');
+    brain.alpha = scene.weight;
+    stemGlow[0].i = (0.25 + 0.2 * Math.sin(TM() * 2 + f * 3)) * (1 - smoothstep(0.5, 0.9, s)) + near(p17, 0.7) * 0.5;
+    stemGlow[1].i = smoothstep(0.55, 0.95, s) * (0.35 + 0.5 * near(p17, 0.7));
     stage.headM.uniforms.uOpacity.value = scene.weight * (1 - 0.35 * smoothstep(0.5, 1, s));
     stage.eyeM.uniforms.uOpacity.value = scene.weight * smoothstep(0.25, 0.6, s);
     stage.crestM.uniforms.uProg.value = range(p16 - 0.6, p16 + 0.5, f);
@@ -85,10 +81,10 @@ export default function BrainGrow() {
       <Backdrop top="#0b3a6e" bottom="#02060f" ray={0.35} />
       <Plankton count={600} box={BOX} color="#78c8ff" size={0.04} flow={-2} center={[0, 0, -2]} />
       <group ref={grp} position={[0, 0.2, 0]} scale={1.05}>
-        <mesh geometry={stage.head} material={stage.headM} frustumCulled={false} position={[0, -0.3, 0]} scale={[1.4, 1.35, 1.35]} />
-        <mesh geometry={geo} material={mat} frustumCulled={false} position={[0, 0.3, 0]} scale={1.4} />
-        <mesh ref={eyeL} geometry={stage.eyeG} material={stage.eyeM} position={[2.9, -0.1, 1.2]} />
-        <mesh ref={eyeR} geometry={stage.eyeG} material={stage.eyeM} position={[2.9, -0.1, -1.2]} />
+        <mesh geometry={stage.head} material={stage.headM} frustumCulled={false} position={[0, -0.3, 0]} scale={[1.0, 0.95, 0.95]} />
+        <Brain ctl={brain} position={[-0.2, 0.25, 0]} scale={1.5} />
+        <mesh ref={eyeL} geometry={stage.eyeG} material={stage.eyeM} position={[1.6, 0.0, 1.45]} />
+        <mesh ref={eyeR} geometry={stage.eyeG} material={stage.eyeM} position={[1.6, 0.0, -1.45]} />
         <points geometry={stage.cg} material={stage.crestM} frustumCulled={false} />
       </group>
     </group>

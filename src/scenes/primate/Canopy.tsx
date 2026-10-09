@@ -4,11 +4,12 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { easeInOutCubic, eventPos, lerp, near, range, rng, smoothstep } from '../../world/util';
-import { Figure, NOISE, ambientTime, makePose } from './common';
+import { NOISE, Primate, ambientTime, neutral, reach } from './common';
+import type { CreatureHandle } from './common';
 import { silhouetteMaterial } from '../mammal/kit';
 
 const PERCH: [number, number][] = [[-4.4, -0.8], [-1.2, 0.3], [1.9, -0.3], [4.9, 0.55]];
-const SCALE = 1.15;
+const SCALE = 1.5;
 
 const FOLIAGE_V = /* glsl */ `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`;
 const FOLIAGE_F = /* glsl */ `
@@ -69,23 +70,23 @@ const LAYERS: Layer[] = [
 
 function branchCurve(cx: number, cy: number, len: number, droop: number) {
   return new THREE.CatmullRomCurve3([
-    new THREE.Vector3(cx - len, cy + droop * 0.6, 0),
-    new THREE.Vector3(cx - len * 0.3, cy + droop * 0.1, 0.05),
-    new THREE.Vector3(cx + len * 0.4, cy - droop * 0.1, -0.05),
-    new THREE.Vector3(cx + len, cy - droop * 0.7, 0),
+    new THREE.Vector3(cx - len, cy + droop * 0.7, 0),
+    new THREE.Vector3(cx - len * 0.45, cy + droop * 0.02, 0.03),
+    new THREE.Vector3(cx + len * 0.45, cy - droop * 0.02, -0.03),
+    new THREE.Vector3(cx + len, cy - droop * 0.8, 0),
   ]);
 }
 
 export default function Canopy() {
   const scene = useScene();
-  const pose = useMemo(makePose, []);
   const fig = useRef<THREE.Group>(null);
+  const hp = useRef<CreatureHandle>(null);
   const shafts = useRef<THREE.ShaderMaterial[]>([]);
   const layerMats = useRef<THREE.ShaderMaterial[]>([]);
   const flyMat = useRef<THREE.ShaderMaterial>(null);
 
   const branches = useMemo(
-    () => PERCH.map(([x, y], i) => new THREE.TubeGeometry(branchCurve(x, y - 0.06, 1.7, 0.25 * (i % 2 ? 1 : -1)), 28, 0.07 + (i % 2) * 0.02, 7)),
+    () => PERCH.map(([x, y], i) => new THREE.TubeGeometry(branchCurve(x, y - 0.07, 2.3, 0.25 * (i % 2 ? 1 : -1)), 32, 0.065 + (i % 2) * 0.015, 8)),
     [],
   );
   const branchMat = useMemo(() => silhouetteMaterial('#a9bcd6', '#000000', 2.4, 1.1), []);
@@ -145,24 +146,35 @@ export default function Canopy() {
     const e = easeInOutCubic(air);
     const x = lerp(a[0], b[0], e);
     const baseY = lerp(a[1], b[1], e);
-    const arc = Math.sin(air * Math.PI) * 0.7;
+    const arc = Math.sin(air * Math.PI) * 0.42;
     const g = fig.current;
-    if (g) {
-      g.position.set(x, baseY + arc + 0.05, 0.2);
-      g.rotation.z = (b[1] - a[1] > 0 ? 1 : -1) * Math.sin(air * Math.PI) * 0.15 - 0.35 * Math.sin(air * Math.PI);
-      g.rotation.y = Math.PI / 2 - 0.2; // profile, facing +x
-    }
+    const h = hp.current;
     const inAir = Math.sin(air * Math.PI);
-    pose.lean = 0.35 * crouch - 0.45 * inAir;
-    pose.y = -0.1 * crouch;
-    pose.aL = [-0.6 - 1.5 * inAir + crouch * 0.2, 0.2, -0.3 - 0.5 * inAir];
-    pose.aR = [-0.6 - 1.5 * inAir + crouch * 0.2, -0.2, -0.3 - 0.5 * inAir];
-    pose.lL = 0.5 * crouch + 0.9 * inAir;
-    pose.lR = 0.5 * crouch + 0.7 * inAir;
-    pose.tail = Math.sin(tm * 2 + t * 8) * 0.15 + inAir * 0.9;
-    pose.headYaw = 0;
-    pose.headPitch = -0.1 * inAir;
-    pose.alpha = 1;
+    const landing = smoothstep(0.82, 0.97, f) * (1 - smoothstep(0.97, 1.0, f));
+    const rising = Math.cos(air * Math.PI) * inAir; // +: going up during the first half
+    if (g) {
+      g.position.set(x, baseY + arc - 0.01, 0.2);
+      g.rotation.z = -0.5 * Math.sin(air * Math.PI * 2) * 0.55 * (b[1] > a[1] ? 1 : 0.7) * (air > 0 && air < 1 ? 1 : 0);
+    }
+    if (h) {
+      const st = h.state, pm = st.pm;
+      neutral(pm);
+      h.override.walk = 0; h.override.phase = 0;
+      st.crouch = 0.55 * crouch + 0.5 * landing;
+      pm.hand.length; // (targets are creature-local)
+      // airborne: arms thrown forward and up, hind legs trailing, tail streaming; grip closes on landing
+      reach(pm.hand, 1, 0.95, 0.62 + 0.1 * rising, 0.14, inAir * 1.0);
+      reach(pm.hand, -1, 0.95, 0.62 + 0.1 * rising, -0.14, inAir * 1.0);
+      reach(pm.foot, 1, -0.62, 0.3, 0.12, inAir);
+      reach(pm.foot, -1, -0.62, 0.3, -0.12, inAir);
+      pm.gripL = pm.gripR = 0.15 + 0.8 * smoothstep(0.72, 0.9, f) + 0.5 * crouch;
+      pm.footGrip = 0.3 + 0.6 * crouch + 0.5 * smoothstep(0.78, 0.92, f);
+      pm.tailPit = -0.3 * inAir; pm.tailCurl = -0.8 * inAir + 0.5 * (1 - inAir);
+      pm.brow = 0.3 + 0.4 * crouch;
+      st.headPitch = 0.25 * crouch + 0.1 * inAir;
+      st.alert = 0.4 + 0.4 * crouch;
+      h.look.w = w;
+    }
   });
 
   return (
@@ -204,7 +216,7 @@ export default function Canopy() {
         />
       </points>
       <group ref={fig} scale={SCALE}>
-        <Figure pose={pose} rim="#ffe2bd" rimGlow={2.3} eyeColor="#fff1c8" />
+        <Primate ref={hp} preset="prosimian" rim="#ffe2bd" look={{ splashK: 0.5, rimK: 2.0 }} />
       </group>
     </group>
   );

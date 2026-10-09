@@ -5,6 +5,8 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, rng, smoothstep } from '../../world/util';
 import { NOISE, Plankton, POINT_FRAG, makeGlass, pxScale, timeNow, useDispose } from './common';
+import { AquaCreature } from '../shared/creatures/AquaCreature';
+import type { AquaHandle } from '../shared/creatures/AquaCreature';
 
 const SRC = new THREE.Vector2(4.2, 0.6);
 const STEPS = 420, DT = 0.1, K = 12;
@@ -43,6 +45,9 @@ export default function Chemotaxis() {
   const bodies = useRef<THREE.InstancedMesh>(null), flags = useRef<THREE.InstancedMesh>(null);
   const d = useMemo(() => new THREE.Object3D(), []);
   const headings = useMemo(() => new Float32Array(NB), []);
+  const hero = useRef<AquaHandle>(null);
+  const heroG = useRef<THREE.Group>(null);
+  const heroState = useMemo(() => ({ tum: 0, ph: 0, last: 0, yaw: 0 }), []);
 
   const trailGeo = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -102,7 +107,7 @@ export default function Chemotaxis() {
     const span = smoothstep(0, 1, scene.t);
     const s = 0.3 + span * (STEPS - 60);
     const pulse = near(eventPos('bacterial-chemotaxis'), 0.6);
-    bodyMat.uniforms.uW.value = w; bodyMat.uniforms.uTime.value = time; flagMat.uniforms.uW.value = w * 0.7;
+    bodyMat.uniforms.uW.value = w * 0.55; bodyMat.uniforms.uTime.value = time; flagMat.uniforms.uW.value = w * 0.4;
     trailMat.uniforms.uPx.value = px; trailMat.uniforms.uW.value = w;
     foodMat.uniforms.uPx.value = px; foodMat.uniforms.uW.value = w; foodMat.uniforms.uTime.value = time;
     fieldMat.uniforms.uW.value = w; fieldMat.uniforms.uTime.value = time; fieldMat.uniforms.uBoost.value = pulse * 0.6;
@@ -121,7 +126,7 @@ export default function Chemotaxis() {
       let dh = target - headings[i]; dh = Math.atan2(Math.sin(dh), Math.cos(dh));
       headings[i] += dh * (tum ? 0.5 : 0.25);
       const h = headings[i];
-      d.position.set(a[0], a[1], z); d.rotation.set(0, 0, h - Math.PI / 2); d.scale.set(0.2, 0.2, 0.2);
+      d.position.set(a[0], a[1], z - 1.2); d.rotation.set(0, 0, h - Math.PI / 2); d.scale.set(0.17, 0.17, 0.17);
       d.updateMatrix(); bodies.current?.setMatrixAt(i, d.matrix);
       // flagellum behind the cell, flailing when tumbling
       const fa = h + Math.PI + (tum ? Math.sin(time * 14 + i) * 1.2 : Math.sin(time * 20 + i) * 0.12);
@@ -130,6 +135,21 @@ export default function Chemotaxis() {
       for (let k = 0; k < K; k++) {
         at(wk, Math.max(0, s - 1 - k * 1.1), b);
         tp.setXYZ(i * K + k, b[0], b[1], z);
+      }
+    }
+    // hero: the first walker's heading and run/tumble state drive a large modelled bacterium with its flagellar bundle
+    const hh = hero.current;
+    if (hh) {
+      const tumNow = walks[0].tum[Math.floor(s)] === 1 ? 1 : 0;
+      heroState.tum += (tumNow - heroState.tum) * 0.12;
+      const dt = Math.min(0.1, Math.max(0, time - heroState.last)); heroState.last = time;
+      heroState.ph += dt * (1.2 + 0.8 * (1 - heroState.tum));
+      hh.state.phase = heroState.ph; hh.state.mouth = heroState.tum;
+      hh.look.w = w; hh.look.glowK = 0.8 + pulse * 0.8;
+      let dyaw = headings[0] - heroState.yaw; dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw)); heroState.yaw += dyaw * 0.08;
+      if (heroG.current) {
+        heroG.current.position.set(-0.4 + span * 1.0 - 1.6, -0.35 + Math.sin(time * 0.5) * 0.08, 2.4);
+        heroG.current.rotation.set(0.25, 0.35, heroState.yaw * 0.85);
       }
     }
     if (bodies.current) bodies.current.instanceMatrix.needsUpdate = true;
@@ -144,6 +164,7 @@ export default function Chemotaxis() {
       </mesh>
       <Plankton count={90} box={[22, 12, 8]} color="#aaffcc" size={0.03} dir={[0.02, 0.02, 0]} />
       <points geometry={foodGeo} material={foodMat} frustumCulled={false} />
+      <group ref={heroG}><group scale={1.5}><AquaCreature ref={hero} kind="bacterium" /></group></group>
       <points geometry={trailGeo} material={trailMat} frustumCulled={false} />
       <instancedMesh ref={bodies} args={[undefined, undefined, NB]} material={bodyMat} frustumCulled={false}>
         <capsuleGeometry args={[0.5, 1.2, 4, 10]} />

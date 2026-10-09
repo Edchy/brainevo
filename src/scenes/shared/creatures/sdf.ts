@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /** Max primitives per creature (per-ray culling keeps the real per-pixel cost to a handful). */
-export const MAXP = 32;
+export const MAXP = 80;
 /** thin hair-like capsules (whiskers) kept outside the main primitive list: drawn as soft sub-pixel lines */
 export const MAXW = 16;
 
@@ -202,7 +202,7 @@ void main(){
       vec3 dv = w0 + rd*tP - u*sP;
       float rp = max(uA[i].w, uB[i].w)*max(1., 1./uP[i].z) + uP[i].x + 0.05;
       if (dot(dv,dv) < rp*rp){
-        mask |= 1u << uint(i); gIds[gCnt++] = i;
+        mask = 1u; gIds[gCnt++] = i;
         float r2 = uS[i].w + 0.05; float h2 = r2*r2 - c2;
         if (h2 > 0.){ float h = sqrt(h2); sn = min(sn, tc - h); sf = max(sf, tc + h); }
       }

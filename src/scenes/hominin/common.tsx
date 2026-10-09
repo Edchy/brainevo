@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
+import type { RigState } from '../shared/creatures/rig';
+import { easeOutCubic } from '../../world/util';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -51,113 +53,6 @@ float n3(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.-2.*f);
   return mix(mix(mix(hash31(i),hash31(i+vec3(1,0,0)),f.x),mix(hash31(i+vec3(0,1,0)),hash31(i+vec3(1,1,0)),f.x),f.y),
              mix(mix(hash31(i+vec3(0,0,1)),hash31(i+vec3(1,0,1)),f.x),mix(hash31(i+vec3(0,1,1)),hash31(i+vec3(1,1,1)),f.x),f.y),f.z); }
 `;
-
-/* ---------------------------------------------------------------- Walker */
-export interface WalkCtl { phase: number; u: number; alpha: number; hl: number; stride: number; int: number }
-export const newWalk = (): WalkCtl => ({ phase: 0, u: 1, alpha: 1, hl: 0, stride: 1, int: 1 });
-
-/** Stylised hominin figure, walks toward +x. u = 0 stooped & bent-kneed, 1 fully upright. hl lights spine+pelvis. */
-export function Walker({ ctl, color = '#ffc891', scale = 1 }: { ctl: WalkCtl; color?: string; scale?: number }) {
-  const mat = useRim(color, 0.1, 2.0);
-  const R = {
-    pelvis: useRef<THREE.Group>(null), torso: useRef<THREE.Group>(null), head: useRef<THREE.Group>(null),
-    th0: useRef<THREE.Group>(null), th1: useRef<THREE.Group>(null), sh0: useRef<THREE.Group>(null), sh1: useRef<THREE.Group>(null),
-    ar0: useRef<THREE.Group>(null), ar1: useRef<THREE.Group>(null), fa0: useRef<THREE.Group>(null), fa1: useRef<THREE.Group>(null),
-  };
-  const hlMat = useMemo(() => new THREE.MeshBasicMaterial({
-    color: new THREE.Color(3, 1.8, 0.7), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false,
-  }), []);
-  const geo = useMemo(() => ({
-    cap: (r: number, l: number) => new THREE.CapsuleGeometry(r, l, 4, 10),
-    sph: new THREE.SphereGeometry(1, 20, 14),
-    torus: new THREE.TorusGeometry(0.17, 0.018, 8, 32),
-  }), []);
-  const caps = useMemo(() => ({
-    thigh: geo.cap(0.075, 0.38), shin: geo.cap(0.058, 0.4), torso: geo.cap(0.13, 0.4),
-    arm: geo.cap(0.05, 0.22), fore: geo.cap(0.042, 0.22),
-  }), [geo]);
-  useEffect(() => () => {
-    Object.values(caps).forEach((g) => g.dispose()); geo.sph.dispose(); geo.torus.dispose(); hlMat.dispose();
-  }, [caps, geo, hlMat]);
-
-  useFrame(() => {
-    const c = ctl, ph = c.phase, b = 1 - c.u, s = Math.sin;
-    const P = R.pelvis.current;
-    if (!P) return;
-    P.position.y = 0.94 - b * 0.15 - 0.018 * Math.cos(2 * ph) * c.stride;
-    R.torso.current!.rotation.z = -b * 0.85 + s(ph) * 0.03;
-    R.head.current!.rotation.z = b * 0.6;
-    const legs: Array<[THREE.Group | null, THREE.Group | null, number]> = [[R.th0.current, R.sh0.current, 0], [R.th1.current, R.sh1.current, Math.PI]];
-    for (const [th, sh, off] of legs) {
-      th!.rotation.z = s(ph + off) * 0.55 * c.stride + b * 0.4;
-      sh!.rotation.z = -(0.12 + 0.85 * Math.max(0, Math.cos(ph + off)) * c.stride) - b * 0.55;
-    }
-    const arms: Array<[THREE.Group | null, THREE.Group | null, number]> = [[R.ar0.current, R.fa0.current, Math.PI], [R.ar1.current, R.fa1.current, 0]];
-    for (const [ar, fa, off] of arms) {
-      ar!.rotation.z = s(ph + off) * 0.5 * c.stride + b * 0.3;
-      fa!.rotation.z = 0.25 + b * 0.25 + 0.2 * Math.max(0, s(ph + off + 0.8));
-    }
-    mat.uniforms.uAlpha.value = c.alpha; mat.uniforms.uInt.value = c.int;
-    hlMat.opacity = c.hl * c.alpha;
-  });
-
-  const m = mat;
-  return (
-    <group scale={scale}>
-      <group ref={R.pelvis} position={[0, 0.94, 0]}>
-        <mesh geometry={geo.sph} material={m} scale={[0.15, 0.11, 0.16]} />
-        <mesh geometry={geo.torus} material={hlMat} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1.1, 1]} />
-        <group ref={R.torso}>
-          <mesh geometry={caps.torso} material={m} position={[0, 0.3, 0]} scale={[0.9, 1, 1.15]} />
-          {[0.08, 0.2, 0.32, 0.44, 0.56].map((y, i) => (
-            <mesh key={i} geometry={geo.sph} material={hlMat} position={[-0.11 + Math.sin(y * 5) * 0.03, y, 0]} scale={0.032} />
-          ))}
-          <group ref={R.head} position={[0.0, 0.7, 0]}>
-            <mesh geometry={geo.sph} material={m} scale={[0.115, 0.105, 0.095]} position={[0.02, 0.05, 0]} />
-            <mesh geometry={geo.sph} material={m} scale={[0.07, 0.05, 0.05]} position={[0.1, 0.0, 0]} />
-          </group>
-          {[0, 1].map((i) => (
-            <group key={i} ref={i ? R.ar1 : R.ar0} position={[0, 0.55, i ? -0.19 : 0.19]}>
-              <mesh geometry={caps.arm} material={m} position={[0, -0.18, 0]} />
-              <group ref={i ? R.fa1 : R.fa0} position={[0, -0.36, 0]}>
-                <mesh geometry={caps.fore} material={m} position={[0, -0.18, 0]} />
-              </group>
-            </group>
-          ))}
-        </group>
-        {[0, 1].map((i) => (
-          <group key={i} ref={i ? R.th1 : R.th0} position={[0, -0.02, i ? -0.09 : 0.09]}>
-            <mesh geometry={caps.thigh} material={m} position={[0, -0.28, 0]} />
-            <group ref={i ? R.sh1 : R.sh0} position={[0, -0.47, 0]}>
-              <mesh geometry={caps.shin} material={m} position={[0, -0.28, 0]} />
-              <mesh geometry={geo.sph} material={m} position={[0.07, -0.51, 0]} scale={[0.11, 0.035, 0.05]} />
-            </group>
-          </group>
-        ))}
-      </group>
-    </group>
-  );
-}
-
-/* ------------------------------------------------------------------ Bust */
-export interface BustCtl { int: number; alpha: number }
-/** Head-and-shoulders figure facing +x; rotate the parent to face the fire/centre. */
-export function Bust({ ctl, color = '#ffc891', scale = 1, headScale = 1 }: { ctl: BustCtl; color?: string; scale?: number; headScale?: number }) {
-  const mat = useRim(color, 0.08, 2.0);
-  const g = useMemo(() => ({
-    body: new THREE.CapsuleGeometry(0.2, 0.35, 4, 12), sh: new THREE.CapsuleGeometry(0.11, 0.4, 4, 10), head: new THREE.SphereGeometry(1, 22, 16),
-  }), []);
-  useEffect(() => () => { g.body.dispose(); g.sh.dispose(); g.head.dispose(); }, [g]);
-  useFrame(() => { mat.uniforms.uAlpha.value = ctl.alpha; mat.uniforms.uInt.value = ctl.int; });
-  return (
-    <group scale={scale}>
-      <mesh geometry={g.body} material={mat} position={[0, 0.3, 0]} scale={[0.75, 1, 1]} />
-      <mesh geometry={g.sh} material={mat} position={[0, 0.62, 0]} rotation={[Math.PI / 2, 0, 0]} />
-      <mesh geometry={g.head} material={mat} position={[0.03, 0.93, 0]} scale={[0.17 * headScale, 0.16 * headScale, 0.14 * headScale]} />
-      <mesh geometry={g.head} material={mat} position={[0.17, 0.88, 0]} scale={[0.07, 0.05, 0.06]} />
-    </group>
-  );
-}
 
 /* ----------------------------------------------------------------- Brain */
 export interface BrainCtl { s: number; alpha: number; motor: number; par: number; broca: number; glow: number; hue: number }
@@ -248,3 +143,27 @@ export function makeGlowMat(color: THREE.ColorRepresentation, power = 2) {
 export const GLSL_FOG = /* glsl */ `
 vec3 applyFog(vec3 c, vec3 fogC, float depth, float a, float b){ return mix(c, fogC, smoothstep(a, b, depth)); }
 `;
+
+/* --------------------------------------------------------------- Knapping */
+/** swing curve for one strike cycle f in 0..1: lift (0..0.6), fast fall (0.6..0.72), rebound. raise 0..1, hit = impact decay. */
+export function strikeCurve(f: number, active = 1) {
+  let raise: number;
+  if (f < 0.6) raise = easeOutCubic(f / 0.6); else if (f < 0.72) { const u = (f - 0.6) / 0.12; raise = 1 - u * u; } else raise = Math.max(0, 0.12 * Math.exp(-(f - 0.72) * 9) * Math.sin((f - 0.72) * 24 + 0.5));
+  const hit = f >= 0.72 ? Math.exp(-(f - 0.72) * 14) * active : 0;
+  return { raise, hit };
+}
+/**
+ * Crouched knapper: the holding hand (side -strike) cups a core at creature-local (0.30, 0.27), the striking hand (side `strike`, +1 = z+)
+ * swings a hammerstone down onto it. Writes only RigState fields.
+ */
+export function setKnap(s: RigState, raise: number, hit: number, tm: number, strike: 1 | -1, reach = 0.7, crouch = 0.85) {
+  const j = Math.sin(tm * 1.3) * 0.004;
+  s.crouch = crouch; s.armsFree = 0;
+  const hold = strike > 0 ? 'L' : 'R', sw = strike > 0 ? 'R' : 'L';
+  const set = (side: string, x: number, y: number, z: number, prop: number, grip: number, roll: number) => {
+    (s as unknown as Record<string, number>)['h' + side + 'w'] = 1; (s as unknown as Record<string, number>)['h' + side + 'x'] = x; (s as unknown as Record<string, number>)['h' + side + 'y'] = y;
+    (s as unknown as Record<string, number>)['h' + side + 'z'] = z; (s as unknown as Record<string, number>)['prop' + side] = prop; (s as unknown as Record<string, number>)['grip' + side] = grip; (s as unknown as Record<string, number>)['roll' + side] = roll;
+  };
+  set(hold, 0.3, 0.27 + j - hit * 0.006, -strike * 0.06, 7, 0.75, 0);
+  set(sw, 0.278 - 0.03 * raise * reach + 0.06 * raise, 0.39 + 0.42 * raise, strike * (0.075 + 0.02 * raise), 6, 0.85, strike * 0.2 * raise);
+}
