@@ -141,19 +141,29 @@ function World() {
 }
 
 const DPR_MAX = world.quality < 1 ? 1.25 : 1.75;
-const DPR_MIN = 0.6;
+// Discrete resolution steps, only ever stepping DOWN. Changing the pixel ratio resizes the canvas and rebuilds the
+// post-processing buffers, which blanks a frame, so it must be rare (never a continuous nudge). ?adaptive=0 disables it.
+const DPR_LEVELS = [DPR_MAX, 1.25, 1, 0.8].filter((v, i, a) => i === 0 || v < a[i - 1]);
+const ADAPTIVE = typeof location === 'undefined' || new URLSearchParams(location.search).get('adaptive') !== '0';
+const COOLDOWN_MS = 6000;
 
 export default function Stage() {
-  // adaptive resolution: if the GPU can't hold frame rate, quietly render fewer pixels
-  const [dpr, setDpr] = useState(DPR_MAX);
+  const [level, setLevel] = useState(0);
+  const lastChange = useRef(0);
+  const stepDown = () => {
+    const now = performance.now();
+    if (now - lastChange.current < COOLDOWN_MS) return;
+    lastChange.current = now;
+    setLevel((l) => Math.min(l + 1, DPR_LEVELS.length - 1));
+  };
   return (
     <div className="stage" aria-hidden="true">
       <Canvas
-        dpr={dpr}
+        dpr={DPR_LEVELS[level]}
         gl={{ antialias: false, powerPreference: 'high-performance', alpha: false }}
         camera={{ fov: 55, near: 0.05, far: 4000, position: DEFAULT_POSE.pos }}
       >
-        <PerformanceMonitor ms={250} iterations={6} flipflops={4} onChange={({ factor }) => setDpr(DPR_MIN + factor * (DPR_MAX - DPR_MIN))} />
+        {ADAPTIVE && <PerformanceMonitor ms={400} iterations={10} bounds={() => [30, 70]} flipflops={0} onDecline={stepDown} />}
         <World />
       </Canvas>
     </div>
