@@ -1,4 +1,5 @@
-import { Suspense, useMemo, useRef, useState } from 'react';
+import { Suspense, memo, useMemo, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
@@ -8,6 +9,7 @@ import { SCENES } from '../scenes';
 import { STYLE_DEFS } from '../style/registry';
 import { getSettings, useSettings } from '../style/store';
 import TitleLayer from '../style/titles';
+import PerfHud from './PerfHud';
 import { titleState } from '../style/titles/state';
 import Ambient from '../scenes/Ambient';
 import { SceneCtx } from './context';
@@ -16,7 +18,9 @@ import { clamp01, smoothstep } from './util';
 import type { CameraPose, SceneDef, SceneState } from './types';
 
 const DEFAULT_POSE: CameraPose = { pos: [0, 0, 6], look: [0, 0, 0], fov: 55 };
-const MOUNT_MARGIN = 2.2; // stations beyond the fade at which a scene is mounted (but hidden)
+const MOUNT_MARGIN = 3; // stations beyond the fade at which a scene is mounted (hidden) and its shaders pre-compiled
+const KEEP_DIST = 9; // once mounted, a scene stays mounted until the viewer is this many stations away.
+// Unmounting disposes materials, and three then has to RECOMPILE the shaders on the next mount (a visible stall).
 
 interface Resolved { def: SceneDef; a: number; b: number; fade: number; state: SceneState }
 
@@ -38,9 +42,32 @@ function resolve(): Resolved[] {
   });
 }
 
+/**
+ * The post-processing chain lives in its own memoised component. react-postprocessing REBUILDS the whole effect pass
+ * (recompiling the merged shader, which outputs a black frame) whenever its children change identity, and World
+ * re-renders every time a scene mounts/unmounts while scrolling. Keep this out of World's render path.
+ */
+const PostFX = memo(function PostFX({ bloom }: { bloom: RefObject<BloomEffect | null> }) {
+  if (import.meta.env.DEV) (window as unknown as Record<string, number>).__postRenders = ((window as unknown as Record<string, number>).__postRenders ?? 0) + 1;
+  const { style, titles } = useSettings();
+  const StyleEffects = STYLE_DEFS[style].Effects;
+  return (
+    <EffectComposer multisampling={0}>
+      <Bloom ref={bloom} intensity={0.5} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
+      <Vignette eskil={false} offset={0.2} darkness={0.7} />
+      {titles ? <TitleLayer /> : <></>}
+      <StyleEffects />
+    </EffectComposer>
+  );
+});
+
 function World() {
+  if (import.meta.env.DEV) (window as unknown as Record<string, number>).__worldRenders = ((window as unknown as Record<string, number>).__worldRenders ?? 0) + 1;
   const resolved = useMemo(resolve, []);
   const advance = useThree((s) => s.advance);
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const keep = useRef(new Set<string>());
   if (import.meta.env.DEV) {
     // hidden/throttled tabs never fire rAF: window.__tick(n) renders n frames (16ms apart) manually
     (window as unknown as Record<string, unknown>).__tick = (n = 1) => {
@@ -52,13 +79,12 @@ function World() {
   const bloom = useRef<BloomEffect>(null);
   const mountedKey = useRef('');
   const [mounted, setMounted] = useState<string[]>([]);
-  const { style, titles } = useSettings();
-  const StyleEffects = STYLE_DEFS[style].Effects;
   const pos = useRef(new THREE.Vector3(...DEFAULT_POSE.pos));
   const look = useRef(new THREE.Vector3(...DEFAULT_POSE.look));
   const tmp = useMemo(() => ({ p: new THREE.Vector3(), l: new THREE.Vector3(), bg: new THREE.Color(), c: new THREE.Color() }), []);
 
   useFrame((state, dt) => {
+    if (import.meta.env.DEV) { (world as unknown as Record<string, number>).__dt = dt; }
     dt = Math.min(dt, 0.1);
     world.time += dt;
     // smoothed signed velocity in viewports/sec
@@ -81,7 +107,8 @@ function World() {
       r.state.t = t; r.state.weight = w; r.state.active = w > 0.001;
       const g = groups.current[r.def.id];
       if (g) g.visible = r.state.active;
-      if (dist < r.fade + MOUNT_MARGIN) live.push(r.def.id);
+      if (dist < r.fade + MOUNT_MARGIN || (keep.current.has(r.def.id) && dist < KEEP_DIST)) { live.push(r.def.id); keep.current.add(r.def.id); }
+      else keep.current.delete(r.def.id);
       if (w <= 0.001) continue;
       sumW += w;
       const pose = r.def.camera ? r.def.camera(t) : DEFAULT_POSE;
@@ -124,18 +151,23 @@ function World() {
       <color attach="background" args={['#000000']} />
       <Ambient weight={ambientW} />
       {resolved.filter((r) => mounted.includes(r.def.id)).map((r) => (
-        <group key={r.def.id} visible={false} ref={(g) => { groups.current[r.def.id] = g; }}>
+        <group key={r.def.id} visible={false} ref={(g) => {
+          groups.current[r.def.id] = g;
+          if (g && !g.userData.warmed) {
+            // pre-compile this scene's shaders off the main thread so the first visible frame doesn't stall
+            g.userData.warmed = true;
+            g.visible = true;
+            gl.compileAsync(g, camera).catch(() => {});
+            g.visible = false;
+          }
+        }}>
           <SceneCtx.Provider value={r.state}>
             <Suspense fallback={null}><r.def.Component /></Suspense>
           </SceneCtx.Provider>
         </group>
       ))}
-      <EffectComposer multisampling={0}>
-        <Bloom ref={bloom} intensity={0.5} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
-        <Vignette eskil={false} offset={0.2} darkness={0.7} />
-        {titles ? <TitleLayer /> : <></>}
-        <StyleEffects />
-      </EffectComposer>
+      {!SAFE && <PostFX bloom={bloom} />}
+      {PERF && <PerfHud />}
     </>
   );
 }
@@ -146,6 +178,10 @@ const DPR_MAX = world.quality < 1 ? 1.25 : 1.75;
 const DPR_LEVELS = [DPR_MAX, 1.25, 1, 0.8].filter((v, i, a) => i === 0 || v < a[i - 1]);
 const ADAPTIVE = typeof location === 'undefined' || new URLSearchParams(location.search).get('adaptive') !== '0';
 const COOLDOWN_MS = 6000;
+const QS = typeof location === 'undefined' ? new URLSearchParams() : new URLSearchParams(location.search);
+const SAFE = QS.get('safe') === '1'; // no post-processing at all: isolates GPU load / pass problems
+const PERF = QS.get('perf') === '1';
+const DPR_OVERRIDE = Number(QS.get('dpr')) || 0;
 
 export default function Stage() {
   const [level, setLevel] = useState(0);
@@ -159,7 +195,7 @@ export default function Stage() {
   return (
     <div className="stage" aria-hidden="true">
       <Canvas
-        dpr={DPR_LEVELS[level]}
+        dpr={DPR_OVERRIDE || DPR_LEVELS[level]}
         gl={{ antialias: false, powerPreference: 'high-performance', alpha: false }}
         camera={{ fov: 55, near: 0.05, far: 4000, position: DEFAULT_POSE.pos }}
       >
