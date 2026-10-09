@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { Settings, StyleId, UiVariant } from './types';
 
-const STYLES: StyleId[] = ['ink', 'specimen', 'signal', 'cartoon', 'oil'];
+const STYLES: StyleId[] = ['original', 'ink', 'specimen', 'signal', 'cartoon', 'oil'];
 const UIS: UiVariant[] = ['minimal', 'hud', 'tidy'];
 const KEY = 'brainevo.settings.v1';
 

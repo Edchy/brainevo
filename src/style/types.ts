@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-export type StyleId = 'ink' | 'specimen' | 'signal' | 'cartoon' | 'oil';
+export type StyleId = 'original' | 'ink' | 'specimen' | 'signal' | 'cartoon' | 'oil';
 export type UiVariant = 'minimal' | 'hud' | 'tidy';
 
 export interface StyleDef {
