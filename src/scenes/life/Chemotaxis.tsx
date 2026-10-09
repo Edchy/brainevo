@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, rng, smoothstep } from '../../world/util';
-import { Backdrop, NOISE, Plankton, POINT_FRAG, makeGlass, pxScale, timeNow, useDispose } from './common';
+import { NOISE, Plankton, POINT_FRAG, makeGlass, pxScale, timeNow, useDispose } from './common';
 
 const SRC = new THREE.Vector2(4.2, 0.6);
 const STEPS = 420, DT = 0.1, K = 12;
@@ -32,7 +32,7 @@ function simulate(seed: number): Walk {
   return { x, y, tum };
 }
 
-const NB = 90;
+const NB = 44;
 
 /** run-and-tumble bacteria climbing a nutrient gradient. Fully scrubbable: positions are sampled from precomputed walks. */
 export default function Chemotaxis() {
@@ -69,15 +69,16 @@ export default function Chemotaxis() {
     fragmentShader: /* glsl */ `varying vec3 vP; uniform float uTime,uW,uBoost; uniform vec2 uSrc; ${NOISE}
       void main(){ vec2 q=vP.xy-uSrc; float d=length(q);
         float n=fbm(vec3(vP.xy*.45+vec2(uTime*.05,0.),uTime*.08));
-        float f=exp(-d/4.2)*(.55+1.1*n);
+        float f=exp(-d/3.0)*(.6+.8*n);
+        f*=f;
         float iso=smoothstep(.04,0.,abs(fract(f*7.)-.5)-.44)*f;
-        vec3 c=vec3(.9,.65,.15)*f*.6+vec3(1.,.9,.4)*iso*.25+vec3(.15,.5,.35)*n*.08;
-        c+=vec3(1.4,.9,.3)*exp(-d*d*1.2)*(1.+uBoost);
+        vec3 c=vec3(.9,.7,.3)*f*.10+vec3(1.,.9,.5)*iso*.10*smoothstep(.05,.3,f);
+        c+=vec3(1.6,1.1,.5)*exp(-d*d*2.2)*.8*(1.+uBoost);
         gl_FragColor=vec4(c*uW,1.); }`,
   }), []);
   // food particles
   const foodGeo = useMemo(() => {
-    const r = rng(5), n = Math.floor(260 * world.quality);
+    const r = rng(5), n = Math.floor(90 * world.quality);
     const p = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
       const a = r() * 6.28, rad = Math.pow(r(), 1.7) * 7;
@@ -138,11 +139,10 @@ export default function Chemotaxis() {
 
   return (
     <group>
-      <Backdrop color="#3fb089" caustics={0.18} shafts={0.18} haze={0.1} />
-      <mesh material={fieldMat} position={[0, 0, -2]} frustumCulled={false}>
+            <mesh material={fieldMat} position={[0, 0, -2]} frustumCulled={false}>
         <planeGeometry args={[30, 16]} />
       </mesh>
-      <Plankton count={500} box={[22, 12, 8]} color="#aaffcc" size={0.04} dir={[0.02, 0.02, 0]} />
+      <Plankton count={90} box={[22, 12, 8]} color="#aaffcc" size={0.03} dir={[0.02, 0.02, 0]} />
       <points geometry={foodGeo} material={foodMat} frustumCulled={false} />
       <points geometry={trailGeo} material={trailMat} frustumCulled={false} />
       <instancedMesh ref={bodies} args={[undefined, undefined, NB]} material={bodyMat} frustumCulled={false}>

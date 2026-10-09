@@ -47,7 +47,7 @@ void main(){
   float body=1.-smoothstep(-.01,.01,d);
   float n=fbm(vec3(p*3.,2.));
   vec3 c=vec3(.5,.28,.15)*(.08+.12*n)*(1.-smoothstep(-.4,0.,d)*.4);
-  c+=vec3(.9,.5,.2)*exp(-pow(d+.02,2.)*600.)*.35;
+  c+=vec3(1.,.8,.6)*exp(-pow(d+.015,2.)*2500.)*.9;
   gl_FragColor=vec4(c,body*uW*uFade);
 }`;
 
@@ -59,10 +59,10 @@ export default function Writing() {
     const q = world.quality;
     const rot = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(-0.18, 0.22, 0.03));
     const v = new THREE.Vector3();
-    const rows = 7, cols = 9, M = rows * cols, per = Math.max(10, Math.floor(46 * q));
+    const rows = 5, cols = 7, M = rows * cols, per = Math.max(10, Math.floor(80 * q));
     for (let m = 0; m < M; m++) {
       const row = Math.floor(m / cols), col = m % cols;
-      const hx = (col - (cols - 1) / 2) * 0.36 + (r() - 0.5) * 0.05, hy = ((rows - 1) / 2 - row) * 0.33 + (r() - 0.5) * 0.04;
+      const hx = (col - (cols - 1) / 2) * 0.46 + (r() - 0.5) * 0.04, hy = ((rows - 1) / 2 - row) * 0.42 + (r() - 0.5) * 0.03;
       const nw = 1 + Math.floor(r() * 2.2);
       const angs = [0, Math.PI / 2, Math.PI / 4, -Math.PI / 4];
       const g = GLYPHS[m % GLYPHS.length];
@@ -70,7 +70,7 @@ export default function Writing() {
         const w = k % nw;
         const ang = angs[(m + w * 2) % 4] + (r() - 0.5) * 0.15;
         const u = ((k / nw) | 0) / Math.ceil(per / nw);
-        const L = 0.2;
+        const L = 0.26;
         const ox = (w - (nw - 1) / 2) * 0.06;
         const lx = hx + ox + Math.cos(ang) * u * L, ly = hy + Math.sin(ang) * u * L;
         v.set(lx, ly, 0.02 + (1 - u) * 0.03).applyMatrix4(rot);
@@ -105,8 +105,8 @@ export default function Writing() {
       float tw = pow(.5+.5*sin(uTime*2.+aSeed.x*40.),4.);
       col = mix(vec3(1.2,.9,1.8), vec3(2.0,1.15,.45), e1);
       col = mix(col, vec3(.7,1.5,2.0), e2);
-      a = (.12 + .32*e1*(1.-e2)) * (1.+press*3.) * (.7+.6*tw);
-      a = mix(a, .55*ribbonA*(.7+.5*tw), e2);
+      a = (.03 + .55*e1*(1.-e2)) * (1.+press*2.) * (.8+.5*tw);
+      a = mix(a, .8*ribbonA*(.8+.4*tw), e2);
       size = mix(.4, .3+.35*(1.-aU)*e1, e1) + press*.3;
       `,
     });
@@ -125,11 +125,11 @@ export default function Writing() {
     const f = world.stationF;
     const e73 = eventPos('writing'), e74 = eventPos('alphabet');
     tickU(mat, scene, state.gl.getPixelRatio());
-    const e2 = range(e74 - 0.35, e74 + 0.5, f);
+    const e2 = range(e73 + 0.5, e74 - 0.08, f);
     mat.uniforms.uE1.value = range(e73 - 0.65, e73 + 0.15, f);
     mat.uniforms.uE2.value = e2;
-    tab.uniforms.uW.value = scene.weight;
-    tab.uniforms.uFade.value = 1 - e2 * 0.9;
+    tab.uniforms.uW.value = scene.weight * range(e73 - 0.3, e73 - 0.05, f);
+    tab.uniforms.uFade.value = 1 - Math.min(1, e2 * 1.6);
   });
   return (
     <group>

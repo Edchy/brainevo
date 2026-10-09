@@ -2,16 +2,14 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
-import { world } from '../../world/store';
-import { lerp, rng, smoothstep } from '../../world/util';
+import { lerp, smoothstep } from '../../world/util';
 import { Figure, ambientTime, makePose } from './common';
-import { roundSprite } from '../../world/sprite';
 
-const A_X = -3.1, B_X = 3.1, WALL_X = 1.2, FRUIT_X = -0.3;
+const A_X = -2.1, B_X = 3.2, WALL_X = 1.3, FRUIT_X = -0.4;
 
 const BUBBLE_F = /* glsl */ `varying vec2 vUv; uniform vec3 uCol; uniform float uI, uTime;
 void main(){ float d=length(vUv-.5)*2.; float edge=smoothstep(.9,.97,d)*smoothstep(1.,.97,d);
-  float fill=smoothstep(1.,.0,d)*.22; float g=edge*1.3+fill+pow(smoothstep(1.,.6,d),2.)*.05;
+  float fill=smoothstep(1.,.0,d)*.05; float g=edge*.75+fill+pow(smoothstep(1.,.6,d),2.)*.02;
   g *= .85+.15*sin(uTime*1.5);
   gl_FragColor=vec4(uCol*g*uI, g*uI*.9); }`;
 const BUBBLE_V = /* glsl */ `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`;
@@ -42,23 +40,13 @@ export default function TheoryOfMind() {
   const miniFruit = useRef<THREE.Mesh>(null);
   const miniMarks = useRef<THREE.Group>(null);
   const wall = useRef<THREE.Mesh>(null);
-  const dust = useRef<THREE.Points>(null);
 
   const coneGeo = useMemo(() => {
     const len = 1, g = new THREE.ConeGeometry(0.34, len, 28, 1, true);
     g.translate(0, -len / 2, 0); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI); // apex at origin, opening toward -x
     return g;
   }, []);
-  const dustGeo = useMemo(() => {
-    const r = rng(8);
-    const n = Math.floor(240 * world.quality);
-    const a = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) a.set([(r() - 0.5) * 24, r() * 8 - 0.5, -3 - r() * 8], i * 3);
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(a, 3));
-    return g;
-  }, []);
-  useEffect(() => () => { coneGeo.dispose(); dustGeo.dispose(); }, [coneGeo, dustGeo]);
+  useEffect(() => () => { coneGeo.dispose(); }, [coneGeo]);
 
   useFrame((state) => {
     if (!scene.active) return;
@@ -83,7 +71,7 @@ export default function TheoryOfMind() {
     if (fruit.current) {
       const carried = smoothstep(0.92, 1, t);
       fruit.current.position.set(lerp(FRUIT_X, ax + 0.7, carried), lerp(0.28, 0.75, carried), 0.2);
-      fruit.current.scale.setScalar(0.26 * (1 + 0.1 * Math.sin(tm * 3)));
+      fruit.current.scale.setScalar(0.17 * (1 + 0.1 * Math.sin(tm * 3)));
       (fruit.current.material as THREE.MeshBasicMaterial).opacity = w;
     }
     if (wall.current) (wall.current.material as THREE.MeshBasicMaterial).opacity = w * 0.95;
@@ -106,7 +94,7 @@ export default function TheoryOfMind() {
       (m.material as THREE.ShaderMaterial).uniforms.uI.value = w * (0.5 + 0.7 * k);
       (m.material as THREE.ShaderMaterial).uniforms.uTime.value = tm;
     };
-    bub(bubble.current, bx + 0.5, by, 3.2, think);
+    bub(bubble.current, bx + 0.7, by, 2.5, think);
     if (trail.current) {
       trail.current.position.set(ax, 0, 0);
       trail.current.children.forEach((c, i) => {
@@ -120,59 +108,54 @@ export default function TheoryOfMind() {
     }
     // miniature: B + wall + fruit + B's cone, inside the bubble
     if (mini.current) {
-      mini.current.position.set(bx + 0.5, by, 0.6);
-      mini.current.scale.setScalar(0.62 * think);
+      mini.current.position.set(bx + 0.7, by, 0.6);
+      mini.current.scale.setScalar(0.5 * think);
       mini.current.visible = think > 0.02;
     }
     if (miniCone.current) {
-      (miniCone.current.material as THREE.MeshBasicMaterial).opacity = w * (0.2 + 0.4 * infer);
+      (miniCone.current.material as THREE.MeshBasicMaterial).opacity = w * (0.1 + 0.25 * infer);
     }
     if (miniFruit.current) {
       (miniFruit.current.material as THREE.MeshBasicMaterial).opacity = w * (1 - 0.8 * infer); // unseen by B in A's model
     }
     if (miniMarks.current) miniMarks.current.scale.setScalar(infer);
     bub(bubble2.current, 0, 0, 0.0001, 0); // reserved (unused)
-    if (dust.current) (dust.current.material as THREE.PointsMaterial).opacity = w * 0.5;
   });
 
   return (
     <group>
-      <group ref={gA}><Figure tail={false} pose={pA} base="#0a0807" rim="#ffb86a" rimGlow={2.6} /></group>
-      <group ref={gB}><Figure tail={false} pose={pB} base="#070a0d" rim="#8fc8ff" rimGlow={2.4} eyeColor="#cfeaff" /></group>
+      <group ref={gA}><Figure tail={false} pose={pA} rim="#ffddb8" rimGlow={2.2} /></group>
+      <group ref={gB}><Figure tail={false} pose={pB} rim="#cfe2ff" rimGlow={1.8} eyeColor="#dbeaff" /></group>
       <mesh ref={fruit}>
         <sphereGeometry args={[1, 16, 12]} />
         <meshBasicMaterial color={[3, 0.5, 0.3]} toneMapped={false} transparent />
       </mesh>
       <mesh ref={wall} position={[WALL_X, 1.2, 0.2]}>
-        <boxGeometry args={[0.25, 2.4, 1.6]} />
-        <meshBasicMaterial color={[0.25, 0.35, 0.55]} toneMapped={false} transparent />
+        <boxGeometry args={[0.08, 2.4, 1.6]} />
+        <meshBasicMaterial color={[0.12, 0.15, 0.22]} toneMapped={false} transparent />
       </mesh>
       <mesh position={[WALL_X, 1.2, 0.2]}>
-        <boxGeometry args={[0.28, 2.43, 1.63]} />
-        <meshBasicMaterial color={[0.25, 0.5, 0.9]} wireframe toneMapped={false} transparent opacity={0.8} />
+        <boxGeometry args={[0.1, 2.43, 1.63]} />
+        <meshBasicMaterial color={[0.5, 0.6, 0.8]} wireframe toneMapped={false} transparent opacity={0.35} />
       </mesh>
       <mesh ref={cone} geometry={coneGeo}>
-        <meshBasicMaterial color={[0.5, 1.1, 2]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={[0.55, 0.75, 1.3]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
       </mesh>
-      <Bubble meshRef={bubble} col={[0.9, 1.2, 2]} />
+      <Bubble meshRef={bubble} col={[1.0, 1.1, 1.5]} />
       <group ref={trail}>
         {[0, 1, 2].map((i) => (
           <mesh key={i} renderOrder={6}>
             <planeGeometry args={[1, 1]} />
             <shaderMaterial transparent depthWrite={false} blending={THREE.AdditiveBlending} vertexShader={BUBBLE_V} fragmentShader={BUBBLE_F}
-              uniforms={{ uCol: { value: new THREE.Color(0.9, 1.2, 2) }, uI: { value: 0 }, uTime: { value: 0 } }} />
+              uniforms={{ uCol: { value: new THREE.Color(1.0, 1.1, 1.5) }, uI: { value: 0 }, uTime: { value: 0 } }} />
           </mesh>
         ))}
       </group>
       <group ref={mini}>
         {/* the "model of B's mind": B, the wall, the fruit, and what B can/cannot see */}
-        <mesh position={[3.2 * 0.3 + 0.4, 0.2, 0]}>
-          <capsuleGeometry args={[0.35, 0.8, 4, 10]} />
-          <meshBasicMaterial color={[0.4, 0.8, 1.6]} toneMapped={false} />
-        </mesh>
         <mesh position={[0.4, 0.05, 0]}>
-          <boxGeometry args={[0.2, 1.8, 0.5]} />
-          <meshBasicMaterial color={[0.7, 0.8, 1]} toneMapped={false} />
+          <boxGeometry args={[0.05, 1.8, 0.1]} />
+          <meshBasicMaterial color={[0.7, 0.8, 1.0]} toneMapped={false} />
         </mesh>
         <mesh ref={miniFruit} position={[-1.5, -0.55, 0]}>
           <sphereGeometry args={[0.28, 12, 10]} />
@@ -180,27 +163,20 @@ export default function TheoryOfMind() {
         </mesh>
         <mesh ref={miniCone} position={[1.1, 0.5, 0]} scale={[1.5, 1.2, 1.2]}>
           <coneGeometry args={[0.55, 1, 20, 1, true]} />
-          <meshBasicMaterial color={[0.5, 1.1, 2]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+          <meshBasicMaterial color={[0.55, 0.75, 1.3]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
         </mesh>
         <group ref={miniMarks} position={[-0.2, 0.4, 0.2]}>
           {/* "?" mark: bar and dot, glowing */}
-          <mesh position={[-0.5, 0.55, 0]}><boxGeometry args={[0.12, 0.45, 0.1]} /><meshBasicMaterial color={[2.5, 2.5, 1.4]} toneMapped={false} /></mesh>
-          <mesh position={[-0.5, 0.2, 0]}><sphereGeometry args={[0.09, 8, 8]} /><meshBasicMaterial color={[2.5, 2.5, 1.4]} toneMapped={false} /></mesh>
+          <mesh position={[-0.5, 0.55, 0]}><boxGeometry args={[0.12, 0.45, 0.1]} /><meshBasicMaterial color={[2.4, 2.4, 2.1]} toneMapped={false} /></mesh>
+          <mesh position={[-0.5, 0.2, 0]}><sphereGeometry args={[0.09, 8, 8]} /><meshBasicMaterial color={[2.4, 2.4, 2.1]} toneMapped={false} /></mesh>
         </group>
       </group>
-      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[9, 48]} />
-        <meshBasicMaterial color="#05080a" />
-      </mesh>
-      <points ref={dust} geometry={dustGeo}>
-        <pointsMaterial map={roundSprite()} alphaTest={0.01} size={0.09} color="#9fb8d8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
-      </points>
     </group>
   );
 }
 
 export const tomCamera = (t: number) => ({
-  pos: [lerp(-1.2, 0.6, t), 2.6, 8.2] as [number, number, number],
-  look: [0, 2.4, 0] as [number, number, number],
+  pos: [lerp(-3.0, -1.4, t), 2.6, 8.2] as [number, number, number],
+  look: [-1.8, 2.4, 0] as [number, number, number],
   fov: 50,
 });

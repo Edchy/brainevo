@@ -65,7 +65,7 @@ function sandMat() {
     fragmentShader: /* glsl */ `${NOISE}
       uniform vec3 uHor,uSun,uSunC; uniform float uSunI,uOp,uTime; varying vec3 vW;
       void main(){ float g=snoise(vec3(vW.xz*9.,vW.x*3.))*.5+.5; float b=snoise(vec3(vW.xz*.9,2.))*.5+.5;
-        float dry=smoothstep(${(1/0.24-0.2).toFixed(2)},${(1/0.24+0.8).toFixed(2)},vW.x); vec3 wet=vec3(.17,.14,.1), dr=vec3(.82,.68,.46);
+        float dry=smoothstep(${(1/0.24-0.2).toFixed(2)},${(1/0.24+0.8).toFixed(2)},vW.x); vec3 wet=vec3(.17,.14,.1), dr=vec3(.34,.28,.2);
         vec3 col=mix(wet,dr,dry)*(.7+.3*g)*(.8+.4*b);
         vec3 N=normalize(vec3(-sin(${TH.toFixed(4)}),cos(${TH.toFixed(4)}),0.)+vec3(0.,0.,(g-.5)*.2));
         float dif=max(dot(N,normalize(uSun)),0.)*.7+.25;
@@ -116,8 +116,8 @@ export default function Shore() {
     bGeo.dispose(); bMat.dispose();
   }, [S, bGeo, bMat]);
 
-  const cTop = useMemo(() => ({ a: new THREE.Color('#070b22'), b: new THREE.Color('#2b3f8a'), c: new THREE.Color('#4f93d8'), o: new THREE.Color() }), []);
-  const cHor = useMemo(() => ({ a: new THREE.Color('#2a1838'), b: new THREE.Color('#ff9a62'), c: new THREE.Color('#bfe0f2'), o: new THREE.Color() }), []);
+  const cTop = useMemo(() => ({ a: new THREE.Color('#04060f'), b: new THREE.Color('#0d1530'), c: new THREE.Color('#1b2d52'), o: new THREE.Color() }), []);
+  const cHor = useMemo(() => ({ a: new THREE.Color('#150c20'), b: new THREE.Color('#8a4a34'), c: new THREE.Color('#5f7589'), o: new THREE.Color() }), []);
   const cSun = useMemo(() => ({ a: new THREE.Color('#ff7a4a'), b: new THREE.Color('#ffd9a8'), o: new THREE.Color() }), []);
   const sunDir = useMemo(() => new THREE.Vector3(), []);
 
@@ -139,7 +139,7 @@ export default function Shore() {
     S.sand.uniforms.uHor.value.copy(cHor.o); S.sand.uniforms.uSun.value.copy(sunDir); S.sand.uniforms.uSunI.value = sunI;
     S.sand.uniforms.uSunC.value.copy(cSun.o); S.sand.uniforms.uOp.value = w; S.sand.uniforms.uTime.value = tm + t * 6;
     S.toon.uniforms.uSun.value.copy(sunDir); S.toon.uniforms.uSunC.value.copy(cSun.o).multiplyScalar(0.5 + sunI * 0.6);
-    S.toon.uniforms.uAmb.value.copy(cHor.o).multiplyScalar(0.6).add(cTop.o); S.toon.uniforms.uOp.value = w;
+    S.toon.uniforms.uAmb.value.copy(cHor.o).multiplyScalar(0.9).add(cTop.o).addScalar(0.1); S.toon.uniforms.uOp.value = w;
     // animal crawling out
     const ax = -1.8 + 8.0 * smoothstep(0.08, 0.93, t);
     const phase = ax * 4.2;

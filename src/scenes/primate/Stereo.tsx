@@ -16,7 +16,7 @@ const CONE_F = /* glsl */ `varying vec3 vP; varying vec3 vN; varying vec3 vV; un
 void main(){
   float f = pow(1.-abs(dot(normalize(vN),normalize(vV))),1.4);
   float along = smoothstep(0.,1.5,-vP.z)*(1.-smoothstep(5.,${CONE_LEN.toFixed(1)},-vP.z));
-  float a = (.05+f*.5)*along*uOp;
+  float a = (.025+f*.32)*along*uOp;
   gl_FragColor = vec4(uCol*a, a);
 }`;
 
@@ -24,24 +24,19 @@ const PTS_V = /* glsl */ `
 attribute float aS;
 uniform vec3 uEL, uER, uAL, uAR; uniform float uCos, uReveal, uOp, uTime, uPulse;
 varying vec3 vC; varying float vA;
-vec3 ramp(float x){ // near=warm -> far=cool
-  vec3 a=vec3(1.9,.55,.12), b=vec3(1.6,1.5,.3), c=vec3(.2,1.5,.9), d=vec3(.3,.35,1.7);
-  x=clamp(x,0.,1.);
-  return x<.33?mix(a,b,x/.33):x<.66?mix(b,c,(x-.33)/.33):mix(c,d,(x-.66)/.34);
-}
 void main(){
-  vec3 p = position; p.y += sin(uTime*.5+aS*30.)*.06;
+  vec3 p = position; p.y += sin(uTime*.5+aS*30.)*.05;
   bool inL = dot(normalize(p-uEL),uAL) > uCos;
   bool inR = dot(normalize(p-uER),uAR) > uCos;
   float depth = clamp(length(p-.5*(uEL+uER))/14.,0.,1.);
   vec3 col; float a;
-  if(inL&&inR){ col = mix(vec3(.9),ramp(depth),uReveal)*(1.+uPulse*.6); a=1.; }
-  else if(inL){ col = vec3(.15,.55,1.3); a=.5; }
-  else if(inR){ col = vec3(1.3,.25,.8); a=.5; }
-  else { col = vec3(.16,.2,.28); a=.35; }
+  if(inL&&inR){ // seen by both eyes: this is where depth is read, so this is where the light is
+    col = vec3(1.7,1.7,1.65)*mix(1., 1.-depth*.8, uReveal)*(1.+uPulse*.5); a = .95; }
+  else if(inL||inR){ col = vec3(.5,.62,.85); a = .16; }
+  else { col = vec3(.4,.45,.55); a = .035; }
   vC = col; vA = a*uOp;
   vec4 mv = modelViewMatrix*vec4(p,1.);
-  gl_PointSize = (a>.9? 5.5: 3.2)*(1.+aS*1.5)*60./ -mv.z * .22;
+  gl_PointSize = (a>.5? 3.2: 2.0)*(1.+aS*1.1)*60./ -mv.z * .22;
   gl_Position = projectionMatrix*mv;
 }`;
 const PTS_F = /* glsl */ `varying vec3 vC; varying float vA;
@@ -67,7 +62,7 @@ export default function Stereo() {
     return g;
   }, []);
   const ptsGeo = useMemo(() => {
-    const n = Math.floor(9000 * world.quality);
+    const n = Math.floor(1500 * world.quality);
     const r = rng(11);
     const pos = new Float32Array(n * 3);
     const s = new Float32Array(n);
@@ -137,17 +132,17 @@ export default function Stereo() {
       {/* head */}
       <mesh position={[0, 0, 0.55]} scale={[0.95, 0.5, 0.9]}>
         <sphereGeometry args={[1, 24, 16]} />
-        <meshBasicMaterial color="#080b12" />
+        <meshBasicMaterial color="#010102" />
       </mesh>
       <mesh ref={eyeL}><sphereGeometry args={[1, 12, 10]} /><meshBasicMaterial color={[3, 3, 2.4]} toneMapped={false} /></mesh>
       <mesh ref={eyeR}><sphereGeometry args={[1, 12, 10]} /><meshBasicMaterial color={[3, 3, 2.4]} toneMapped={false} /></mesh>
       <mesh ref={coneL} geometry={coneGeo} renderOrder={3}>
         <shaderMaterial ref={cmL} transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide}
-          vertexShader={CONE_V} fragmentShader={CONE_F} uniforms={{ uCol: { value: new THREE.Color(0.2, 0.7, 1.6) }, uOp: { value: 0 } }} />
+          vertexShader={CONE_V} fragmentShader={CONE_F} uniforms={{ uCol: { value: new THREE.Color(0.55, 0.8, 1.4) }, uOp: { value: 0 } }} />
       </mesh>
       <mesh ref={coneR} geometry={coneGeo} renderOrder={3}>
         <shaderMaterial ref={cmR} transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide}
-          vertexShader={CONE_V} fragmentShader={CONE_F} uniforms={{ uCol: { value: new THREE.Color(1.6, 0.3, 0.9) }, uOp: { value: 0 } }} />
+          vertexShader={CONE_V} fragmentShader={CONE_F} uniforms={{ uCol: { value: new THREE.Color(1.4, 0.85, 0.6) }, uOp: { value: 0 } }} />
       </mesh>
       <points geometry={ptsGeo} renderOrder={2}>
         <shaderMaterial ref={ptsMat} transparent depthWrite={false} blending={THREE.AdditiveBlending}
@@ -159,11 +154,11 @@ export default function Stereo() {
       </points>
       <mesh ref={target} position={[0, 0, -6]}>
         <sphereGeometry args={[1, 20, 14]} />
-        <meshBasicMaterial color={[3, 1.2, 0.4]} toneMapped={false} transparent />
+        <meshBasicMaterial color={[2.8, 2.6, 2.2]} toneMapped={false} transparent />
       </mesh>
       <mesh ref={ring} position={[0, 0, -6]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.9, 1, 48]} />
-        <meshBasicMaterial color={[2, 1.4, 0.6]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color={[1.6, 1.5, 1.3]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );

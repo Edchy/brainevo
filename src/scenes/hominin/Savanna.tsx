@@ -31,8 +31,8 @@ uniform vec3 uCol, uFog; uniform float uAlpha;
 varying vec3 vN; varying float vY; varying float vDepth;
 void main(){
   float f = pow(1. - abs(normalize(vN).z), 2.);
-  vec3 c = uCol * (.1 + f * .8 + max(0., vY) * .1);
-  c = mix(c, uFog, smoothstep(10., 55., vDepth));
+  vec3 c = uCol * (.05 + f * .45 + max(0., vY) * .05);
+  c = mix(c, uFog, smoothstep(8., 34., vDepth));
   gl_FragColor = vec4(c, uAlpha);
 }`;
 
@@ -52,12 +52,12 @@ export default function Savanna() {
   const R = useMemo(() => {
     const r = rng(11);
     // trees
-    const nTree = Math.floor(120 * Math.max(0.5, q));
-    const nAc = Math.floor(34);
+    const nTree = 16;
+    const nAc = 7;
     const mk = (n: number, acacia: boolean) => {
       const trunkM: THREE.Matrix4[] = [], canM: THREE.Matrix4[] = [], rs = new Float32Array(n);
       for (let i = 0; i < n; i++) {
-        const x = -34 + r() * 76, z = -(acacia ? 6 + r() * 30 : 3 + r() * 28);
+        const x = -22 + r() * 44, z = -(acacia ? 9 + r() * 22 : 7 + r() * 20);
         const h = acacia ? 1.8 + r() * 1.4 : 3 + r() * 4, w = acacia ? 1 : 0.7 + r() * 0.8;
         rs[i] = r();
         trunkM.push(new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), new THREE.Quaternion(), new THREE.Vector3(w * 0.9, h, w * 0.9)));
@@ -80,13 +80,13 @@ export default function Savanna() {
     const meshes = [inst(geos[0], mats[0], forest.trunkM), inst(geos[1], mats[1], forest.canM), inst(geos[2], mats[2], ac.trunkM), inst(geos[3], mats[3], ac.canM)];
 
     // grass
-    const nG = Math.floor(13000 * q);
+    const nG = Math.floor(2600 * q);
     const bg = new THREE.InstancedBufferGeometry();
     bg.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-.5, 0, 0, .5, 0, 0, -.36, .5, 0, .36, .5, 0, 0, 1, 0]), 3));
     bg.setIndex([0, 1, 2, 1, 3, 2, 2, 3, 4]);
     const off = new Float32Array(nG * 3), ar = new Float32Array(nG * 2);
     for (let i = 0; i < nG; i++) {
-      off[i * 3] = -22 + r() * 44; off[i * 3 + 2] = -9 + r() * 10.5;
+      off[i * 3] = -16 + r() * 32; off[i * 3 + 2] = -5 + r() * 7;
       ar[i * 2] = r(); ar[i * 2 + 1] = r();
     }
     bg.setAttribute('offset', new THREE.InstancedBufferAttribute(off, 3));
@@ -102,7 +102,7 @@ export default function Savanna() {
         varying float vY; varying float vDepth; varying float vR;
         void main(){
           float vis = step(aR.x, mix(.28, 1., uDry));
-          float h = (.3 + aR.y * .45) * mix(.8, 1.35, uDry) * vis * uAlpha;
+          float h = (.2 + aR.y * .3) * mix(.8, 1.2, uDry) * vis * uAlpha;
           float a = aR.x * 62.8;
           vec3 p = position; p.x *= .06 * (1. + uDry);
           float sway = (sin(uTime * 1.5 + offset.x * .55 + offset.z * .3) * .28 + sin(uTime * 3.3 + offset.x * 2.1) * .07) * mix(.5, 1., uDry);
@@ -119,9 +119,9 @@ export default function Savanna() {
         varying float vY; varying float vDepth; varying float vR;
         void main(){
           vec3 lo = mix(vec3(.01, .07, .04), vec3(.16, .09, .03), uDry);
-          vec3 hi = mix(vec3(.14, .55, .3), vec3(1., .72, .28), uDry) * (.45 + vR * .3);
+          vec3 hi = mix(vec3(.08, .3, .2), vec3(.7, .5, .22), uDry) * (.2 + vR * .2);
           vec3 c = mix(lo, hi, vY * vY);
-          c = mix(c, uFog, smoothstep(8., 40., vDepth));
+          c = mix(c, uFog, smoothstep(5., 18., vDepth));
           gl_FragColor = vec4(c, uAlpha);
         }`,
     });
@@ -136,8 +136,8 @@ export default function Savanna() {
         uniform float uDry, uAlpha; uniform vec3 uFog; varying vec3 vW; varying float vDepth;
         void main(){
           float n = n3(vec3(vW.x * 1.7, 0., vW.z * 1.7)) * .6 + n3(vec3(vW.x * 6., 1., vW.z * 6.)) * .4;
-          vec3 c = mix(vec3(.012, .045, .03), vec3(.2, .11, .045), uDry) * (.5 + n * .9);
-          c = mix(c, uFog, smoothstep(10., 70., vDepth));
+          vec3 c = mix(vec3(.012, .045, .03), vec3(.2, .11, .045), uDry) * (.25 + n * .45);
+          c = mix(c, uFog, smoothstep(6., 40., vDepth));
           gl_FragColor = vec4(c, uAlpha);
         }`,
     });
@@ -154,7 +154,7 @@ export default function Savanna() {
           vec3 sd = normalize(vec3(.25, .09, -1.));
           float s = max(dot(vD, sd), 0.);
           c += mix(vec3(.2, .45, .3), vec3(1., .65, .25), uDry) * (pow(s, 90.) * .9 + pow(s, 700.) * 6. * uDry + pow(s, 6.) * .18);
-          gl_FragColor = vec4(c * uAlpha * .6, 1.);
+          gl_FragColor = vec4(c * uAlpha * .38, 1.);
         }`,
     });
     const hazeMat = new THREE.ShaderMaterial({
@@ -166,11 +166,11 @@ export default function Savanna() {
           float y = vUv.y;
           float w = sin(vUv.x * 120. + uTime * 2.2 + y * 30.) * .5 + sin(vUv.x * 47. - uTime * 1.3 + y * 12.) * .5;
           float band = pow(1. - y, 3.) * smoothstep(0., .08, y) * (.55 + .45 * w);
-          gl_FragColor = vec4(vec3(1., .5, .2) * band * .22 * uDry * uAlpha, 1.);
+          gl_FragColor = vec4(vec3(1., .5, .2) * band * .05 * uDry * uAlpha, 1.);
         }`,
     });
     // dust motes
-    const nM = Math.floor(500 * q), mp = new Float32Array(nM * 3);
+    const nM = Math.floor(90 * q), mp = new Float32Array(nM * 3);
     for (let i = 0; i < nM; i++) { mp[i * 3] = -22 + r() * 44; mp[i * 3 + 1] = r() * 5; mp[i * 3 + 2] = -10 + r() * 14; }
     const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.BufferAttribute(mp, 3));
     const moteMat = new THREE.ShaderMaterial({
@@ -210,7 +210,7 @@ export default function Savanna() {
     walk.alpha = w;
     walk.stride = 0.55 + 0.45 * walk.u;
     walk.hl = near(eventPos('bipedalism'), 0.6) * 0.9;
-    walk.int = 1.0 + near(eventPos('bipedalism'), 0.5) * 0.6;
+    walk.int = 1.35 + near(eventPos('bipedalism'), 0.5) * 0.6;
   });
 
   return (
@@ -221,12 +221,12 @@ export default function Savanna() {
       <primitive object={R.grass} />
       <mesh position={[0, 1.6, -19]} material={R.hazeMat}><planeGeometry args={[160, 3.2]} /></mesh>
       <points geometry={R.mg} material={R.moteMat} frustumCulled={false} />
-      <group ref={walker} position={[-7, 0, 0]}><Walker ctl={walk} scale={1.3} /></group>
+      <group ref={walker} position={[-7, 0, 0]}><Walker ctl={walk} scale={1.55} color="#ffe2c4" /></group>
     </group>
   );
 }
 
 export const savannaCamera = (t: number) => {
   const x = walkerX(t);
-  return { pos: [x + 1.2, 1.3, 5] as [number, number, number], look: [x + 0.6, 1.1, 0] as [number, number, number], fov: 52 };
+  return { pos: [x + 1.2, 1.3, 5] as [number, number, number], look: [x + 0.4, 1.25, 0] as [number, number, number], fov: 50 };
 };

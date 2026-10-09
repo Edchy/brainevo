@@ -18,7 +18,7 @@ void main(){
   p+=aOff*(1.-.72*col)*(1.+.12*sin(uTime*.4+aMisc.w*20.));
   float lit=smoothstep(aMisc.y,aMisc.y+.35,uF);
   vCol=mix(vec3(.16,.12,.55),vec3(1.1,.4,.75),lit)*(1.+lit*1.2*aMisc.w);
-  vA=uW*(.1+.3*col)*(.5+.9*lit);
+  vA=uW*(.04+.11*col)*(.4+.8*lit);
   vec4 mv=modelViewMatrix*vec4(p,1.);
   gl_PointSize=clamp(aMisc.z*uPx/max(-mv.z,.1),1.,60.);
   gl_Position=projectionMatrix*mv;
@@ -49,8 +49,8 @@ void main(){
 const starFrag = /* glsl */ `
 varying vec3 vCol; varying float vA; varying float vSp;
 void main(){ vec2 q=gl_PointCoord-.5; float d=length(q)*2.; if(d>1.) discard;
-  float core=exp(-d*d*9.); float halo=.25*(1.-d)*(1.-d);
-  float spike=(exp(-abs(q.x)*60.)*exp(-abs(q.y)*5.)+exp(-abs(q.y)*60.)*exp(-abs(q.x)*5.))*(.3+vSp*.3);
+  float core=exp(-d*d*14.); float halo=.08*(1.-d)*(1.-d);
+  float spike=(exp(-abs(q.x)*60.)*exp(-abs(q.y)*5.)+exp(-abs(q.y)*60.)*exp(-abs(q.x)*5.))*(.12+vSp*.2);
   gl_FragColor=vec4(vCol*(core+halo+spike)*vA,1.); }`;
 
 const snVert = /* glsl */ `
@@ -84,11 +84,11 @@ export default function FirstStars() {
 
   const data = useMemo(() => {
     const r = rng(77);
-    const NN = 14;
+    const NN = 9;
     const nodes: THREE.Vector3[] = [];
     const tn: number[] = [];
     for (let i = 0; i < NN; i++) {
-      nodes.push(new THREE.Vector3((r() - 0.5) * 24, (r() - 0.5) * 12, -20 + r() * 22));
+      nodes.push(new THREE.Vector3((r() - 0.5) * 22, (r() - 0.5) * 11, -18 + r() * 18));
       tn.push(0.66 + r() * 0.5);
     }
     // supernova nodes
@@ -103,7 +103,7 @@ export default function FirstStars() {
       for (let k = 0; k < 2; k++) edges.push([i, d[k][1]]);
     }
     // gas
-    const G = Math.floor(13000 * q);
+    const G = Math.floor(5500 * q);
     const A = new Float32Array(G * 3), B = new Float32Array(G * 3), O = new Float32Array(G * 3), M = new Float32Array(G * 4);
     for (let i = 0; i < G; i++) {
       const [ia, ib] = edges[Math.floor(r() * edges.length)];
@@ -115,7 +115,7 @@ export default function FirstStars() {
       M.set([s, s < 0.5 ? tn[ia] : tn[ib], 0.12 + r() * 0.22, r()], i * 4);
     }
     // stars
-    const S = Math.floor(520 * q);
+    const S = Math.floor(240 * q);
     const P = new Float32Array(S * 3), SM = new Float32Array(S * 4);
     for (let i = 0; i < S; i++) {
       const n = Math.floor(r() * NN);
@@ -125,7 +125,7 @@ export default function FirstStars() {
       SM.set([tn[n] + r() * 0.14, 0.05 + mass * 0.16, mass, r()], i * 4);
     }
     // supernova particles
-    const PER = Math.floor(600 * q);
+    const PER = Math.floor(300 * q);
     const NS = snNodes.length;
     const C = new Float32Array(NS * PER * 4), D = new Float32Array(NS * PER * 4), CL = new Float32Array(NS * PER * 4);
     snNodes.forEach((n, k) => {
@@ -135,7 +135,7 @@ export default function FirstStars() {
         C.set([nodes[n].x, nodes[n].y, nodes[n].z, ts.get(n)!], i * 4);
         D.set([s * Math.cos(th), s * Math.sin(th), z, 0.25 + Math.pow(r(), 0.6) * 0.75], i * 4);
         const e = ELEMENTS[Math.floor(r() * ELEMENTS.length)];
-        CL.set([e[0], e[1], e[2], 0.08 + r() * 0.1], i * 4);
+        CL.set([e[0], e[1], e[2], 0.04 + r() * 0.06], i * 4);
       }
     });
     return { nodes, tn, ts, G, S, NS, PER, A, B, O, M, P, SM, C, D, CL };
@@ -157,15 +157,15 @@ export default function FirstStars() {
       const g = glows.current[i];
       const d1 = f - data.tn[i];
       let I = 0;
-      let sc = 1.6;
-      if (d1 > 0) { I += 2.0 * Math.exp(-d1 * 12) + 0.35 * Math.min(1, d1 * 6); }
+      let sc = 1.0;
+      if (d1 > 0) { I += 1.6 * Math.exp(-d1 * 12) + 0.28 * Math.min(1, d1 * 6); }
       const ts = data.ts.get(i);
-      let spike = 0.25;
+      let spike = 0.1;
       let cr = 0.8, cg = 0.9, cb = 1.3;
       if (ts !== undefined && f > ts) {
         const d2 = f - ts;
-        I += 9 * Math.exp(-d2 * 9); sc += 5 * (1 - Math.exp(-d2 * 6)) * Math.exp(-d2 * 1.5);
-        cr = 1.4; cg = 0.8; cb = 0.7; spike = 0.9;
+        I += 6 * Math.exp(-d2 * 9); sc += 3.2 * (1 - Math.exp(-d2 * 6)) * Math.exp(-d2 * 1.5);
+        cr = 1.4; cg = 0.8; cb = 0.7; spike = 0.3;
       }
       if (g) { g.position.copy(n); setGlow(g, sc, I * scene.weight, cr, cg, cb, spike); }
     });

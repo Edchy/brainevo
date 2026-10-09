@@ -110,7 +110,7 @@ export function Plankton({ count, box, color, size = 0.05, flow = 0, drift = [0.
   drift?: [number, number, number]; center?: [number, number, number];
 }) {
   const scene = useScene();
-  const n = Math.floor(count * world.quality);
+  const n = Math.floor(count * 0.4 * world.quality);
   const geo = useMemo(() => {
     const r = rng(11 + n);
     const a = new Float32Array(n * 4);
@@ -148,7 +148,7 @@ export function Backdrop({ top, bottom, ray = 0.5, rays = true }: {
       uniform vec3 uTop,uBot; uniform float uOp,uTime,uT,uRay; varying vec2 vUv;
       void main(){ vec3 c=mix(uBot,uTop,smoothstep(0.,1.,vUv.y));
         float r=snoise(vec3(vUv.x*5.+vUv.y*1.4+uT*0.8,uTime*.06,1.))*.5+.5; r=pow(r,3.)*smoothstep(0.2,1.,vUv.y);
-        gl_FragColor=vec4((c*(0.7+0.3*vUv.y)+uTop*r*uRay*1.5)*uOp,1.); }`,
+        gl_FragColor=vec4((c*(0.7+0.3*vUv.y)*.3+uTop*r*uRay*.45)*uOp,1.); }`,
   }), [top, bottom, ray, rays]);
   useEffect(() => () => mat.dispose(), [mat]);
   const dir = useMemo(() => new THREE.Vector3(), []);

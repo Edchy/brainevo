@@ -52,15 +52,15 @@ export default function Coop() {
     const s = t * NB * 1.35 + 0.0;
     infant(s, p);
     orb.current?.position.copy(p);
-    if (orb.current) { orb.current.scale.setScalar(0.1 * w); }
-    if (halo.current) { halo.current.position.copy(p); halo.current.quaternion.copy(st.camera.quaternion); halo.current.scale.setScalar(1.5 + Math.sin(world.reduced ? 0 : world.time * 3) * 0.08); R.halo.uniforms.uAlpha.value = w; }
-    if (floorGlow.current) { floorGlow.current.position.set(p.x, 0.02, p.z); R.floor.uniforms.uAlpha.value = w * 1.6; }
+    if (orb.current) { orb.current.scale.setScalar(0.13 * w); }
+    if (halo.current) { halo.current.position.copy(p); halo.current.quaternion.copy(st.camera.quaternion); halo.current.scale.setScalar(2.1 + Math.sin(world.reduced ? 0 : world.time * 3) * 0.08); R.halo.uniforms.uAlpha.value = w; }
+    if (floorGlow.current) { floorGlow.current.position.set(p.x, 0.02, p.z); R.floor.uniforms.uAlpha.value = w * 0.35; }
     const lp = R.lg.attributes.position as THREE.BufferAttribute, lc = R.lg.attributes.color as THREE.BufferAttribute;
     for (let i = 0; i < NB; i++) {
       const a = ang(i), cur = ((s % NB) + NB) % NB;
       let d = Math.abs(cur - i); d = Math.min(d, NB - d);
       const hold = Math.exp(-d * d * 1.3);
-      busts[i].int = 0.9 + hold * 1.5; busts[i].alpha = w;
+      busts[i].int = 0.07 + hold * 1.35; busts[i].alpha = w;
       hand.set(Math.cos(a) * (RAD - 0.7), 0.75 * SCL[i], Math.sin(a) * (RAD - 0.7));
       lp.setXYZ(i * 2, hand.x, hand.y, hand.z); lp.setXYZ(i * 2 + 1, p.x, p.y, p.z);
       const c = hold * w * 1.2; lc.setXYZ(i * 2, c, c * 0.55, c * 0.2); lc.setXYZ(i * 2 + 1, c * 0.2, c * 0.1, 0);
@@ -91,4 +91,4 @@ export default function Coop() {
   );
 }
 
-export const coopCamera = (t: number) => ({ pos: [Math.sin(t * 1.6) * 1.2, 3.0 - t * 0.4, 5.4] as [number, number, number], look: [0, 0.7, 0] as [number, number, number], fov: 52 });
+export const coopCamera = (t: number) => ({ pos: [Math.sin(t * 1.6) * 1.0, 2.2 - t * 0.3, 5.0] as [number, number, number], look: [0, 0.9, 0] as [number, number, number], fov: 48 });

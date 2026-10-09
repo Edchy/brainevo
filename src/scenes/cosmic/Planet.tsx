@@ -21,12 +21,13 @@ void main(){
   float f1=fbm(d*2.6+3.); float f2=fbm(d*8.+f1*2.);
   float diff=clamp(dot(n,uL),0.,1.);
   float ridge=abs(fbm(d*4.2+7.)-.5)*2.;
-  float wc=mix(.9,.05,uCrust);
+  float wc=mix(.26,.05,uCrust);
   float lava=1.-smoothstep(wc*.45,wc,ridge+f2*.04);
   float boil=.7+.6*fbm(d*14.+uTime*.15);
   float hotm=smoothstep(.3,.9,f2*boil+f1*.2);
   vec3 lavaC=mix(vec3(.55,.035,.0),vec3(2.4,.8,.12),hotm)*(.9+uHeat*.5)+vec3(2.5,1.4,.4)*pow(hotm,6.)*.5*(1.-uCrust);
-  vec3 crustC=mix(vec3(.018,.012,.01),vec3(.1,.07,.055),f1)*(.25+.9*diff);
+  vec3 crustC=mix(vec3(.012,.01,.01),vec3(.08,.07,.06),f1)*(.2+1.0*diff);
+  lavaC*=(.2+.8*smoothstep(-.15,.55,diff))*.7;
   vec3 land=mix(crustC,lavaC,lava);
   // ocean
   float o=smoothstep(0.,1.,uOcean*1.5-f1*.35+.05);
@@ -80,7 +81,7 @@ void main(){
   float nearp=smoothstep(uRp*1.05,uRp*1.6,length(p));
   float n=vnoise(vec3(p.x*.7,p.y*3.,p.z*.7));
   vCol=mix(vec3(.6,.32,.18),vec3(.35,.4,.6),n)*(.5+n);
-  vA=uW*.9*hide*nearp*(.4+.8*n)*(1.-smoothstep(11.,14.,aD.x));
+  vA=uW*.5*hide*nearp*(.4+.8*n)*(1.-smoothstep(11.,14.,aD.x));
   vec4 mv=modelViewMatrix*vec4(p,1.);
   gl_PointSize=clamp((.07+.12*aD.w)*uPx/max(-mv.z,.1),1.,10.);
   gl_Position=projectionMatrix*mv;
@@ -155,13 +156,13 @@ export default function Planet() {
 
   const geos = useMemo(() => {
     const r = rng(404);
-    const N = Math.floor(17000 * q);
+    const N = Math.floor(6500 * q);
     const D = new Float32Array(N * 4);
     for (let i = 0; i < N; i++) {
       const rad = 1.4 + Math.pow(r(), 0.8) * 11;
       D.set([rad, r() * 6.2832, gauss(r) * 0.55, r()], i * 4);
     }
-    const K = Math.floor(260 * q);
+    const K = Math.floor(110 * q);
     const H = new Float32Array(K * 4), R = new Float32Array(K * 4);
     for (let i = 0; i < K; i++) {
       const th = r() * 6.2832, la = Math.asin(r() * 2 - 1);
@@ -213,7 +214,7 @@ export default function Planet() {
     for (const u of [dU, rU, bU]) { u.uF.value = f; u.uPx.value = px; u.uW.value = w; u.uRp.value = Rp; }
 
     // proto-sun
-    setGlow(sun.current, 7 + 2 * Math.sin(time * 0.5), 1.9 * w * smoothstep(1.2, 1.6, f), 1, 0.8, 0.55, 0.15);
+    setGlow(sun.current, 4.5 + 1 * Math.sin(time * 0.5), 1.0 * w * smoothstep(1.2, 1.6, f), 1, 0.8, 0.55, 0.15);
     if (sun.current) sun.current.position.set(-15, 3.5, -7);
 
     // Theia, the Moon-forming impactor

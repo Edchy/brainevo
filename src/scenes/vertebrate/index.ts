@@ -59,7 +59,7 @@ export const vertebrateScenes: SceneDef[] = [
     id: 'v-shore', from: 'tetrapods-move-to-land', to: 'tetrapods-move-to-land', lead: 0.45, tail: 0.45, fade: 0.35,
     Component: Shore,
     camera: (t) => ({ pos: [0.6 + t * 3.4, -0.5 + smoothstep(0.15, 0.65, t) * 1.7, 6.4 - t * 1.0], look: [2.4 + t * 2.0, -0.4 + smoothstep(0.2, 0.8, t) * 0.8, 0], fov: 52 }),
-    mood: (t) => ({ bg: t < 0.3 ? '#04202a' : '#9a7f78', bloom: 0.7 + smoothstep(0.5, 0.9, t) * 0.2 }),
+    mood: (t) => ({ bg: t < 0.3 ? '#03121a' : '#0a0d14', bloom: 0.7 + smoothstep(0.5, 0.9, t) * 0.2 }),
   },
   {
     id: 'v-egg', from: 'amniotes-first-eggs', to: 'amniotes-first-eggs', lead: 0.45, tail: 0.45, fade: 0.35,

@@ -63,7 +63,7 @@ void main(){
   float c=fbm(vec3(q*2.,uTime*.02))*.7+fbm(vec3(q*6.,uTime*.04))*.3;
   float d=smoothstep(.35,.85,c);
   float dist=length(vW.xz-cameraPosition.xz);
-  vec3 col=vec3(.03,.045,.08)*d+vec3(.4,.5,.9)*d*d*uFlash*1.4;
+  vec3 col=vec3(.015,.022,.04)*d+vec3(.4,.5,.9)*d*d*uFlash*1.0;
   gl_FragColor=vec4(col*uAmt*smoothstep(260.,60.,dist),1.);
 }`;
 
@@ -109,7 +109,7 @@ const ECOL: Record<string, [THREE.Color, number]> = {
   P: [new THREE.Color(1.6, 0.8, 0.1), 0.46],
 };
 const MS = 0.6;
-const N_MOL = 58;
+const N_MOL = 14;
 const N_BEAD = 30;
 
 interface Placed { home: THREE.Vector3; mol: Mol; ta: number; rot: THREE.Quaternion; scat: THREE.Vector3[]; ph: number; first: number }
@@ -130,7 +130,7 @@ export default function Soup() {
     shaft: mkMat(`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`, shaftFrag, shaftU, { side: THREE.DoubleSide }),
     snow: mkMat(`attribute vec3 aP; attribute vec4 aM; uniform float uPx,uTime,uA; varying float vA;
               void main(){ vec3 p=aP+vec3(sin(uTime*.2+aM.x*30.),-mod(uTime*.12*(.5+aM.y)+aM.z*20.,16.)+8.,cos(uTime*.17+aM.y*30.))*vec3(.6,1.,.6); p.y=mod(p.y+8.,16.)-8.;
-              vec4 mv=modelViewMatrix*vec4(p,1.); gl_PointSize=clamp((.03+.05*aM.w)*uPx/max(-mv.z,.1),1.,6.); vA=uA*(.2+.6*aM.w); gl_Position=projectionMatrix*mv; }`, `varying float vA; void main(){ float d=length(gl_PointCoord-.5)*2.; if(d>1.) discard; gl_FragColor=vec4(vec3(.5,.9,1.)*(1.-d)*vA,1.); }`, snowU),
+              vec4 mv=modelViewMatrix*vec4(p,1.); gl_PointSize=clamp((.03+.05*aM.w)*uPx/max(-mv.z,.1),1.,6.); vA=uA*(.12+.4*aM.w); gl_Position=projectionMatrix*mv; }`, `varying float vA; void main(){ float d=length(gl_PointCoord-.5)*2.; if(d>1.) discard; gl_FragColor=vec4(vec3(.5,.9,1.)*(1.-d)*vA,1.); }`, snowU),
     spark: mkMat(`attribute vec4 aS; uniform float uF,uPx,uW; varying float vA;
               void main(){ float dt=uF-aS.w; float fl=dt>0.?exp(-dt*16.):0.; vA=uW*fl*(dt>0.?1.:0.);
               vec4 mv=modelViewMatrix*vec4(aS.xyz,1.); gl_PointSize=clamp(.9*(.2+fl)*uPx/max(-mv.z,.1),0.,120.); gl_Position=projectionMatrix*mv; }`, `varying float vA; void main(){ float d=length(gl_PointCoord-.5)*2.; if(d>1.) discard; float g=exp(-d*d*6.); gl_FragColor=vec4(vec3(1.4,1.8,3.)*g*vA*2.,1.); }`, sparkU),
@@ -151,7 +151,7 @@ export default function Soup() {
       const mol = MOLS[Math.floor(Math.pow(r(), 1.2) * MOLS.length)];
       const scat: THREE.Vector3[] = mol.atoms.map(() => new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).multiplyScalar(3));
       placed.push({
-        home: new THREE.Vector3((r() - 0.5) * 13, (r() - 0.5) * 6, (r() - 0.5) * 7 - 3),
+        home: new THREE.Vector3((r() - 0.5) * 11, (r() - 0.5) * 5, (r() - 0.5) * 6 - 3),
         mol, ta: 3.42 + r() * 0.5,
         rot: new THREE.Quaternion().setFromEuler(new THREE.Euler(r() * 6, r() * 6, r() * 6)), scat,
         ph: r() * 6.28, first: 0,
@@ -180,7 +180,7 @@ export default function Soup() {
       boltSegs.push(segs);
     }
     // rain
-    const NR = Math.floor(2600 * q);
+    const NR = Math.floor(1300 * q);
     const R = new Float32Array(NR * 2 * 4), E = new Float32Array(NR * 2);
     for (let i = 0; i < NR; i++) {
       const v = [(r() - 0.5) * 40, r() * 18, -r() * 30 + 4, r()];
@@ -188,7 +188,7 @@ export default function Soup() {
     }
     const rainGeo = makeGeo(NR * 2, { aR: [R, 4], aEnd: [E, 1] });
     // marine snow
-    const NS = Math.floor(2200 * q);
+    const NS = Math.floor(700 * q);
     const SP = new Float32Array(NS * 3), SM = new Float32Array(NS * 4);
     for (let i = 0; i < NS; i++) { SP.set([(r() - 0.5) * 30, (r() - 0.5) * 16, (r() - 0.5) * 24], i * 3); SM.set([r(), r(), r(), r()], i * 4); }
     const snowGeo = makeGeo(NS, { aP: [SP, 3], aM: [SM, 4] });
@@ -229,7 +229,7 @@ export default function Soup() {
     (oceanU.uBg.value as THREE.Color).set(under > 0.5 ? '#04202f' : '#02060e');
     skyU.uTime.value = time; skyU.uFlash.value = fl; skyU.uAmt.value = w;
     rainU.uTime.value = time; rainU.uAmt.value = rain * w;
-    shaftU.uTime.value = time; shaftU.uFlash.value = fl; shaftU.uI.value = 0.2 * w * under;
+    shaftU.uTime.value = time; shaftU.uFlash.value = fl; shaftU.uI.value = 0.08 * w * under;
     snowU.uPx.value = px; snowU.uTime.value = time; snowU.uA.value = w * (0.2 + 0.8 * under) * (1 - 0.5 * smoothstep(3.85, 4.15, f));
     sparkU.uF.value = f; sparkU.uPx.value = px; sparkU.uW.value = w * under;
 
@@ -243,7 +243,7 @@ export default function Soup() {
           T.p.copy(a).add(b).multiplyScalar(0.5);
           T.a.copy(b).sub(a); const len = T.a.length();
           T.q.setFromUnitVectors(T.up, T.a.normalize());
-          T.s.set(0.16, len, 0.16);
+          T.s.set(0.08, len, 0.08);
           T.m.compose(T.p, T.q, T.s); im.setMatrixAt(i, T.m);
         });
         im.instanceMatrix.needsUpdate = true;
@@ -325,11 +325,11 @@ export default function Soup() {
       am.instanceMatrix.needsUpdate = true; bm.instanceMatrix.needsUpdate = true;
       if (underGroup.current) underGroup.current.visible = true;
     } else if (underGroup.current) underGroup.current.visible = under > 0.01;
-    if (hemi.current) hemi.current.intensity = 0.9 + fl * 1.2;
+    if (hemi.current) hemi.current.intensity = 0.55 + fl * 1.0;
     if (dir.current) dir.current.intensity = 2.2 + fl * 3;
   });
 
-  const shafts = useMemo(() => [[-8, 0.3], [-3, -0.2], [2, 0.25], [7, -0.3], [11, 0.2]], []);
+  const shafts = useMemo(() => [[-6, 0.3], [5, -0.3]], []);
   return (
     <group>
       <group ref={aboveGroup}>

@@ -44,7 +44,7 @@ export default function Lineages() {
     });
     const halo = makeGlowMat('#ffffff', 2);
     const leafM = [new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 1.2, .6), toneMapped: false, transparent: true }), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.4, 2.4, 2), toneMapped: false, transparent: true }), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, .7, 2), toneMapped: false, transparent: true })];
-    const nS = Math.floor(900 * q), r = rng(30), sp = new Float32Array(nS * 3);
+    const nS = Math.floor(140 * q), r = rng(30), sp = new Float32Array(nS * 3);
     for (let i = 0; i < nS; i++) { sp[i * 3] = (r() - .5) * 26; sp[i * 3 + 1] = (r() - .5) * 20; sp[i * 3 + 2] = -r() * 14 - 1; }
     const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
     const sm = new THREE.PointsMaterial({ size: 0.05, color: '#cdb8ff', transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -60,7 +60,7 @@ export default function Lineages() {
     if (!scene.active) return;
     const w = scene.weight, t = scene.t, tm = world.reduced ? 0 : world.time;
     R.branches.forEach(({ mat, b }) => { mat.uniforms.uG.value = range(b.t0, b.t1, t); mat.uniforms.uAlpha.value = w; mat.uniforms.uT.value = tm + t * 10; });
-    R.flows.forEach(({ mat, f }) => { mat.uniforms.uG.value = range(f.t0, f.t0 + 0.12, t); mat.uniforms.uAlpha.value = w * 0.8; mat.uniforms.uT.value = tm + t * 10; });
+    R.flows.forEach(({ mat, f }) => { mat.uniforms.uG.value = range(f.t0, f.t0 + 0.12, t); mat.uniforms.uAlpha.value = w * 0.0; mat.uniforms.uT.value = tm + t * 10; });
     leaves.forEach((l, i) => {
       const b = BR[l.m === 0 ? 4 : l.m === 1 ? 1 : 5];
       const g = smoothstep(b.t1 - 0.05, b.t1 + 0.04, t), ev = near(eventPos(l.ev), 0.6);
@@ -69,7 +69,7 @@ export default function Lineages() {
     const gN = smoothstep(0.28, 0.36, t), gL = smoothstep(0.62, 0.7, t);
     bN.s = 0.42 * gN; bN.alpha = w * gN; bN.glow = near(eventPos('neanderthals'), 0.6); bN.motor = 0.3;
     bL.s = 0.29 * gL; bL.alpha = w * gL; bL.glow = near(eventPos('homo-naledi'), 0.6); bL.motor = 0.3;
-    R.sm.opacity = w * 0.5;
+    R.sm.opacity = w * 0.3;
     void lerp;
   });
 
@@ -87,4 +87,4 @@ export default function Lineages() {
   );
 }
 
-export const lineagesCamera = (t: number) => ({ pos: [0.4, lerp(-0.6, 1.9, t), 9.6 - t * 0.6] as [number, number, number], look: [0.3, lerp(-0.6, 1.9, t), 0] as [number, number, number], fov: 52 });
+export const lineagesCamera = (t: number) => ({ pos: [-2.1, lerp(-0.6, 1.9, t), 9.2 - t * 0.6] as [number, number, number], look: [-2.1, lerp(-0.6, 1.9, t), 0] as [number, number, number], fov: 52 });

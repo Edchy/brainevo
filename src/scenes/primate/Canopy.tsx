@@ -5,9 +5,10 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { easeInOutCubic, eventPos, lerp, near, range, rng, smoothstep } from '../../world/util';
 import { Figure, NOISE, ambientTime, makePose } from './common';
+import { silhouetteMaterial } from '../mammal/kit';
 
 const PERCH: [number, number][] = [[-4.4, -0.8], [-1.2, 0.3], [1.9, -0.3], [4.9, 0.55]];
-const SCALE = 0.62;
+const SCALE = 1.15;
 
 const FOLIAGE_V = /* glsl */ `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`;
 const FOLIAGE_F = /* glsl */ `
@@ -27,7 +28,7 @@ void main(){
   float a = smoothstep(.5,.56,d);
   if(a<.01) discard;
   float edge = 1.-smoothstep(.56,.74,d);
-  vec3 c = mix(uCol, uGlow, edge*.75 + leaf*.1);
+  vec3 c = mix(uCol, uGlow, edge*.5);
   gl_FragColor = vec4(c, a*uOp);
 }`;
 
@@ -52,21 +53,18 @@ void main(){
   float tw = pow(.5+.5*sin(uTime*(1.+aR.x*2.)+aR.w*40.),3.);
   vA = (.15+tw)*uOp*(1.+uGlowAmt);
   vec4 mv = modelViewMatrix*vec4(p,1.);
-  gl_PointSize = (14.+tw*14.)*aR.z*(1.+uGlowAmt*.3)/ -mv.z * 6.;
+  gl_PointSize = (9.+tw*9.)*aR.z*(1.+uGlowAmt*.3)/ -mv.z * 3.;
   gl_Position = projectionMatrix*mv;
 }`;
 const FLY_F = /* glsl */ `
 varying float vA;
 void main(){ vec2 c=gl_PointCoord-.5; float d=length(c)*2.; float g=smoothstep(1.,0.,d); g*=g;
-  gl_FragColor = vec4(vec3(1.6,1.9,.7)*g*vA, g*vA); }`;
+  gl_FragColor = vec4(vec3(1.5,1.6,1.3)*g*vA, g*vA); }`;
 
 interface Layer { z: number; h: number; col: string; glow: string; seed: number; top: number; bot: number; scroll: number }
 const LAYERS: Layer[] = [
-  { z: -16, h: 30, col: '#16483c', glow: '#5fb497', seed: 1.3, top: 0.55, bot: 0.4, scroll: 0.4 },
-  { z: -11, h: 24, col: '#0e382c', glow: '#46a07a', seed: 7.7, top: 0.6, bot: 0.45, scroll: 0.1 },
-  { z: -7, h: 18, col: '#0a2a21', glow: '#3a8a60', seed: 3.1, top: 0.7, bot: 0.5, scroll: 0.7 },
-  { z: -3.2, h: 12, col: '#06180f', glow: '#2b6c43', seed: 11.9, top: 0.75, bot: 0.55, scroll: 0.3 },
-  { z: 2.6, h: 6, col: '#010503', glow: '#123e22', seed: 5.5, top: 0.9, bot: 0.8, scroll: 0.9 },
+  { z: -16, h: 30, col: '#000201', glow: '#22332d', seed: 1.3, top: 0.55, bot: 0.5, scroll: 0.4 },
+  { z: -8, h: 20, col: '#000100', glow: '#17251f', seed: 3.1, top: 0.75, bot: 0.6, scroll: 0.7 },
 ];
 
 function branchCurve(cx: number, cy: number, len: number, droop: number) {
@@ -90,9 +88,9 @@ export default function Canopy() {
     () => PERCH.map(([x, y], i) => new THREE.TubeGeometry(branchCurve(x, y - 0.06, 1.7, 0.25 * (i % 2 ? 1 : -1)), 28, 0.07 + (i % 2) * 0.02, 7)),
     [],
   );
-  const branchMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#030604', transparent: true }), []);
+  const branchMat = useMemo(() => silhouetteMaterial('#a9bcd6', '#000000', 2.4, 1.1), []);
   const flyGeo = useMemo(() => {
-    const n = Math.floor(260 * world.quality);
+    const n = Math.floor(36 * world.quality);
     const r = rng(42);
     const pos = new Float32Array(n * 3);
     const aR = new Float32Array(n * 4);
@@ -109,7 +107,7 @@ export default function Canopy() {
 
   const shaftDefs = useMemo(() => {
     const r = rng(9);
-    return Array.from({ length: 6 }, (_, i) => ({ x: -9 + i * 3.6 + r() * 1.5, z: -4 - r() * 5, w: 1.6 + r() * 2.4, seed: r() * 10 }));
+    return Array.from({ length: 2 }, (_, i) => ({ x: -2 + i * 7 + r() * 1.5, z: -4 - r() * 5, w: 1.6 + r() * 2.4, seed: r() * 10 }));
   }, []);
 
   useFrame(() => {
@@ -118,24 +116,24 @@ export default function Canopy() {
     const w = scene.weight;
     const t = scene.t;
     const beat = near(eventPos('first-primates'), 0.8);
-    for (let i = 0; i < layerMats.current.length; i++) {
+    for (let i = 0; i < LAYERS.length; i++) {
       const m = layerMats.current[i];
       if (!m) continue;
       m.uniforms.uTime.value = tm;
-      m.uniforms.uOp.value = w;
+      m.uniforms.uOp.value = w * 0.9;
       m.uniforms.uScroll.value = LAYERS[i].scroll + t * 0.6 * (1 - (LAYERS[i].z + 18) / 24);
     }
     shafts.current.forEach((m, i) => {
       if (!m) return;
       m.uniforms.uTime.value = tm;
-      m.uniforms.uOp.value = w * (0.16 + beat * 0.2) * (0.6 + 0.4 * Math.sin(t * 5 + i));
+      m.uniforms.uOp.value = w * (0.1 + beat * 0.12) * (0.7 + 0.3 * Math.sin(t * 5 + i));
     });
     if (flyMat.current) {
       flyMat.current.uniforms.uTime.value = tm + t * 6;
       flyMat.current.uniforms.uOp.value = w;
       flyMat.current.uniforms.uGlowAmt.value = beat * 0.8;
     }
-    branchMat.opacity = w;
+    branchMat.uniforms.uW.value = w;
 
     // leap schedule: 3 hops
     const seg = Math.min(2.9999, t * 3);
@@ -147,7 +145,7 @@ export default function Canopy() {
     const e = easeInOutCubic(air);
     const x = lerp(a[0], b[0], e);
     const baseY = lerp(a[1], b[1], e);
-    const arc = Math.sin(air * Math.PI) * 1.15;
+    const arc = Math.sin(air * Math.PI) * 0.7;
     const g = fig.current;
     if (g) {
       g.position.set(x, baseY + arc + 0.05, 0.2);
@@ -191,7 +189,7 @@ export default function Canopy() {
             ref={(m) => { if (m) shafts.current[i] = m; }}
             transparent depthWrite={false} blending={THREE.AdditiveBlending}
             vertexShader={SHAFT_V} fragmentShader={SHAFT_F}
-            uniforms={{ uTime: { value: 0 }, uOp: { value: 0 }, uSeed: { value: s.seed }, uCol: { value: new THREE.Color(1.0, 0.85, 0.45) } }}
+            uniforms={{ uTime: { value: 0 }, uOp: { value: 0 }, uSeed: { value: s.seed }, uCol: { value: new THREE.Color(0.9, 0.95, 1.0) } }}
           />
         </mesh>
       ))}
@@ -206,14 +204,14 @@ export default function Canopy() {
         />
       </points>
       <group ref={fig} scale={SCALE}>
-        <Figure pose={pose} base="#07090a" rim="#ffc77a" rimGlow={2.8} eyeColor="#ffe9a8" />
+        <Figure pose={pose} rim="#ffe2bd" rimGlow={2.3} eyeColor="#fff1c8" />
       </group>
     </group>
   );
 }
 
 export const canopyCamera = (t: number) => ({
-  pos: [lerp(-3.4, 4.2, t), 0.3, 7] as [number, number, number],
-  look: [lerp(-3.0, 4.4, t), 0.1, 0] as [number, number, number],
+  pos: [lerp(-5.0, 2.8, t), 0.4, 7] as [number, number, number],
+  look: [lerp(-4.6, 3.0, t), -0.15, 0] as [number, number, number],
   fov: 50,
 });

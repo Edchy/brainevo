@@ -23,9 +23,9 @@ function discMat(color: string, glow: number) {
     fragmentShader: /* glsl */ `${NOISE}
       uniform vec3 uC; uniform float uOp,uGlow,uTime,uBoost; varying vec2 vUv; varying vec3 vP;
       void main(){ vec2 q=vUv*2.-1.; float r=length(q); if(r>1.) discard;
-        float rim=smoothstep(.9,1.,r)*smoothstep(1.,.97,r)*2.2; float rings=.5+.5*sin(r*26.-uTime*.8); rings=pow(rings,6.)*.35;
-        float tex=smoothstep(.4,.9,snoise(vec3(q*3.,uTime*.05))*.5+.5)*.25;
-        float spokes=pow(.5+.5*sin(atan(q.y,q.x)*12.),12.)*.2*smoothstep(.2,.9,r);
+        float rim=smoothstep(.9,1.,r)*smoothstep(1.,.97,r)*2.2; float rings=.5+.5*sin(r*26.-uTime*.8); rings=pow(rings,8.)*.18;
+        float tex=smoothstep(.4,.9,snoise(vec3(q*3.,uTime*.05))*.5+.5)*.12;
+        float spokes=pow(.5+.5*sin(atan(q.y,q.x)*12.),12.)*.08*smoothstep(.2,.9,r);
         float core=exp(-r*r*14.)*.7;
         vec3 c=uC*(.05+rim+rings+tex+spokes+core)*uGlow*uBoost; gl_FragColor=vec4(c*uOp,1.); }`,
   });
@@ -57,7 +57,7 @@ export default function ReptileBrain() {
     if (!scene.active) return;
     const w = scene.weight, t = scene.t, tm = TM(), n = near(p26, 0.8);
     const ex = smoothstep(0.08, 0.6, t);
-    const fadeBrain = 1 - smoothstep(0.05, 0.5, t) * 0.88;
+    const fadeBrain = 1 - smoothstep(0.05, 0.4, t);
     const u = mat.uniforms;
     u.uSw.value = 1; u.uFold.value = 0.5; u.uHemi.value = 0.3; u.uWr.value = 0.3; u.uTime.value = tm; u.uSig.value = t * 5;
     u.uOpacity.value = w * fadeBrain; u.uRim.value = 1.0; u.uBase.value = 0.07; u.uBoost.value = 1;

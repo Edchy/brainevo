@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
-import { world } from '../../world/store';
-import { eventPos, lerp, near, rng, smoothstep } from '../../world/util';
+import { eventPos, lerp, near, smoothstep } from '../../world/util';
 import { Figure, ambientTime, makePose } from './common';
 import type { Arm, Pose } from './common';
-import { roundSprite } from '../../world/sprite';
 
 const MZ = -2.4; // mirror plane z
 const MY = 2.0;
@@ -18,8 +16,8 @@ void main(){
   float diag = smoothstep(.06,.0,abs(fract((vUv.x*1.2+vUv.y*.9)*1.1-uTime*.02)-.5)-.44);
   float sheen = smoothstep(.015,.0,abs(vUv.x*.8+vUv.y-.95+sin(uTime*.2)*.05)) *.5;
   float vig = smoothstep(.75,.1,length(q*vec2(1.,1.3)));
-  float a = (.1+vig*.1+diag*.07+sheen*.12)*uOp;
-  vec3 c = vec3(.35,.55,.9)*(.6+sheen*.6) + vec3(2.,1.5,.7)*uWake*vig*.5;
+  float a = (.02+vig*.035+diag*.02+sheen*.1)*uOp;
+  vec3 c = vec3(.7,.8,1.)*(.6+sheen*.6) + vec3(1.8,1.7,1.5)*uWake*vig*.5;
   a += uWake*vig*.25*uOp;
   gl_FragColor = vec4(c*a, a);
 }`;
@@ -41,18 +39,6 @@ export default function Mirror() {
   const glass = useRef<THREE.ShaderMaterial>(null);
   const frame = useRef<THREE.MeshBasicMaterial>(null);
   const pulse = useRef<THREE.Mesh>(null);
-  const dust = useRef<THREE.Points>(null);
-
-  const dustGeo = useMemo(() => {
-    const r = rng(15);
-    const n = Math.floor(200 * world.quality);
-    const a = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) a.set([(r() - 0.5) * 20, r() * 7, -4 - r() * 8], i * 3);
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(a, 3));
-    return g;
-  }, []);
-  useEffect(() => () => dustGeo.dispose(), [dustGeo]);
 
   const pose = (p: Pose, wave: number, touch: number, head: number) => {
     // test-waving arm swings, then the hand goes to the marked forehead
@@ -108,15 +94,14 @@ export default function Mirror() {
       const k = smoothstep(0.38, 0.62, t);
       const kk = (k * 1.6) % 1;
       pulse.current.scale.setScalar(0.4 + kk * 3.2);
-      (pulse.current.material as THREE.MeshBasicMaterial).opacity = w * (k > 0.02 && k < 0.99 ? (1 - kk) * 0.7 : 0) + beat * 0;
+      (pulse.current.material as THREE.MeshBasicMaterial).opacity = w * (k > 0.02 && k < 0.99 ? (1 - kk) * 0.3 : 0) + beat * 0;
     }
-    if (dust.current) (dust.current.material as THREE.PointsMaterial).opacity = w * 0.5;
   });
 
   return (
     <group>
-      <group ref={gApe}><Figure tail={false} pose={ape} base="#0a0806" rim="#ffb86a" rimGlow={2.6} /></group>
-      <group ref={gRef}><Figure tail={false} pose={refl} base="#0a1018" rim="#9ad0ff" rimGlow={2.8} eyeColor="#cfeaff" /></group>
+      <group ref={gApe}><Figure tail={false} pose={ape} rim="#ffddb8" rimGlow={2.3} /></group>
+      <group ref={gRef}><Figure tail={false} pose={refl} rim="#d6e6ff" rimGlow={2.2} eyeColor="#dbeaff" /></group>
       {/* mirror */}
       <mesh position={[0, MY, MZ]} renderOrder={8}>
         <planeGeometry args={[6.2, 4.2]} />
@@ -126,20 +111,13 @@ export default function Mirror() {
       {[[0, 2.15, 6.5, 0.14], [0, -2.15, 6.5, 0.14], [3.18, 0, 0.14, 4.44], [-3.18, 0, 0.14, 4.44]].map(([x, y, sw, sh], i) => (
         <mesh key={i} position={[x, MY + y, MZ - 0.02]}>
           <boxGeometry args={[sw, sh, 0.12]} />
-          <meshBasicMaterial ref={i === 0 ? frame : undefined} color={[0.45, 0.34, 0.2]} toneMapped={false} transparent />
+          <meshBasicMaterial ref={i === 0 ? frame : undefined} color={[0.3, 0.32, 0.38]} toneMapped={false} transparent />
         </mesh>
       ))}
       <mesh ref={pulse} position={[0, 2.1, MZ + 0.02]}>
         <ringGeometry args={[0.9, 1, 56]} />
-        <meshBasicMaterial color={[2, 1.5, 0.7]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color={[1.7, 1.6, 1.4]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
-      <mesh position={[0, -0.01, -2]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[14, 14]} />
-        <meshBasicMaterial color="#05080a" />
-      </mesh>
-      <points ref={dust} geometry={dustGeo}>
-        <pointsMaterial map={roundSprite()} alphaTest={0.01} size={0.09} color="#b0b8d8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
-      </points>
     </group>
   );
 }

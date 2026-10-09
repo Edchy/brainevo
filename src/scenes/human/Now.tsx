@@ -3,16 +3,17 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
-import { range, smoothstep } from '../../world/util';
+import { range, rng, smoothstep } from '../../world/util';
 import { EarthSphere, landV, llToVec, useEarthMats } from './Earth';
 import { LBuf, PBuf, brainCurve, inPoly, lineMat, pointMat, tickU } from './common';
 
 export const NOW_CAM = (t: number) => {
-  const k = smoothstep(0.3, 0.8, t);
+  const k = smoothstep(0.25, 0.7, t);
   return { pos: [0, 0.3 * (1 - k), 6.4 + k * 21] as [number, number, number], look: [0, 0, 0] as [number, number, number], fov: 50 };
 };
 
-const BRAIN_SCALE = 4.4;
+const BRAIN_SCALE = 3.4;
+const b2rng = rng;
 
 export default function Now() {
   const scene = useScene();
@@ -26,12 +27,12 @@ export default function Now() {
     const cb = new PBuf(171);
     const r = cb.r;
     const hubs: [number, number][] = [];
-    while (hubs.length < 70) {
+    while (hubs.length < 42) {
       const lat = -40 + r() * 100, lon = r() * 360 - 180;
       if (landV(lat, lon) > 0.58) hubs.push([lat, lon]);
     }
     hubs.forEach(([la, lo], hi) => {
-      const n = Math.floor((60 + r() * 150) * q);
+      const n = Math.floor((50 + r() * 90) * q);
       for (let i = 0; i < n; i++) {
         const sg = 1.6 + r() * 2.2;
         const a = r() * 6.283, d = Math.abs(r() + r() - 1) * sg;
@@ -50,7 +51,7 @@ export default function Now() {
     });
     // --- arcs ---
     const ab = new PBuf(172);
-    for (let k = 0; k < 110; k++) {
+    for (let k = 0; k < 34; k++) {
       const A = hubs[Math.floor(r() * hubs.length)], B = hubs[Math.floor(r() * hubs.length)];
       if (A === B) continue;
       const va = new THREE.Vector3(...llToVec(A[0], A[1])), vb = new THREE.Vector3(...llToVec(B[0], B[1]));
@@ -62,7 +63,7 @@ export default function Now() {
         const s = i / n;
         const v = new THREE.Vector3().copy(va).multiplyScalar(Math.sin((1 - s) * ang)).addScaledVector(vb, Math.sin(s * ang)).divideScalar(Math.sin(ang));
         v.normalize().multiplyScalar(1.004 + Math.sin(s * Math.PI) * 0.1 * Math.min(1, ang));
-        ab.add(v.x, v.y, v.z, [.6, 1.4, 2.4], k / 110, { aA: [s, ph] });
+        ab.add(v.x, v.y, v.z, [.6, 1.4, 2.4], k / 34, { aA: [s, ph] });
       }
     }
     const aMat = pointMat({
@@ -76,7 +77,7 @@ export default function Now() {
     });
     // --- far stars ---
     const sb = new PBuf(173);
-    for (let i = 0; i < 1800 * q; i++) {
+    for (let i = 0; i < 260 * q; i++) {
       const v = new THREE.Vector3(r() - .5, r() - .5, r() - .5).normalize().multiplyScalar(60 + r() * 140);
       sb.add(v.x, v.y, v.z, r() < 0.2 ? [2.0, 1.5, 1.0] : [1.3, 1.6, 2.4], 0);
     }
@@ -84,64 +85,76 @@ export default function Now() {
       size: 2.4,
       body: `
       float cos_ = smoothstep(.1,.5,uT);
-      a = cos_*.7*(.4+.6*pow(.5+.5*sin(uTime*(.4+aSeed.y)+aSeed.z*60.),3.)); size=.3+aSeed.x*.8;`,
+      a = cos_*.45*(.3+.7*pow(.5+.5*sin(uTime*(.4+aSeed.y)+aSeed.z*60.),3.)); size=.25+aSeed.x*.6;`,
     });
-    // --- brain constellation ---
-    const poly = brainCurve(140);
+    // --- brain constellation: a luminous outline, a few drawn folds, one marker star ---
+    const poly = brainCurve(150);
     const kb = new PBuf(174);
     const lb = new LBuf(175);
-    const kc: [number, number, number] = [2.3, 2.0, 1.5];
-    const stars: { x: number; y: number; z: number; o: number }[] = [];
+    const kc: [number, number, number] = [2.3, 2.1, 1.8];
+    // outline draws around the contour (o = draw-in time)
     poly.forEach(([x, y], i) => {
-      const o = (i / poly.length) * 0.55;
-      stars.push({ x, y, z: (r() - .5) * .25, o });
+      const o = (i / poly.length) * 0.5;
+      const major = i % 6 === 0;
+      const br = major ? 2.0 : 0.7;
+      kb.add(x, y, 0, [kc[0] * br, kc[1] * br, kc[2] * br], o, { aC: [major ? 1 : 0] });
+      const j = (i + 1) % poly.length;
+      lb.seg([x, y, 0], [poly[j][0], poly[j][1], 0], o, o, [1.0, 1.15, 1.6], 1);
     });
-    const outlineN = stars.length;
-    let guard = 0;
-    while (stars.length < outlineN + 650 && guard++ < 4000) {
-      const x = (r() - .5) * 4.2, y = r() * 4 - 2.1;
-      if (!inPoly(poly, x, y)) continue;
-      stars.push({ x, y, z: (r() - .5) * 1.2, o: 0.3 + r() * 0.55 });
-    }
-    // sulci strands
-    for (let s = 0; s < 9; s++) {
-      let x = (r() - .5) * 2.8, y = r() * 2 - .6, ang = r() * 6.28;
-      if (!inPoly(poly, x, y)) continue;
-      const base = 0.35 + r() * 0.4;
-      for (let k = 0; k < 28; k++) {
-        ang += (r() - .5) * 1.1; x += Math.cos(ang) * .11; y += Math.sin(ang) * .11;
-        if (!inPoly(poly, x, y)) break;
-        stars.push({ x, y, z: (r() - .5) * .5, o: base + k * 0.006 });
+    // folds (hand-placed gyral strands, smoothed and lightly perturbed so they read as organic, not drawn)
+    const FOLDS: [number, number][][] = [
+      [[0.3, 1.48], [0.2, 0.9], [0.0, 0.45], [-0.15, 0.1]],
+      [[1.1, -0.5], [0.5, -0.38], [-0.2, -0.12], [-0.8, 0.12]],
+      [[1.72, 0.85], [1.2, 0.95], [0.75, 0.98], [0.45, 1.02]],
+      [[1.62, 0.12], [1.15, 0.28], [0.8, 0.34], [0.55, 0.3]],
+      [[0.85, -0.55], [0.2, -0.62], [-0.55, -0.4], [-1.25, 0.05]],
+      [[-0.1, 0.95], [-0.6, 0.85], [-1.05, 0.62], [-1.5, 0.45]],
+      [[-1.0, 1.38], [-1.15, 0.9], [-1.25, 0.45]],
+      [[-1.65, -0.55], [-1.25, -0.72], [-0.85, -0.74]],
+    ];
+    const rr = b2rng(176);
+    FOLDS.forEach((pts, fi) => {
+      const cv = new THREE.CatmullRomCurve3(pts.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal');
+      const n = 46;
+      const base = 0.45 + fi * 0.055;
+      let prev: [number, number, number] | null = null;
+      const ph = rr() * 6.28;
+      for (let i = 0; i <= n; i++) {
+        const u = i / n;
+        const v = cv.getPoint(u);
+        const w = Math.sin(u * 9 + ph) * 0.035 * Math.sin(u * Math.PI);
+        const cur: [number, number, number] = [v.x + w * 0.6, v.y + w, 0];
+        const o = base + u * 0.1;
+        if (prev) lb.seg(prev, cur, o, o, [0.8, 1.0, 1.6], 0);
+        if (i % 9 === 0) kb.add(cur[0], cur[1], 0, [kc[0] * 0.9, kc[1] * 0.9, kc[2] * 0.9], o, { aC: [0] });
+        prev = cur;
       }
-    }
-    stars.forEach((s, i) => {
-      const bright = i < outlineN ? 1.2 : 0.6 + r() * .6;
-      kb.add(s.x, s.y, s.z, [kc[0] * bright, kc[1] * bright, kc[2] * bright], s.o, { aC: [i < outlineN ? 1 : 0] });
     });
-    for (let i = 0; i < outlineN; i++) {
-      const a = stars[i], b = stars[(i + 1) % outlineN];
-      lb.seg([a.x, a.y, a.z], [b.x, b.y, b.z], a.o, a.o, [.7, 1.0, 1.8], 1);
+    // a faint dust of stars inside the silhouette
+    for (let n = 0, g = 0; n < 340 && g < 6000; g++) {
+      const x = (rr() - 0.5) * 4.2, y = rr() * 4 - 2.1;
+      if (!inPoly(poly, x, y)) continue;
+      n++;
+      kb.add(x, y, (rr() - 0.5) * 0.3, [kc[0] * 0.5, kc[1] * 0.5, kc[2] * 0.5], 0.2 + rr() * 0.65, { aC: [0] });
     }
-    for (let i = outlineN; i < stars.length; i++) {
-      const a = stars[i];
-      const near2 = stars.map((b, j) => [j, Math.hypot(a.x - b.x, a.y - b.y, (a.z - b.z) * .5)] as const).filter(([j, d]) => j !== i && d < .62).sort((p, q2) => p[1] - q2[1]).slice(0, 3);
-      for (const [j] of near2) { const b = stars[j]; lb.seg([a.x, a.y, a.z], [b.x, b.y, b.z], Math.max(a.o, b.o), Math.max(a.o, b.o), [.6, .9, 1.7], 0); }
-    }
+    // "you are here": one bright star on the lateral surface
+    kb.add(0.62, 0.52, 0, [3.2, 3.0, 2.6], 0.9, { aC: [2] });
     const kMat = pointMat({
       decl: 'attribute float aC; uniform float uBrain;', uniforms: { uBrain: { value: 0 } }, size: 3.4,
       body: `
       float on = smoothstep(aSeed.w, aSeed.w+.06, uBrain);
-      float tw = pow(.5+.5*sin(uTime*(.6+aSeed.y*1.5)+aSeed.z*60.),3.);
-      float wave = exp(-pow((fract(uTime*.1+p.x*.05+uT)-.5)*6.,2.))*0.;
-      a = on*(.55+.6*tw); size = (.3+.45*aC+.6*tw)*on + (1.-on)*.0;`,
+      float tw = .5+.5*sin(uTime*(.5+aSeed.y*.8)+aSeed.z*60.);
+      float mk = step(1.5, aC);
+      a = on*(.8+.25*tw+mk*.5*(.5+.5*sin(uTime*1.3)));
+      size = on*((.25+.5*aC*(1.-mk)+.1*tw) + mk*1.7);`,
     });
     const lMat = lineMat({
       decl: 'uniform float uBrain;', uniforms: { uBrain: { value: 0 } },
       body: `
-      float on = smoothstep(aG, aG+.06, uBrain);
-      float pp = fract(uTime*.07 + aSeed.x);
-      float fire = exp(-pow((fract(uTime*.12 + aG*1.7 + aSeed.y*.3)-.5)*5.,2.));
-      a = on*(.3+.9*fire);`,
+      float on = smoothstep(aG, aG+.05, uBrain);
+      float fire = exp(-pow((fract(uTime*.06 + aSeed.x*.7)-.5)*6.,2.));
+      a = on*(.55+.5*fire*step(.5,aSeed.w+0.));
+      a = on*(.5+.55*fire);`,
     });
     return {
       cGeo: cb.build(), cMat, aGeo: ab.build(), aMat, sGeo: sb.build(), sMat,
@@ -156,18 +169,19 @@ export default function Now() {
     const pr = state.gl.getPixelRatio();
     const tm = world.reduced ? 0 : world.time;
     // earth
-    eMat.uniforms.uW.value = scene.weight; atmo.uniforms.uW.value = scene.weight;
-    const k = smoothstep(0.3, 0.8, t);
+    const ef = scene.weight * (1 - smoothstep(0.46, 0.72, t));
+    eMat.uniforms.uW.value = ef; atmo.uniforms.uW.value = ef;
+    const k = smoothstep(0.25, 0.7, t);
     if (earth.current) {
       earth.current.scale.setScalar(2.0 - 1.62 * k);
       earth.current.rotation.y = -0.45 + t * 1.4 + tm * 0.03;
       earth.current.rotation.x = 0.35;
-      earth.current.position.y = 0.4 * (1 - k);
+      earth.current.position.set(-1.8 - 3.3 * k, 0.4 * (1 - k) + 1.6 * k, 0);
     }
     const on = range(0.02, 0.3, t);
-    for (const m of [cMat, aMat]) { tickU(m, scene, pr); m.uniforms.uOn.value = on; }
+    for (const m of [cMat, aMat]) { tickU(m, scene, pr); m.uniforms.uOn.value = on; m.uniforms.uW.value = ef; }
     tickU(sMat, scene, pr);
-    const brain = range(0.5, 0.88, t);
+    const brain = range(0.6, 0.92, t);
     tickU(kMat, scene, pr); kMat.uniforms.uBrain.value = brain;
     tickU(lMat, scene); lMat.uniforms.uBrain.value = brain;
   });
@@ -179,7 +193,7 @@ export default function Now() {
         <points geometry={cGeo} material={cMat} frustumCulled={false} />
         <points geometry={aGeo} material={aMat} frustumCulled={false} />
       </group>
-      <group position={[0, 0.3 * BRAIN_SCALE, -0.5]} scale={BRAIN_SCALE}>
+      <group position={[-7.2, 0.8, -0.5]} scale={BRAIN_SCALE}>
         <points geometry={kGeo} material={kMat} frustumCulled={false} />
         <lineSegments geometry={lGeo} material={lMat} frustumCulled={false} />
       </group>

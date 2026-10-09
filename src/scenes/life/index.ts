@@ -56,7 +56,7 @@ export const lifeScenes: SceneDef[] = [
     id: 'life-cambrian', from: 'cambrian-explosion-eyes', to: 'cambrian-explosion-eyes', lead: 0.45, tail: 0.9, fade: 0.45, Component: Cambrian,
     camera: (t) => ({ pos: [0, 0.4, 8.5 - 2.5 * Math.sin(Math.min(1, t * 1.6) * Math.PI * 0.5) + 2.5 * Math.max(0, (t - 0.65) / 0.35)], look: [0, 0.4, 0], fov: 55 }),
     mood: (t) => ({
-      bg: t > 0.9 ? '#03050b' : near(eventPos('cambrian-explosion-eyes'), 0.3) > 0.5 ? '#0b3a48' : t > 0.5 ? '#052233' : '#020a12',
+      bg: t > 0.9 ? '#03050b' : '#020609',
       bloom: 0.8 + near(eventPos('cambrian-explosion-eyes'), 0.3) * 0.5,
     }),
   },

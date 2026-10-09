@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
+import { profileBody } from '../mammal/kit';
 
 export const NOISE = /* glsl */ `
 float hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
@@ -41,35 +42,24 @@ export function makePose(): Pose {
 }
 
 const VERT = /* glsl */ `
-varying vec3 vN; varying vec3 vV; varying vec3 vObj; varying vec3 vWN;
+varying vec3 vN; varying vec3 vV;
 void main(){
   vec4 mv = modelViewMatrix*vec4(position,1.);
   vN = normalize(normalMatrix*normal);
-  vWN = normalize(mat3(modelMatrix)*normal);
   vV = normalize(-mv.xyz);
-  vObj = (modelMatrix*vec4(position,1.)).xyz;
   gl_Position = projectionMatrix*mv;
 }`;
-// dark body with a warm fur-fringed rim: the rim is broken up by high-frequency "hair" noise and the silhouette
-// edge is stippled away so the outline reads as fur, not a clean outline.
+// near-black body with a thin, one-sided rim of light (back-light from upper left in view space). No hair stipple, no
+// uniform outline: the silhouette is carved by light the way a title-sequence still would be.
 const FRAG = /* glsl */ `
 uniform vec3 uBase; uniform vec3 uRim; uniform float uOp; uniform float uGlow; uniform float uPow;
-varying vec3 vN; varying vec3 vV; varying vec3 vObj; varying vec3 vWN;
-float h3(vec3 p){ p=fract(p*.3183099+.1); p*=17.; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+varying vec3 vN; varying vec3 vV;
 void main(){
   vec3 n = normalize(vN);
-  float ndv = abs(dot(n,normalize(vV)));
-  float edge = 1.-ndv;
-  float f = pow(edge, uPow);
-  // fur: strands elongated along y (hanging fur) -> sample noise in stretched object space
-  float hair = h3(floor(vObj*vec3(190.,70.,190.)));
-  float tuft = .5+.5*sin(vObj.x*31.+sin(vObj.y*23.)*2.)*sin(vObj.z*27.+vObj.y*15.);
-  if(edge>.9 && hair>.62+ (1.-edge)*2.) discard;
-  float wup = normalize(vWN).y*.5+.5;
-  float key = max(dot(normalize(vWN), normalize(vec3(-.35,.7,.6))),0.);
-  vec3 c = uBase*(.35+.65*wup) + uBase*key*1.6;
-  c += uRim*f*uGlow*(.7+.6*hair)*(.8+.35*tuft)*(.55+.75*wup);
-  c += uRim*.12*key*uGlow*smoothstep(.2,.9,tuft);
+  float f = pow(1.-abs(dot(n,normalize(vV))), uPow);
+  float side = dot(normalize(n.xy+1e-4), normalize(vec2(-.62,.78)));
+  float lit = mix(.16, 1., smoothstep(-.3,.7,side));
+  vec3 c = uBase*(.4+.6*(n.y*.5+.5)) + uRim*f*uGlow*lit;
   gl_FragColor = vec4(c, uOp);
 }`;
 
@@ -95,44 +85,48 @@ export function useRimMaterial(base: string, rim: string, pow = 2.2, additive = 
   return mat;
 }
 
-/** tapered limb segment, y in [-1, 0] hanging down from its pivot (radius 1 at the pivot, `t` at the far end) */
-const hang = (rTop: number, rBot: number, len: number) => {
-  const g = new THREE.CylinderGeometry(rTop, rBot, len, 14, 1, false);
-  g.translate(0, -len / 2, 0);
-  return g;
-};
-const ell = (x: number, y: number, z: number) => { const g = new THREE.SphereGeometry(1, 18, 12); g.scale(x, y, z); return g; };
+const ell = (x: number, y: number, z: number) => { const g = new THREE.SphereGeometry(1, 24, 16); g.scale(x, y, z); return g; };
+/** tapered limb segment hanging down (-y) from its pivot: keys are [distance, radius, 0] */
+const limb = (keys: [number, number, number][], flat = 1) => { const g = profileBody(keys, flat, 28, 16); g.rotateZ(-Math.PI / 2); return g; };
 
 const GEO = {
-  chest: ell(0.235, 0.27, 0.19),
-  belly: ell(0.2, 0.22, 0.17),
-  mantle: ell(0.3, 0.1, 0.17),
-  neck: hang(0.07, 0.09, 0.14),
-  skull: ell(0.17, 0.165, 0.165),
-  brow: ell(0.14, 0.035, 0.075),
-  jaw: ell(0.07, 0.05, 0.085),
-  muzzle: ell(0.078, 0.066, 0.1),
-  nose: ell(0.04, 0.03, 0.03),
-  ear: ell(0.03, 0.062, 0.056),
-  upper: hang(0.075, 0.055, 0.4),
-  fore: hang(0.055, 0.04, 0.38),
-  joint: new THREE.SphereGeometry(1, 12, 10),
-  palm: ell(0.05, 0.06, 0.035),
-  finger: (() => { const g = new THREE.CapsuleGeometry(0.014, 0.05, 3, 6); g.translate(0, -0.03, 0); return g; })(),
-  thigh: hang(0.1, 0.07, 0.4),
-  shin: hang(0.07, 0.045, 0.34),
-  foot: ell(0.045, 0.028, 0.09),
-  tail1: hang(0.05, 0.036, 0.3),
-  tail2: hang(0.036, 0.022, 0.26),
-  tail3: hang(0.022, 0.012, 0.2),
-  stick: new THREE.CapsuleGeometry(0.018, 1.0, 4, 10),
-  eye: new THREE.SphereGeometry(0.028, 10, 8),
+  // torso: pelvis -> belly -> chest -> mantle -> neck as ONE surface (spine-local, y up from the waist)
+  torso: (() => {
+    const g = profileBody([
+      [-0.13, 0.0, 0], [-0.1, 0.13, 0], [0.0, 0.19, 0], [0.16, 0.19, 0], [0.34, 0.205, 0], [0.48, 0.235, 0.01], [0.58, 0.215, 0.0], [0.65, 0.1, 0], [0.72, 0.075, 0], [0.76, 0.0, 0],
+    ], 1.3, 60, 22);
+    g.rotateZ(Math.PI / 2);
+    return g;
+  })(),
+  // head: skull running smoothly into the muzzle (x forward -> +z)
+  head: (() => {
+    const g = profileBody([
+      [-0.17, 0.0, 0.03], [-0.14, 0.11, 0.03], [-0.05, 0.165, 0.04], [0.06, 0.16, 0.04], [0.14, 0.125, 0.0], [0.21, 0.088, -0.03], [0.29, 0.076, -0.045], [0.34, 0.05, -0.045], [0.365, 0.0, -0.045],
+    ], 1.0, 48, 20);
+    g.rotateY(-Math.PI / 2);
+    return g;
+  })(),
+  brow: ell(0.14, 0.03, 0.07),
+  ear: ell(0.03, 0.062, 0.05),
+  upper: limb([[0, 0.065, 0], [0.1, 0.082, 0], [0.28, 0.062, 0], [0.4, 0.05, 0]]),
+  fore: limb([[0, 0.05, 0], [0.1, 0.056, 0], [0.28, 0.042, 0], [0.38, 0.034, 0]]),
+  joint: new THREE.SphereGeometry(1, 14, 12),
+  palm: ell(0.048, 0.062, 0.03),
+  finger: (() => { const g = new THREE.CapsuleGeometry(0.013, 0.05, 3, 6); g.translate(0, -0.03, 0); return g; })(),
+  thigh: limb([[0, 0.092, 0], [0.12, 0.1, 0], [0.3, 0.07, 0], [0.4, 0.058, 0]]),
+  shin: limb([[0, 0.058, 0], [0.1, 0.064, 0], [0.26, 0.042, 0], [0.34, 0.034, 0]]),
+  foot: ell(0.042, 0.026, 0.09),
+  tail1: limb([[0, 0.05, 0], [0.3, 0.034, 0]]),
+  tail2: limb([[0, 0.034, 0], [0.26, 0.02, 0]]),
+  tail3: limb([[0, 0.02, 0], [0.2, 0.004, 0]]),
+  stick: new THREE.CapsuleGeometry(0.016, 1.0, 4, 10),
+  eye: new THREE.SphereGeometry(0.026, 10, 8),
   mark: new THREE.SphereGeometry(0.045, 10, 8),
 };
 
 const eyeMat = new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true });
 const markMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 0.2, 0.15), toneMapped: false, transparent: true });
-const stickMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.0, 0.5), toneMapped: false, transparent: true });
+const stickMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 1.7, 1.5), toneMapped: false, transparent: true });
 
 interface FigureProps {
   pose: Pose;
@@ -149,16 +143,16 @@ interface FigureProps {
 const Hand = ({ mat }: { mat: THREE.Material }) => (
   <group position={[0, -0.43, 0]}>
     <mesh geometry={GEO.palm} material={mat} position={[0, -0.03, 0]} />
-    {[-0.028, 0, 0.028].map((x, i) => (
+    {[-0.026, 0, 0.026].map((x, i) => (
       <mesh key={i} geometry={GEO.finger} material={mat} position={[x, -0.075, 0.01]} rotation={[-0.5, 0, 0]} scale={[1, 1 + (i === 1 ? 0.2 : 0), 1]} />
     ))}
-    <mesh geometry={GEO.finger} material={mat} position={[0.05, -0.03, 0.02]} rotation={[-0.6, 0, -0.9]} scale={[1.1, 0.8, 1.1]} />
+    <mesh geometry={GEO.finger} material={mat} position={[0.048, -0.03, 0.02]} rotation={[-0.6, 0, -0.9]} scale={[1.1, 0.8, 1.1]} />
   </group>
 );
 
 /** Stylised procedural primate, +z is forward. Animated entirely through the mutable `pose` object (same API as before). */
 export function Figure({
-  pose, base = '#080b0e', rim = '#ffd7a0', rimPow = 2.2, rimGlow = 2.4, eyeColor = '#fff0c0', scale = 1, tail = true,
+  pose, base = '#030405', rim = '#ffe2bd', rimPow = 2.6, rimGlow = 1.9, eyeColor = '#fff0c0', scale = 1, tail = true,
   additive = false,
 }: FigureProps) {
   const scene = useScene();
@@ -203,11 +197,11 @@ export function Figure({
   });
 
   const arm = (side: 1 | -1, ref: React.RefObject<THREE.Group | null>, eref: React.RefObject<THREE.Group | null>, withStick: boolean) => (
-    <group ref={ref} position={[0.27 * side, 0.46, 0]}>
-      <mesh geometry={GEO.joint} material={mat} scale={0.085} />
+    <group ref={ref} position={[0.27 * side, 0.52, 0]}>
+      <mesh geometry={GEO.joint} material={mat} scale={0.075} />
       <mesh geometry={GEO.upper} material={mat} />
       <group ref={eref} position={[0, -0.4, 0]}>
-        <mesh geometry={GEO.joint} material={mat} scale={0.058} />
+        <mesh geometry={GEO.joint} material={mat} scale={0.052} />
         <mesh geometry={GEO.fore} material={mat} />
         <Hand mat={mat} />
         {withStick && <mesh ref={stick} geometry={GEO.stick} material={stickMat} position={[0, -0.5, 0.18]} rotation={[1.1, 0, 0]} />}
@@ -216,10 +210,10 @@ export function Figure({
   );
   const leg = (side: 1 | -1, ref: React.RefObject<THREE.Group | null>) => (
     <group ref={ref} position={[0.12 * side, 0.5, 0]}>
-      <mesh geometry={GEO.joint} material={mat} scale={0.1} />
+      <mesh geometry={GEO.joint} material={mat} scale={0.095} />
       <mesh geometry={GEO.thigh} material={mat} rotation={[-0.15, 0, 0]} />
       <group position={[0, -0.4, -0.06]}>
-        <mesh geometry={GEO.joint} material={mat} scale={0.07} />
+        <mesh geometry={GEO.joint} material={mat} scale={0.06} />
         <mesh geometry={GEO.shin} material={mat} rotation={[0.3, 0, 0]} />
         <mesh geometry={GEO.foot} material={mat} position={[0, -0.34, 0.07]} />
       </group>
@@ -230,24 +224,18 @@ export function Figure({
     <group scale={scale}>
       <group ref={root}>
         <group ref={spine} position={[0, 0.5, 0]}>
-          <mesh geometry={GEO.belly} material={mat} position={[0, 0.1, 0]} />
-          <mesh geometry={GEO.chest} material={mat} position={[0, 0.38, 0.01]} />
-          <mesh geometry={GEO.mantle} material={mat} position={[0, 0.58, -0.02]} />
-          <mesh geometry={GEO.neck} material={mat} position={[0, 0.7, 0.02]} />
+          <mesh geometry={GEO.torso} material={mat} />
           {/* head */}
-          <group ref={head} position={[0, 0.78, 0.04]}>
-            <mesh geometry={GEO.skull} material={mat} position={[0, 0.03, -0.005]} />
-            <mesh geometry={GEO.brow} material={mat} position={[0, 0.075, 0.125]} />
-            <mesh geometry={GEO.muzzle} material={mat} position={[0, -0.045, 0.15]} />
-            <mesh geometry={GEO.nose} material={mat} position={[0, -0.02, 0.24]} />
-            <mesh geometry={GEO.jaw} material={mat} position={[0, -0.105, 0.11]} />
-            <mesh geometry={GEO.ear} material={mat} position={[0.175, 0.02, -0.02]} />
-            <mesh geometry={GEO.ear} material={mat} position={[-0.175, 0.02, -0.02]} />
+          <group ref={head} position={[0, 0.8, 0.03]}>
+            <mesh geometry={GEO.head} material={mat} position={[0, 0.0, 0]} />
+            <mesh geometry={GEO.brow} material={mat} position={[0, 0.09, 0.115]} />
+            <mesh geometry={GEO.ear} material={mat} position={[0.165, 0.05, -0.03]} />
+            <mesh geometry={GEO.ear} material={mat} position={[-0.165, 0.05, -0.03]} />
             <group ref={eyes}>
-              <mesh geometry={GEO.eye} material={eyeM} position={[0.062, 0.036, 0.158]} />
-              <mesh geometry={GEO.eye} material={eyeM} position={[-0.062, 0.036, 0.158]} />
+              <mesh geometry={GEO.eye} material={eyeM} position={[0.075, 0.065, 0.118]} />
+              <mesh geometry={GEO.eye} material={eyeM} position={[-0.075, 0.065, 0.118]} />
             </group>
-            <mesh ref={mark} geometry={GEO.mark} material={markMat} position={[0.05, 0.14, 0.12]} />
+            <mesh ref={mark} geometry={GEO.mark} material={markMat} position={[0.05, 0.15, 0.1]} />
           </group>
           {arm(1, aL, eL, false)}
           {arm(-1, aR, eR, true)}

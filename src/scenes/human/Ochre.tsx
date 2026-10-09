@@ -1,124 +1,118 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
-import { eventPos, near, range } from '../../world/util';
-import { GLSL_UTIL, PBuf, pointMat, tickU } from './common';
+import { eventPos, range } from '../../world/util';
+import { LBuf, PBuf, lineMat, pointMat, tickU, type V3 } from './common';
 
-// hand stencil as a union of capsules (unit-ish coordinates, y up)
-const CAPS: [number, number, number, number, number][] = [
-  [0, -0.15, 0, -0.2, 0.5], // palm (disc)
-  [0, -0.4, 0, -1.4, 0.3], // wrist
-  [-0.45, -0.1, -0.95, 0.4, 0.13], // thumb
-  [-0.3, 0.3, -0.42, 1.1, 0.12], // index
-  [-0.08, 0.38, -0.1, 1.25, 0.125], // middle
-  [0.14, 0.33, 0.2, 1.1, 0.12], // ring
-  [0.34, 0.2, 0.52, 0.8, 0.105], // pinky
-];
-function sdHand(x: number, y: number) {
-  let d = 1e9;
-  for (const [ax, ay, bx, by, r] of CAPS) {
-    const pax = x - ax, pay = y - ay, bax = bx - ax, bay = by - ay;
-    const h = Math.min(1, Math.max(0, (pax * bax + pay * bay) / (bax * bax + bay * bay + 1e-9)));
-    d = Math.min(d, Math.hypot(pax - bax * h, pay - bay * h) - r);
-  }
-  return d;
-}
-
-const WALL_FS = /* glsl */ `${GLSL_UTIL}
-uniform float uW,uTime,uGlow; varying vec2 vUv;
-void main(){
-  vec2 p=vUv*vec2(8.,5.);
-  float h=fbm(vec3(p*1.6,1.))*.7+fbm(vec3(p*6.,4.))*.3;
-  float e=.02; float hx=fbm(vec3((p+vec2(e,0.))*1.6,1.))*.7+fbm(vec3((p+vec2(e,0.))*6.,4.))*.3;
-  float hy=fbm(vec3((p+vec2(0.,e))*1.6,1.))*.7+fbm(vec3((p+vec2(0.,e))*6.,4.))*.3;
-  vec3 n=normalize(vec3((h-hx)/e*.35,(h-hy)/e*.35,1.));
-  vec2 lp=vec2(.5,.52); float fl=.9+.1*sin(uTime*7.+sin(uTime*3.1)*2.);
-  vec3 L=normalize(vec3((lp-vUv)*vec2(8.,5.)*.35,.8));
-  float dif=max(dot(n,L),0.);
-  float r=length((vUv-lp)*vec2(1.,.8));
-  float lit=exp(-r*r*5.)*fl*uGlow;
-  vec3 c=vec3(.5,.26,.15)*(.02+dif*lit*.5)+vec3(.008,.006,.012);
-  vec2 q=abs(vUv-.5)*2.; float m=(1.-smoothstep(.55,1.,q.x))*(1.-smoothstep(.55,1.,q.y));
-  gl_FragColor=vec4(c,uW*m);
-}`;
+// One engraved piece of ochre (after the cross-hatched Blombos stones): a slab edge, then the pattern scratched in line by line.
+const HW = 2.3, HH = 1.45;
 
 export default function Ochre() {
   const scene = useScene();
-  const { geo, mat, wallMat } = useMemo(() => {
-    const b = new PBuf(31);
-    const N = Math.floor(16000 * world.quality);
-    const r = b.r;
-    let n = 0;
-    while (n < N) {
-      const x = (r() * 2 - 1) * 1.9, y = r() * 3.3 - 1.4;
-      const d = sdHand(x, y);
-      if (d < 0.015 + r() * 0.01) continue;
-      const sx = Math.abs(x) / 1.9, sy = Math.abs(y - 0.25) / 1.65;
-      const fall = (1 - Math.min(1, Math.max(0, (sx - 0.5) / 0.5))) * (1 - Math.min(1, Math.max(0, (sy - 0.5) / 0.5)));
-      if (r() > (Math.exp(-d * 3.2) * 0.9 + 0.02) * fall) continue;
-      b.add(x, y, 0.02, [1, 1, 1], r());
-      n++;
+  const root = useRef<THREE.Group>(null);
+  const { lGeo, lMat, pGeo, pMat } = useMemo(() => {
+    const lb = new LBuf(31);
+    const pb = new PBuf(32);
+    const r = lb.r;
+    const edgeC: V3 = [2.0, 1.75, 1.45], lineC: V3 = [2.4, 2.1, 1.7];
+    // slab edge: a softened, slightly irregular rectangle
+    const N = 120;
+    const pts: [number, number][] = [];
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      const c = Math.cos(a), s = Math.sin(a);
+      const k = 1 / Math.pow(Math.pow(Math.abs(c), 7) + Math.pow(Math.abs(s), 7), 1 / 7);
+      const w = 1 + 0.008 * Math.sin(a * 5 + 1) + 0.005 * Math.sin(a * 11);
+      pts.push([c * k * HW * w, s * k * HH * w]);
     }
-    const mat = pointMat({
-      decl: 'uniform float uSpray;',
-      uniforms: { uSpray: { value: 0 } },
-      size: 0.75,
+    for (let i = 0; i < N; i++) {
+      const A = pts[i], B = pts[(i + 1) % N];
+      const g = (i / N) * 0.05;
+      lb.seg([A[0], A[1], 0], [B[0], B[1], 0], g, g, edgeC, 0);
+      if (i % 4 === 0) pb.add(A[0], A[1], 0, [2.2, 1.9, 1.5], g, { aK: [1] });
+    }
+    // engraved bands: three strips of diamond cross-hatching, scratched in left to right
+    const bands: [number, number][] = [[0.62, 1.12], [-0.28, 0.52], [-1.18, -0.38]];
+    const sp = 0.4;
+    const xl = -HW + 0.28, xr = HW - 0.28;
+    const jit = () => (r() - 0.5) * 0.02;
+    bands.forEach(([y0, y1], bi) => {
+      // frame lines of the band
+      for (const y of [y0, y1]) {
+        const g = 0.2 + (bi * 0.06);
+        lb.seg([xl + jit(), y + jit(), 0], [xr + jit(), y + jit(), 0], g, g, lineC, 1);
+      }
+      const hgt = y1 - y0;
+      for (const dir of [1, -1]) {
+        for (let x0 = xl - hgt; x0 <= xr + hgt; x0 += sp) {
+          // line from (x0, y0) rising to (x0 + dir*hgt, y1), clipped to the slab span
+          let ax = x0, ay = y0, bx = x0 + dir * hgt, by = y1;
+          const clip = (px: number, py: number, qx: number, qy: number): [number, number, number, number] | null => {
+            let t0 = 0, t1 = 1; const dx = qx - px;
+            if (Math.abs(dx) < 1e-6) return px >= xl && px <= xr ? [px, py, qx, qy] : null;
+            const ta = (xl - px) / dx, tb = (xr - px) / dx;
+            t0 = Math.max(t0, Math.min(ta, tb)); t1 = Math.min(t1, Math.max(ta, tb));
+            if (t0 >= t1) return null;
+            return [px + dx * t0, py + (qy - py) * t0, px + dx * t1, py + (qy - py) * t1];
+          };
+          const cl = clip(ax, ay, bx, by);
+          if (!cl) continue;
+          [ax, ay, bx, by] = cl;
+          const gx = ((ax + bx) / 2 - xl) / (xr - xl);
+          const g = 0.3 + gx * 0.5 + (dir > 0 ? 0 : 0.05) + r() * 0.04;
+          lb.seg([ax + jit(), ay + jit(), 0], [bx + jit(), by + jit(), 0], g, g, [lineC[0] * (0.8 + r() * 0.4), lineC[1] * (0.8 + r() * 0.4), lineC[2]], 2);
+        }
+      }
+      // light caught at the diamond vertices on the band's mid-line
+      for (let x = xl + sp / 2; x < xr; x += sp) {
+        const g = 0.3 + ((x - xl) / (xr - xl)) * 0.5 + 0.05;
+        pb.add(x, (y0 + y1) / 2, 0.01, [2.4, 2.1, 1.7], g, { aK: [0] });
+      }
+    });
+    // ochre dust drifting off the stone
+    for (let i = 0; i < 80; i++) {
+      const a = r() * 6.283, rad = 0.9 + r() * 1.3;
+      pb.add(Math.cos(a) * rad * HW * 0.9, Math.sin(a) * rad * HH * 0.9, (r() - 0.5) * 0.8, [1.6, 1.0, 0.6], 0.2 + r() * 0.6, { aK: [2] });
+    }
+    const lMat = lineMat({
+      decl: 'uniform float uRev;', uniforms: { uRev: { value: 0 } },
       body: `
-      float d = aSeed.w; // delay
-      vec3 tgt = p;
-      // powder mound at the foot of the wall, ground in circles
-      float ang = aSeed.x*6.283 + uTime*(.6+aSeed.y) + aSeed.z*10.;
-      float rr = sqrt(aSeed.y)*.9;
-      vec3 mound = vec3(-2.6 + cos(ang)*rr, -1.9 + (1.-aSeed.y)*.35 + sin(ang*2.)*.03, 1.0 + sin(ang)*rr*.5);
-      mound.y += .08*pow(.5+.5*sin(uTime*2.+aSeed.x*9.),4.)*uMillW;
-      float s = clamp((uSpray - d*.75)/.25, 0., 1.);
-      float e = s*s*(3.-2.*s);
-      // arc travel from the mouth/hand towards the wall, with turbulence
-      vec3 mid = mix(mound, tgt, e);
-      mid.z += sin(e*3.14159)*1.6*(aSeed.z-.2);
-      mid.y += sin(e*3.14159)*.9;
-      mid.x += (aSeed.y-.5)*sin(e*3.14159)*1.2;
-      p = mid;
-      p.z += (1.-e)*0. + (aSeed.z-.5)*.02;
-      float settled = smoothstep(.85,1.,e);
-      col = mix(vec3(1.5,.4,.14), vec3(1.4,.2,.07), settled)*(.8+aSeed.x*.5);
-      col = mix(col, vec3(1.8,.5,.2), uFlash*(1.-settled)*.6);
-      a = 1.5*(.45 + .2*sin(uTime*3.+aSeed.z*30.)*(1.-settled)) * (.7 + .3*settled) * mix(.5,1.,s);
-      size = mix(.7,.45,settled) + (1.-settled)*.3*s;
-      `,
+      float on = smoothstep(aG, aG+.05, uRev);
+      float fl = .85 + .15*sin(uTime*1.4 + aSeed.x*30.);
+      a = on * fl * (aSeed.w < .5 ? 1.0 : aSeed.w < 1.5 ? .9 : .75);`,
     });
-    mat.vertexShader = mat.vertexShader.replace('uniform float uSpray;', 'uniform float uSpray; uniform float uFlash; uniform float uMillW;');
-    mat.uniforms.uFlash = { value: 0 };
-    mat.uniforms.uMillW = { value: 1 };
-    const wallMat = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false,
-      uniforms: { uW: { value: 0 }, uTime: { value: 0 }, uGlow: { value: 1 } },
-      vertexShader: 'varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-      fragmentShader: WALL_FS,
+    const pMat = pointMat({
+      decl: 'attribute float aK; uniform float uRev;', uniforms: { uRev: { value: 0 } }, size: 1.2,
+      body: `
+      float on = smoothstep(aSeed.w, aSeed.w+.05, uRev);
+      float tw = pow(.5+.5*sin(uTime*(.6+aSeed.y)+aSeed.z*50.), 3.);
+      if (aK > 1.5) { p.y += mod(uTime*.05 + aSeed.x*3., 1.2) - .3; p.x += sin(uTime*.2+aSeed.z*20.)*.1; a = on*.35*(.4+tw); size = .35; }
+      else if (aK > .5) { a = on*.9; size = .45; }
+      else { a = on*(.6+.7*tw); size = .55 + .4*tw; }`,
     });
-    return { geo: b.build(), mat, wallMat };
+    return { lGeo: lb.build(), lMat, pGeo: pb.build(), pMat };
   }, []);
-  useEffect(() => () => { geo.dispose(); mat.dispose(); wallMat.dispose(); }, [geo, mat, wallMat]);
+  useEffect(() => () => { lGeo.dispose(); pGeo.dispose(); lMat.dispose(); pMat.dispose(); }, [lGeo, pGeo, lMat, pMat]);
 
   useFrame((state) => {
     if (!scene.active) return;
     const e = eventPos('ochre-symbolic-thought');
-    const f = world.stationF;
-    tickU(mat, scene, state.gl.getPixelRatio());
-    mat.uniforms.uSpray.value = range(e - 0.35, e + 0.45, f);
-    mat.uniforms.uFlash.value = near(e, 0.4) * 0.5;
-    wallMat.uniforms.uW.value = scene.weight;
-    wallMat.uniforms.uTime.value = world.reduced ? 0 : world.time;
-    wallMat.uniforms.uGlow.value = 0.6 + 0.6 * range(e - 0.6, e + 0.3, f);
+    const rev = range(e - 0.6, e - 0.05, world.stationF);
+    tickU(lMat, scene); tickU(pMat, scene, state.gl.getPixelRatio());
+    lMat.uniforms.uRev.value = rev; pMat.uniforms.uRev.value = rev;
+    if (root.current) {
+      root.current.rotation.y = -0.38 + scene.t * 0.5;
+      root.current.rotation.x = 0.1;
+      root.current.rotation.z = 0.05;
+      root.current.position.set(0.9, 0.35, 0);
+    }
   });
   return (
-    <group>
-      <mesh position={[0, 0.3, -0.05]} material={wallMat}>
-        <planeGeometry args={[9, 6]} />
-      </mesh>
-      <points geometry={geo} material={mat} frustumCulled={false} position={[0.3, 0.5, 0]} scale={1.15} />
+    <group ref={root}>
+      <lineSegments geometry={lGeo} material={lMat} frustumCulled={false} />
+      <points geometry={pGeo} material={pMat} frustumCulled={false} />
     </group>
   );
 }

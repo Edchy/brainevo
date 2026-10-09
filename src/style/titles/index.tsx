@@ -7,6 +7,10 @@
  * (center | left), --title-spacing (em, letter spacing), --title-size (multiplier), --title-parallax (frame widths per
  * station, default 0.8), --title-y (0..1 vertical centre, default 0.4), --title-softness (depth edge, 0..1),
  * --title-key (0..1: how strongly bright pixels with no depth, e.g. additive particles, occlude the type).
+ * --title-placement (fixed | art; "art" places each headline using SceneDef.titleAnchor / the table in anchors.ts so the
+ * type sits clear of the scene's hero, default fixed = always --title-y / --title-align),
+ * --title-kicker-opacity / --title-year-opacity (0..1, 0 hides the line, default 0.85),
+ * --title-kicker-mode (all | era: only on the first event of an era, default all).
  */
 import { useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
@@ -16,6 +20,7 @@ import { events } from '../../data';
 import { ERA_META } from '../../lib/eras';
 import { world } from '../../world/store';
 import { titleState } from './state';
+import { resolveAnchor, type TitleAnchor } from './anchors';
 
 const BREAKTHROUGH: Record<string, string> = {
   steering: 'Breakthrough 1 · Steering', reinforcing: 'Breakthrough 2 · Reinforcing',
@@ -84,6 +89,7 @@ class TitleEffect extends Effect {
 interface Theme {
   family: string; color: string; weight: string; upper: boolean; align: string; spacing: number; size: number;
   opacity: number; key: number; mode: number; parallax: number; y: number; soft: number;
+  art: boolean; kickerOpacity: number; yearOpacity: number; kickerEra: boolean;
 }
 
 function readTheme(): Theme {
@@ -104,6 +110,10 @@ function readTheme(): Theme {
     parallax: parseFloat(v('--title-parallax', '0.8')),
     y: parseFloat(v('--title-y', '0.4')),
     soft: parseFloat(v('--title-softness', '0.04')),
+    art: v('--title-placement', 'fixed') === 'art',
+    kickerOpacity: parseFloat(v('--title-kicker-opacity', '0.85')),
+    yearOpacity: parseFloat(v('--title-year-opacity', '0.85')),
+    kickerEra: v('--title-kicker-mode', 'all') === 'era',
   };
 }
 
@@ -126,8 +136,12 @@ function drawSlot(ctx: CanvasRenderingContext2D, W: number, H: number, idx: numb
   const font = (px: number, w = th.weight) => `${w} ${px}px ${th.family}`;
   const text = th.upper ? ev.title.toUpperCase() : ev.title;
   const color = th.color === 'accent' ? accent : th.color;
-  const maxW = W * 0.9;
-  const cap = H * (eraStart ? 0.34 : 0.27) * th.size;
+  const an: TitleAnchor = th.art
+    ? resolveAnchor(idx)
+    : { x: th.align === 'left' ? 0.05 : 0.5, y: th.y, align: th.align === 'left' ? 'left' : 'center', size: 1 };
+  const side = an.align !== 'center';
+  const maxW = W * (side ? Math.min(0.4, an.align === 'left' ? 0.94 - an.x : an.x - 0.06) : 0.9);
+  const cap = H * (eraStart ? 0.34 : 0.27) * th.size * (an.size ?? 1);
   // largest size (<= cap) such that the text fits in <= 3 lines and the block is at most ~0.62 H tall
   let px = cap, lines: string[] = [];
   for (; px > H * 0.05; px *= 0.94) {
@@ -139,27 +153,31 @@ function drawSlot(ctx: CanvasRenderingContext2D, W: number, H: number, idx: numb
   }
   const lh = px * 0.96;
   const total = lines.length * lh;
-  const cy = H * th.y;
-  const left = th.align === 'left';
-  const x = left ? W * 0.05 : W / 2;
-  ctx.textAlign = left ? 'left' : 'center';
+  const cy = H * an.y;
+  const x = W * an.x;
+  ctx.textAlign = an.align;
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = color;
   ctx.font = font(px);
   ctx.letterSpacing = `${th.spacing * px}px`;
-  const top = cy - total / 2;
+  const top = Math.max(H * 0.07, cy - total / 2); // never ride up into the top edge
   lines.forEach((l, i) => ctx.fillText(l, x, top + (i + 0.82) * lh));
-  // kicker (era / breakthrough) above, year label below
+  // kicker (era / breakthrough) above, year label below; both optional (theme opacity 0 hides them)
   const small = Math.max(14, H * 0.026);
-  ctx.font = font(small, '600');
-  ctx.letterSpacing = `${small * 0.32}px`;
   const era = ERA_META[ev.era].name.toUpperCase();
   const kicker = eraStart ? era : ev.breakthrough ? BREAKTHROUGH[ev.breakthrough].toUpperCase() : era;
-  ctx.globalAlpha = 0.85;
-  ctx.fillText(kicker, x, top - small * 0.9);
-  ctx.font = font(small * 1.25, '500');
-  ctx.letterSpacing = `${small * 0.18}px`;
-  ctx.fillText(ev.yearLabel.toUpperCase(), x, top + total + small * 2.1);
+  if (th.kickerOpacity > 0.01 && (!th.kickerEra || eraStart)) {
+    ctx.font = font(small, '600');
+    ctx.letterSpacing = `${small * 0.32}px`;
+    ctx.globalAlpha = th.kickerOpacity;
+    ctx.fillText(kicker, x, top - small * 0.9);
+  }
+  if (th.yearOpacity > 0.01) {
+    ctx.font = font(small * 1.25, '500');
+    ctx.letterSpacing = `${small * 0.18}px`;
+    ctx.globalAlpha = th.yearOpacity;
+    ctx.fillText(ev.yearLabel.toUpperCase(), x, top + total + small * 2.1);
+  }
   ctx.globalAlpha = 1;
 }
 
@@ -228,11 +246,15 @@ export default function TitleLayer() {
     // slot k holds event c+k-1; its horizontal offset (in frame widths) follows the scroll at `parallax` speed
     const off = effect.uniforms.get('uOff')!.value as THREE.Vector3;
     const al = effect.uniforms.get('uAlpha')!.value as THREE.Vector3;
-    const o = [-1, 0, 1].map((d) => (c + d - f) * th.parallax);
-    const intro = 1 - smooth(-1.2, -0.3, f) * 0 ; // titles also show on the intro/outro edge events
-    const fade = (x: number, idx: number) => (idx < 0 || idx > last ? 0 : 1 - smooth(0.18, 0.62, Math.abs(x))) * intro;
+    let o = [-1, 0, 1].map((d) => (c + d - f) * th.parallax);
+    // fade by distance in stations (not frame widths) so a low --title-parallax doesn't leave neighbours half-visible
+    let fd = (_x: number, idx: number) => (idx < 0 || idx > last ? 0 : 1 - smooth(0.12, 0.5, Math.abs(idx - f)));
+    // past the ends (intro / outro) the edge title stays put and just dissolves: it must not slide off-frame, where
+    // its kicker would be clipped and it would sit over the finale/intro content
+    if (f > last) { o = [9, 0, 9]; fd = (_x, idx) => (idx === last ? 1 - smooth(0.02, 0.4, f - last) : 0); }
+    else if (f < 0) { o = [9, 0, 9]; fd = (_x, idx) => (idx === 0 ? 1 - smooth(0.02, 0.4, -f) : 0); }
     off.set(o[0], o[1], o[2]);
-    al.set(fade(o[0], c - 1), fade(o[1], c), fade(o[2], c + 1));
+    al.set(fd(o[0], c - 1), fd(o[1], c), fd(o[2], c + 1));
     const dbg = import.meta.env.DEV ? (window as unknown as { __td?: number }).__td : undefined;
     effect.uniforms.get('uDepth')!.value = dbg ?? titleState.depth;
     effect.uniforms.get('uSoft')!.value = th.soft;

@@ -76,12 +76,12 @@ void main(){
   vec2 uv=vec2(atan(n.x,n.z)/6.28318+.5, asin(n.y)/3.14159+.5);
   float v=texture2D(uTex,uv).r;
   float land=smoothstep(.47,.53,v);
-  float edge=(1.-smoothstep(0.,.05,abs(v-.5)))*.9;
-  float rim=pow(1.-abs(vNv.z),3.);
+  float edge=(1.-smoothstep(0.,.03,abs(v-.5)))*.9;
+  float rim=smoothstep(.86,1.,1.-abs(vNv.z));
   float lit=.35+.65*smoothstep(-.3,.9,dot(vNv,normalize(vec3(-.5,.6,.7))));
   vec3 c=vec3(.004,.01,.03)+land*vec3(.02,.07,.08)*lit;
   c+=edge*vec3(.04,.3,.42)*(.4+.6*lit);
-  c+=rim*vec3(.06,.16,.4);
+  c+=rim*vec3(.08,.12,.2);
   gl_FragColor=vec4(c,uW);
 }`,
   });

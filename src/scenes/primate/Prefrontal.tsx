@@ -30,13 +30,13 @@ void main(){
   float tw = .5+.5*sin(uTime*2.2+aS*40.);
   float wave = exp(-pow((p.x-uWave)*1.1,2.));
   float lit = front*uLit*(.55+.45*tw);
-  vec3 base = mix(vec3(.15,.3,1.0), vec3(.5,.25,1.0), aS)*(.25+.5*tw+gy*1.4);
-  if(part>.5) base = vec3(.2,.5,.7)*.45;
-  vec3 gold = vec3(2.6,1.6,.45);
-  vC = base + gold*lit*.7 + vec3(.5,.9,1.6)*wave*uLit*.6;
-  vA = uOp*(part<.5? .8:.6);
+  vec3 base = vec3(.72,.8,1.0)*max(.05,.1+.14*tw+gy*.45);
+  if(part>.5) base = vec3(.6,.68,.8)*.16;
+  vec3 gold = vec3(2.4,2.1,1.6);
+  vC = base + gold*lit*.7 + vec3(1.,1.1,1.3)*wave*uLit*.5;
+  vA = uOp*(part<.5? .6:.4);
   vec4 mv = modelViewMatrix*vec4(p,1.);
-  gl_PointSize = (2.0+lit*2.2+wave*1.5)*(.7+aS*.6)*30./ -mv.z;
+  gl_PointSize = (1.4+lit*2.0+wave*1.2)*(.7+aS*.6)*30./ -mv.z;
   gl_Position = projectionMatrix*mv;
 }`;
 const BRAIN_F = /* glsl */ `varying vec3 vC; varying float vA;
@@ -57,7 +57,7 @@ void main(){
   gl_Position = projectionMatrix*mv;
 }`;
 const LOOP_F = /* glsl */ `varying float vA;
-void main(){ float g = smoothstep(.5,.0,length(gl_PointCoord-.5)); gl_FragColor = vec4(vec3(1.9,1.5,.7)*g*vA, g*vA); }`;
+void main(){ float g = smoothstep(.5,.0,length(gl_PointCoord-.5)); gl_FragColor = vec4(vec3(2.2,2.0,1.6)*g*vA, g*vA); }`;
 
 export default function Prefrontal() {
   const scene = useScene();
@@ -67,7 +67,7 @@ export default function Prefrontal() {
 
   const brainGeo = useMemo(() => {
     const r = rng(5);
-    const nC = Math.floor(9000 * world.quality), nB = Math.floor(1600 * world.quality), nS = Math.floor(300 * world.quality);
+    const nC = Math.floor(6500 * world.quality), nB = Math.floor(900 * world.quality), nS = Math.floor(160 * world.quality);
     const n = nC + nB + nS;
     const aD = new Float32Array(n * 4), aS = new Float32Array(n), pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
@@ -147,6 +147,6 @@ export default function Prefrontal() {
 
 export const prefrontalCamera = (t: number) => ({
   pos: [lerp(0.5, 2.5, t), lerp(1.4, 0.8, t), lerp(8.5, 7.2, t)] as [number, number, number],
-  look: [lerp(0, 0.6, t), 0, 0] as [number, number, number],
+  look: [lerp(-1.4, -0.8, t), 0.2, 0] as [number, number, number],
   fov: 50,
 });

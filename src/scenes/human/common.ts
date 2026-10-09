@@ -157,7 +157,7 @@ export function genNeuron(r: () => number, scale = 1): { segs: NSeg[]; soma: V3 
 /** Smooth closed lateral brain outline (frontal lobe to the +x side), roughly x:[-2,2], y:[-2,1.5] */
 export const BRAIN_OUTLINE: [number, number][] = [
   [1.95, 0.0], [1.7, 0.85], [1.0, 1.4], [0.1, 1.55], [-0.9, 1.4], [-1.65, 0.9], [-1.95, 0.1], [-1.8, -0.6],
-  [-1.35, -0.95], [-0.7, -0.9], [-0.35, -1.1], [-0.3, -1.95], [0.15, -2.0], [0.35, -1.1], [0.8, -0.8], [1.45, -0.55],
+  [-1.35, -0.95], [-0.7, -0.9], [-0.28, -1.05], [-0.14, -1.85], [0.14, -1.9], [0.3, -1.05], [0.8, -0.8], [1.45, -0.55],
 ];
 export function brainCurve(n: number): [number, number][] {
   const c = new THREE.CatmullRomCurve3(BRAIN_OUTLINE.map(([x, y]) => new THREE.Vector3(x, y, 0)), true, 'centripetal');

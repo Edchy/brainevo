@@ -56,13 +56,13 @@ export default function Broca() {
     const ev = near(eventPos('broca-vocal-tract'), 0.7);
     const on = smoothstep(0.3, 0.62, t);
     const ph = t * 60 + tm * 2;
-    brain.alpha = w; brain.s = 1.25; brain.broca = on * (0.7 + 0.3 * Math.sin(ph * 0.6)) + ev * 0.4; brain.motor = on * 0.3; brain.glow = 0.3; shell.alpha = w * 0.4;
+    brain.alpha = w; brain.s = 1.3; brain.broca = on * (0.7 + 0.3 * Math.sin(ph * 0.6)) + ev * 0.4; brain.motor = on * 0.3; brain.glow = 0.3; shell.alpha = w * 0.4;
     for (const m of [R.tm, R.mm]) { m.uniforms.uAlpha.value = w; m.uniforms.uPh.value = ph * 0.5; m.uniforms.uAmp.value = on; }
-    R.waves.uniforms.uAlpha.value = w * on; R.waves.uniforms.uPh.value = ph;
-    R.skin.opacity = w * 0.3;
+    R.waves.uniforms.uAlpha.value = w * on * 0.45; R.waves.uniforms.uPh.value = ph;
+    R.skin.opacity = 0;
     const ly = lerp(-1.25, -1.75, smoothstep(0.05, 0.55, t));
     if (larynx.m) { larynx.m.position.set(0.1, ly, 0); larynx.m.scale.setScalar((0.1 + ev * 0.04) * w); }
-    R.halo.uniforms.uAlpha.value = w * (0.4 + 0.6 * on);
+    R.halo.uniforms.uAlpha.value = w * (0.2 + 0.5 * on);
   });
 
   return (
@@ -78,4 +78,4 @@ export default function Broca() {
   );
 }
 
-export const brocaCamera = (t: number) => ({ pos: [1.6 + Math.sin(t * 2) * 0.3, 0.3, 8.4] as [number, number, number], look: [1.4, 0.05, 0] as [number, number, number], fov: 52 });
+export const brocaCamera = (t: number) => ({ pos: [0.5 + Math.sin(t * 2) * 0.3, 0.3, 7.6] as [number, number, number], look: [0.5, 0.05, 0] as [number, number, number], fov: 52 });

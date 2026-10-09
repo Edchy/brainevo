@@ -10,8 +10,8 @@ const SLICE_FS = /* glsl */ `${GLSL_UTIL}
 uniform float uW,uMix,uTime,uT,uPulse; varying vec2 vUv;
 float blob(vec2 p, vec2 c, float r, float ph){
   float act = pow(.5+.5*sin(uTime*.9+ph*3.1+uT*14.), 2.);
-  float rad = r*(.7+.5*act);
-  return exp(-dot(p-c,p-c)/(rad*rad))*(.35+.65*act);
+  float rad = r*(.55+.4*act);
+  return exp(-pow(dot(p-c,p-c)/(rad*rad),1.4))*(.35+.65*act);
 }
 void main(){
   vec2 p=(vUv-.5)*2.; p.x*=1.18;
@@ -22,13 +22,12 @@ void main(){
   // slightly narrower toward the front
   d += .1*smoothstep(0.,1.,p.y)*abs(p.x);
   float inside=1.-smoothstep(-.015,.015,d);
-  float ridge=abs(fbm(vec3(p*5.5,2.))-.5);
-  float sulci=smoothstep(.0,.035,ridge);
-  float fissure=smoothstep(.012,.03,abs(p.x))+ (1.-smoothstep(.55,.62,abs(p.y)))*0.;
+  float ridge=abs(fbm(vec3(p*4.5,2.))-.5);
+  float sulciLine=1.-smoothstep(.0,.013,ridge);
+  float fissure=smoothstep(.012,.03,abs(p.x));
   fissure=mix(1.,fissure,smoothstep(.62,.5,abs(p.y)));
-  float shade=.35+.65*sulci;
-  vec3 base=vec3(.16,.21,.34)*shade*fissure*(.7+.5*fbm(vec3(p*3.,5.)));
-  // BOLD blobs
+  float inner=smoothstep(-.02,-.14,d);
+  vec3 base=vec3(.012)*inside + vec3(.9,.92,1.)*sulciLine*.3*inner*fissure;
   float v=0.;
   v+=blob(p,vec2(-.32,.5),.2,0.)*.9;
   v+=blob(p,vec2(.3,.55),.18,1.)*.7;
@@ -38,14 +37,14 @@ void main(){
   v+=blob(p,vec2(-.62,-.3),.14,5.)*.7;
   v+=blob(p,vec2(.4,-.38),.16,6.)*.8;
   v*=uMix*(.4+.5*uPulse);
-  v*=inside*fissure*(.4+.6*sulci);
-  vec3 hot=vec3(min(1.,v*2.),max(0.,min(1.,v*2.-.7)),max(0.,v-1.1)*.4)*vec3(1.5,1.2,.9);
-  vec3 c=base*inside+hot*smoothstep(.05,.3,v);
-  float rimGlow=exp(-pow(d*20.,2.))*.5;
-  c+=vec3(.25,.45,.9)*rimGlow*(.4+.3*uMix);
+  v*=inside*fissure;
+  vec3 hot=vec3(1.,.96,.9)*v*1.5;
+  vec3 c=base+hot*smoothstep(.04,.3,v);
+  float rimGlow=exp(-pow(d*28.,2.))*.9;
+  c+=vec3(.9,.95,1.2)*rimGlow*(.5+.3*uMix);
   // scan line
   float sy=fract(uT*3.+uTime*.1)*2.-1.;
-  c+=vec3(.4,.8,1.6)*exp(-pow((p.y-sy)*18.,2.))*.25*inside;
+  c+=vec3(1.)*exp(-pow((p.y-sy)*30.,2.))*.12*inside;
   gl_FragColor=vec4(c,uW*(inside*.9+rimGlow));
 }`;
 
@@ -53,7 +52,7 @@ export default function Imaging() {
   const scene = useScene();
   const { geo, mat, slice, lgeo, lmat } = useMemo(() => {
     const b = new PBuf(141);
-    const CH = 9;
+    const CH = 5;
     const N = Math.floor(900 * world.quality);
     for (let c = 0; c < CH; c++) for (let i = 0; i < N; i++) b.add(i / N, c, 0, [1, 1, 1], c);
     const mat = pointMat({
@@ -65,10 +64,11 @@ export default function Imaging() {
       float spike = pow(max(0.,sin(s*7.+ch*2.4-uT*10.)),24.)*sin(ph*6.)*.6;
       float env = pow(sin(3.14159*s),.6);
       float y = (alpha+beta+theta+spike)*.33*env*(1.-uMix*.85);
-      p = vec3(mix(-5.2,5.2,s), (ch-4.)*.46*(1.-uMix*.5) + y + .2, ch*.04);
+      p = vec3(mix(-5.2,5.2,s), (ch-2.)*.78*(1.-uMix*.5) + y*(ch==2.?1.4:1.) + .2, ch*.04);
       float head = exp(-pow((fract(s*1.-uT*3.-uTime*.08)-.5)*5.,2.));
-      col = mix(vec3(.3,1.5,2.2), vec3(1.6,.7,2.2), ch/8.);
-      a = (.18+.7*head)*env*(1.-uMix);
+      col = vec3(1.6,1.6,1.7);
+      float hero = ch==2. ? 1. : .35;
+      a = (.16+.7*head)*hero*env*(1.-uMix);
       size = .35+.5*head;`,
     });
     const slice = new THREE.ShaderMaterial({
@@ -99,7 +99,6 @@ export default function Imaging() {
   return (
     <group>
       <points geometry={geo} material={mat} frustumCulled={false} />
-      <lineSegments geometry={lgeo} material={lmat} frustumCulled={false} />
       <mesh position={[0, 0.1, 0]} rotation={[-0.25, 0.1, 0]} material={slice}><planeGeometry args={[4.6, 4.6]} /></mesh>
     </group>
   );

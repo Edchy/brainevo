@@ -26,10 +26,9 @@ const BODY = /* glsl */ `
     float par = smoothstep(.3,-.7,dir.x)*smoothstep(-.1,.6,dir.y);
     float cer = smoothstep(-.1,-.7,dir.y)*smoothstep(.4,-.4,dir.x);
     float hl = max(par,cer)*sin(m*3.14159)*.8 + max(par,cer)*m*.25;
-    col = mix(amber, cool, m*.7) ;
-    col += vec3(.2,.7,1.1)*hl;
-    a = .11*mix(.12,.8,rf) * (.55 + tw*1.1) * (1. + uPulse*.5 + hl*.4);
-    size = .35 + .35*rf + tw*.35 + hl*.3;
+    col = vec3(1.0,1.0,1.02)*1.1 + vec3(.15,.2,.3)*hl;
+    a = .2*mix(.05,1.,rf*rf*rf) * (.7 + tw*1.3) * (1. + uPulse*.5 + hl*.4);
+    size = .3 + .3*rf + tw*.4 + hl*.25;
   } else if (uMode < 1.5) {
     // ghost of the old shape
     p = pa;
@@ -48,30 +47,23 @@ const BODY = /* glsl */ `
 export default function Morph() {
   const scene = useScene();
   const root = useRef<THREE.Group>(null);
-  const { geo, skull, mats } = useMemo(() => {
+  const { geo, mats } = useMemo(() => {
     const r = rng(11);
     const N = Math.floor(15000 * world.quality);
     const b = new PBuf(21);
-    const s = new PBuf(22);
     const dirv = new THREE.Vector3();
     for (let i = 0; i < N; i++) {
       dirv.set(r() * 2 - 1, r() * 2 - 1, r() * 2 - 1);
       while (dirv.lengthSq() > 1 || dirv.lengthSq() < 0.01) dirv.set(r() * 2 - 1, r() * 2 - 1, r() * 2 - 1);
       dirv.normalize();
-      const surf = r() < 0.7;
+      const surf = r() < 0.93;
       const rf = surf ? 1 : Math.cbrt(r()) * 0.92;
       b.add(dirv.x * rf, dirv.y * rf, dirv.z * rf, [1, 1, 1], rf);
     }
-    for (let i = 0; i < Math.floor(4200 * world.quality); i++) {
-      dirv.set(r() * 2 - 1, r() * 2 - 1, r() * 2 - 1);
-      while (dirv.lengthSq() > 1 || dirv.lengthSq() < 0.01) dirv.set(r() * 2 - 1, r() * 2 - 1, r() * 2 - 1);
-      dirv.normalize();
-      s.add(dirv.x, dirv.y, dirv.z, [1, 1, 1], 1);
-    }
     const mk = (mode: number) => pointMat({ decl: 'uniform float uM,uPulse,uMode;', body: BODY, uniforms: { uM: { value: 0 }, uPulse: { value: 0 }, uMode: { value: mode } }, size: 0.9 });
-    return { geo: b.build(), skull: s.build(), mats: [mk(0), mk(1), mk(2)] };
+    return { geo: b.build(), mats: [mk(0)] };
   }, []);
-  useEffect(() => () => { geo.dispose(); skull.dispose(); mats.forEach((m) => m.dispose()); }, [geo, skull, mats]);
+  useEffect(() => () => { geo.dispose(); mats.forEach((m) => m.dispose()); }, [geo, mats]);
 
   useFrame((state) => {
     if (!scene.active) return;
@@ -93,8 +85,6 @@ export default function Morph() {
   return (
     <group ref={root}>
       <points geometry={geo} material={mats[0]} frustumCulled={false} />
-      <points geometry={geo} material={mats[1]} frustumCulled={false} />
-      <points geometry={skull} material={mats[2]} frustumCulled={false} />
     </group>
   );
 }

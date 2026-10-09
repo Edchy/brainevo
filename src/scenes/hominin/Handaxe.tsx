@@ -5,7 +5,6 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, rng, smoothstep } from '../../world/util';
 
-const NF = 40;
 export default function Handaxe() {
   const scene = useScene();
   const q = world.quality;
@@ -64,14 +63,14 @@ export default function Handaxe() {
       fragmentShader: `uniform float uAlpha, uT; varying vec2 vUv;
         void main(){ float x=abs(vUv.x-.5)*2.; float core=exp(-x*x*900.); float halo=exp(-x*x*30.)*.12;
           float seg = .6+.4*sin(vUv.y*40.-uT*3.); float fade=smoothstep(0.,.15,vUv.y)*smoothstep(1.,.85,vUv.y);
-          gl_FragColor=vec4(vec3(1.,.8,.5)*(core*seg*1.4+halo)*fade*uAlpha,1.); }`,
+          gl_FragColor=vec4(vec3(1.,.8,.5)*(core*seg*0.7+halo*.6)*fade*uAlpha,1.); }`,
     });
     const chipGeo = new THREE.TetrahedronGeometry(1, 0); chipGeo.scale(1, .3, .7);
-    const chipMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.2, .9), transparent: true, opacity: .8, blending: THREE.AdditiveBlending, depthWrite: false, wireframe: true, toneMapped: false });
+    const chipMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.5, 1.2, .9), transparent: true, opacity: .5, blending: THREE.AdditiveBlending, depthWrite: false, wireframe: true, toneMapped: false });
     const r = rng(4);
-    const ch = Array.from({ length: Math.floor(NF * Math.max(.5, q)) }, () => ({ a: r() * 6.28, y: (r() - .5) * 2.6, sp: .6 + r() * 1.6, s: .05 + r() * .08, t0: r() * .7 }));
+    const ch = Array.from({ length: Math.floor(7 * Math.max(.5, q)) }, () => ({ a: r() * 6.28, y: (r() - .5) * 2.6, sp: .6 + r() * 1.6, s: .05 + r() * .08, t0: r() * .7 }));
     // dust
-    const nD = Math.floor(600 * q), dp = new Float32Array(nD * 3);
+    const nD = Math.floor(120 * q), dp = new Float32Array(nD * 3);
     for (let i = 0; i < nD; i++) { dp[i * 3] = (r() - .5) * 14; dp[i * 3 + 1] = (r() - .5) * 8; dp[i * 3 + 2] = (r() - .5) * 8 - 1; }
     const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.BufferAttribute(dp, 3));
     const dm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uAlpha: { value: 1 }, uTime: { value: 0 } },
@@ -113,4 +112,4 @@ export default function Handaxe() {
   );
 }
 
-export const handaxeCamera = (t: number) => ({ pos: [0, 0.2, 6.4 - t * 0.6] as [number, number, number], look: [0, 0, 0] as [number, number, number], fov: 50 });
+export const handaxeCamera = (t: number) => ({ pos: [-0.6, 0.2, 6.2 - t * 0.6] as [number, number, number], look: [-0.6, 0, 0] as [number, number, number], fov: 50 });

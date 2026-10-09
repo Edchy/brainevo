@@ -17,14 +17,14 @@ export default function Burial() {
     // 5 halo
     for (let i = 0; i < 14; i++) b.add(0, 0, 0, [1, 1, 1], 5);
     // 1 motes
-    for (let i = 0; i < 1400 * q; i++) {
+    for (let i = 0; i < 380 * q; i++) {
       const a = r() * 6.283, rad = Math.sqrt(r()) * 7;
       b.add(Math.cos(a) * rad, 0, Math.sin(a) * rad - 1, [1, 1, 1], 1);
     }
     // 2 flowers (around the grave)
     const fcols: [number, number, number][] = [[1.7, 1.7, 1.9], [1.8, 1.5, .5], [.8, 1.1, 2.0], [1.9, .8, 1.1]];
-    for (let f = 0; f < 11; f++) {
-      const a = (f / 11) * 6.283 + r() * 0.5, rad = 1.5 + r() * 0.9;
+    for (let f = 0; f < 7; f++) {
+      const a = (f / 7) * 6.283 + r() * 0.5, rad = 1.5 + r() * 0.9;
       const cx = Math.cos(a) * rad * 1.2, cz = Math.sin(a) * rad * 0.8;
       const col = fcols[f % 4];
       const stem = 0.14 + r() * 0.12;
@@ -46,7 +46,7 @@ export default function Burial() {
     }
     // 4 distant fires
     const fires: [number, number, number][] = [];
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 24; i++) {
       const a = r() * 6.283, rad = 3.2 + Math.pow(r(), 0.8) * 13;
       fires.push([Math.cos(a) * rad, 0, Math.sin(a) * rad * 0.9 - 2.5]);
     }
@@ -71,18 +71,18 @@ export default function Burial() {
       float fl = .85+.15*sin(uTime*9.+sin(uTime*4.)*2.);
       if (k < .5) {
         float ph = fract(aSeed.x + uTime*.6 + uT*3.);
-        float h = ph*.75;
-        float rad = (1.-ph)*.13*(.3+aSeed.z);
+        float h = ph*.95;
+        float rad = (1.-ph)*.15*(.3+aSeed.z);
         float an = aSeed.y*6.283 + uTime*3.;
         p = vec3(cos(an)*rad + sin(uTime*5.+ph*7.)*.03*ph, .07+h, sin(an)*rad);
-        col = mix(vec3(2.4,1.4,.45), vec3(1.7,.4,.1), ph);
+        col = mix(vec3(2.6,2.1,1.4), vec3(1.9,.9,.4), ph);
         a = pow(1.-ph,1.4)*.9*fl; size = .9*(1.-ph)+.25;
       } else if (k < 1.5) {
         float y = fract(aSeed.y + uTime*.02 + uT*.35)*5.;
         p = vec3(position.x + sin(uTime*.3+aSeed.x*30.)*.4, y-.2, position.z + cos(uTime*.25+aSeed.z*20.)*.4);
         col = vec3(1.5,.55,.25);
         float d = length(p.xz*vec2(.6,.6));
-        a = .35*(.3+.7*exp(-d*.3))*sin(3.14159*y/5.)*(.6+.6*sin(uTime*2.+aSeed.x*40.)); size = .35;
+        a = .5*(.3+.7*exp(-d*.3))*sin(3.14159*y/5.)*(.6+.6*sin(uTime*2.+aSeed.x*40.)); size = .35;
       } else if (k < 2.5) {
         a = .8*(.75+.25*sin(uTime*1.5+aSeed.x*20.)); size = .5; col = aCol*1.1;
         p.y += .01*sin(uTime+aSeed.x*10.);
@@ -109,7 +109,7 @@ export default function Burial() {
     // network lines between fires
     const lb = new LBuf(72);
     fires.forEach((fp, i) => {
-      const dists = fires.map((g, j) => [j, Math.hypot(g[0] - fp[0], g[2] - fp[2])] as const).filter(([j]) => j !== i).sort((a, c) => a[1] - c[1]).slice(0, 2);
+      const dists = fires.map((g, j) => [j, Math.hypot(g[0] - fp[0], g[2] - fp[2])] as const).filter(([j]) => j !== i).sort((a, c) => a[1] - c[1]).slice(0, 1);
       for (const [j] of dists) {
         if (j < i && dists.length) continue;
         const gp = fires[j];
@@ -161,7 +161,6 @@ export default function Burial() {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} material={ground}><planeGeometry args={[60, 60]} /></mesh>
       <points geometry={geo} material={mat} frustumCulled={false} />
-      <lineSegments geometry={lgeo} material={lmat} frustumCulled={false} />
     </group>
   );
 }

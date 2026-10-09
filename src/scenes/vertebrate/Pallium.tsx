@@ -86,7 +86,7 @@ export default function Pallium() {
     for (let i = 0; i < orr.length; i++) orr[i] = r();
     og.setAttribute('position', new THREE.BufferAttribute(new Float32Array(on * 3), 3)); og.setAttribute('aR', new THREE.BufferAttribute(orr, 4));
     const head = latheX((x) => 1.05 * Math.sqrt(Math.max(0, 1 - Math.pow((x - 0.2) / 3.3, 2))) * (x > 1.5 ? 0.9 : 1), -3.1, 3.5, 80, 44, 0.95);
-    return { hg, nl: mk(1), nr: mk(-1), og, hm: hemiMat(), nm: neuronMat(), om: odorMat(), head, headM: makeBodyMat('#58b8ff', { rim: 0.8, base: 0.015 }) };
+    return { hg, nl: mk(1), nr: mk(-1), og, hm: hemiMat(), nm: neuronMat(), om: odorMat(), head, headM: makeBodyMat('#58b8ff', { rim: 0.4, base: 0.008 }) };
   }, []);
   useEffect(() => () => { S.hg.dispose(); S.nl.dispose(); S.nr.dispose(); S.og.dispose(); S.hm.dispose(); S.nm.dispose(); S.om.dispose(); S.head.dispose(); S.headM.dispose(); }, [S]);
   const p22 = eventPos('pallium-fish-forebrain');

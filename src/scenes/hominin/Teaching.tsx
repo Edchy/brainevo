@@ -7,11 +7,11 @@ import { makeGlowMat, makeRim } from './common';
 import { ik, makeSkin, seg, taperGeo } from './limbs';
 import { smoothstep } from '../../world/util';
 
-const N = 7, TR = 46;
-const SP = 1.28;
-const pos = (i: number, out: THREE.Vector3) => out.set(-3.1 + i * SP, 0, -0.4 * i);
+const N = 5, TR = 46;
+const SP = 1.4;
+const pos = (i: number, out: THREE.Vector3) => out.set(-2.4 + i * SP, 0, -0.25 * i);
 const sc = (i: number) => (i === 0 ? 1.28 : 1.12 - i * 0.015);
-const COOL = new THREE.Color('#6b4a3a'), GOLD = new THREE.Color('#f0b872');
+const COOL = new THREE.Color('#2b2522'), GOLD = new THREE.Color('#ffe0b8');
 const A = 0.4, B = 0.38;
 
 interface Shared { s: number; w: number; tm: number; hand: THREE.Vector3[]; lit: number[] }
@@ -21,7 +21,7 @@ function Person({ i, S, geo, shard, ringG, shardM, ringM }: {
   shardM: THREE.Material; ringM: THREE.Material;
 }) {
   const grp = useRef<THREE.Group>(null);
-  const skin = useMemo(() => makeSkin('#6b4a3a', '#ffcf94', { rimPow: 2.0 }), []);
+  const skin = useMemo(() => makeSkin('#6b4a3a', '#ffcf94', { rimPow: 3.0 }), []);
   const eyeM = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(0, 0, 0), toneMapped: false }), []);
   const m = {
     torso: useRef<THREE.Mesh>(null), lL: useRef<THREE.Mesh>(null), lR: useRef<THREE.Mesh>(null), sL: useRef<THREE.Mesh>(null), sR: useRef<THREE.Mesh>(null),
@@ -43,8 +43,8 @@ function Person({ i, S, geo, shard, ringG, shardM, ringM }: {
     const lit = smoothstep(i - 0.45, i + 0.05, s);
     const near = Math.exp(-(s - i) * (s - i) * 6);
     S.lit[i] = lit;
-    const bright = 0.5 + lit * 0.85 + near * 0.55;
-    skin.uniforms.uInt.value = bright; skin.uniforms.uAlpha.value = w; skin.uniforms.uHotAmt.value = (lit * 0.16 + near * 0.45) * w;
+    const bright = 0.13 + lit * 0.1 + near * 0.9;
+    skin.uniforms.uInt.value = bright; skin.uniforms.uAlpha.value = w; skin.uniforms.uHotAmt.value = (lit * 0.03 + near * 0.5) * w;
     (skin.uniforms.uColor.value as THREE.Color).copy(COOL).lerp(GOLD, lit * 0.8);
     eyeM.color.setRGB(2.6, 1.9, 1.0).multiplyScalar(lit * (0.6 + near));
     const sw = 1 + 0.012 * Math.sin(tm * 1.7 + i) ;
@@ -63,10 +63,10 @@ function Person({ i, S, geo, shard, ringG, shardM, ringM }: {
     seg(m.uL.current, V.a, V.el, 0.062); seg(m.fL.current, V.el, V.b, 0.047);
     // tool + halo (complexity grows down the chain)
     const tool = m.tool.current;
-    if (tool) { tool.position.set(V.ha.x + 0.1, V.ha.y + 0.03, V.ha.z); tool.scale.setScalar(Math.max(0.0001, lit * w * 0.07 * (1 + near * 0.6))); tool.rotation.y = tm * 1.4 + i; tool.rotation.z = 0.4; }
+    if (tool) { tool.position.set(V.ha.x + 0.1, V.ha.y + 0.03, V.ha.z); tool.scale.setScalar(0.0001); tool.rotation.y = tm * 1.4 + i; tool.rotation.z = 0.4; }
     const halo = m.halo.current;
     if (halo) {
-      halo.position.y = 2.2 + Math.sin(tm * 1.4 + i) * 0.03; halo.rotation.y = tm * 0.7 + i; halo.scale.setScalar(Math.max(0.0001, lit * w));
+      halo.position.y = 2.2 + Math.sin(tm * 1.4 + i) * 0.03; halo.rotation.y = tm * 0.7 + i; halo.scale.setScalar(0.0001);
       const n = Math.min(8, i + 1);
       for (let k = 0; k < 8; k++) {
         const sh = m.shards.current![k]; if (!sh) continue;
@@ -77,7 +77,7 @@ function Person({ i, S, geo, shard, ringG, shardM, ringM }: {
         sh.rotation.set(a, a * 1.3, 0);
       }
     }
-    if (m.pool.current) { V.poolM.uniforms.uAlpha.value = (0.22 + lit * 0.5 + near * 0.35) * w; }
+    if (m.pool.current) { V.poolM.uniforms.uAlpha.value = (0.04 + lit * 0.12 + near * 0.3) * w; }
     void sw;
   });
 
@@ -174,16 +174,16 @@ export default function Teaching() {
     for (let i = 0; i < N - 1; i++) {
       const a = S.hand[i], b = S.hand[i + 1];
       lp.setXYZ(i * 2, a.x, a.y, a.z); lp.setXYZ(i * 2 + 1, b.x, b.y, b.z);
-      const c = smoothstep(i, i + 1, s) * w * 0.9; lc.setXYZ(i * 2, c, c * 0.6, c * 0.25); lc.setXYZ(i * 2 + 1, c, c * 0.6, c * 0.25);
+      const c = smoothstep(i, i + 1, s) * w * 0.35; lc.setXYZ(i * 2, c, c * 0.6, c * 0.25); lc.setXYZ(i * 2 + 1, c, c * 0.6, c * 0.25);
     }
     lp.needsUpdate = true; lc.needsUpdate = true; R.lm.opacity = w;
     orbAt(Math.min(s, N - 1.0001), tmp);
-    if (orb.m) { orb.m.position.copy(tmp); orb.m.scale.setScalar(0.07 * w); }
-    if (orb.h) { orb.h.position.copy(tmp); orb.h.quaternion.copy(st.camera.quaternion); orb.h.scale.setScalar(1.3); R.halo.uniforms.uAlpha.value = w; }
+    if (orb.m) { orb.m.position.copy(tmp); orb.m.scale.setScalar(0.09 * w); }
+    if (orb.h) { orb.h.position.copy(tmp); orb.h.quaternion.copy(st.camera.quaternion); orb.h.scale.setScalar(2.0); R.halo.uniforms.uAlpha.value = w; }
     const tp = R.tg.attributes.position as THREE.BufferAttribute, ta = R.tg.attributes.aA as THREE.BufferAttribute;
     for (let i = 0; i < TR; i++) { orbAt(Math.min(Math.max(0, s - i * 0.03), N - 1.0001), tmp); tp.setXYZ(i, tmp.x, tmp.y, tmp.z); ta.setX(i, (1 - i / TR) * 0.8); }
     tp.needsUpdate = true; ta.needsUpdate = true; R.tm.uniforms.uAlpha.value = w;
-    R.shardM.opacity = w; R.haze.uniforms.uAlpha.value = 0.25 * w;
+    R.shardM.opacity = w; R.haze.uniforms.uAlpha.value = 0.06 * w;
   });
 
   return (
@@ -198,4 +198,4 @@ export default function Teaching() {
   );
 }
 
-export const teachingCamera = (t: number) => ({ pos: [-0.2 + t * 0.4, 1.55, 5.6] as [number, number, number], look: [0.1, 1.05, -1.2] as [number, number, number], fov: 50 });
+export const teachingCamera = (t: number) => ({ pos: [-0.2 + t * 0.4, 1.45, 5.0] as [number, number, number], look: [0.0, 1.1, -0.7] as [number, number, number], fov: 50 });

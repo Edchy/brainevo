@@ -62,10 +62,9 @@ export default function Cambrian() {
     const r = rng(540);
     const list: Critter[] = [
       { kind: 1, x: 0.5, y: 0.9, z: 0.5, s: 1.25, yaw: 0, sp: 0.5, ph: 0 },
-      { kind: 1, x: -6.5, y: 2.6, z: -7, s: 1.0, yaw: -0.3, sp: 0.35, ph: 1.7 },
-      { kind: 1, x: 7, y: 1.2, z: -11, s: 1.6, yaw: Math.PI + 0.2, sp: 0.3, ph: 3.1 },
+      { kind: 1, x: 7, y: 1.6, z: -11, s: 1.6, yaw: Math.PI + 0.2, sp: 0.3, ph: 3.1 },
     ];
-    for (let i = 0; i < 13; i++) list.push({ kind: 0, x: (r() - 0.5) * 18, y: -3.1 + r() * 0.1, z: -4 + r() * 4.5, s: 0.9 + r() * 0.8, yaw: r() * 6.28, sp: 0.1 + r() * 0.2, ph: r() * 6 });
+    for (let i = 0; i < 5; i++) list.push({ kind: 0, x: (r() - 0.5) * 18, y: -3.1 + r() * 0.1, z: -4 + r() * 4.5, s: 0.9 + r() * 0.8, yaw: r() * 6.28, sp: 0.1 + r() * 0.2, ph: r() * 6 });
     return list;
   }, []);
   const U = useMemo(() => ({ uTime: { value: 0 }, uW: { value: 0 }, uEye: { value: 0 }, uLight: { value: 0.2 } }), []);
@@ -86,7 +85,7 @@ export default function Cambrian() {
         float seg=.5+.5*sin(vO.x*(uMode>.5?22.:60.));
         vec3 body=vec3(.05,.07,.09)+vec3(.22,.3,.28)*up*uLight*(.7+.3*seg)+vec3(.3,.55,.6)*f*uLight*.9;
         body+=vec3(.25,.12,.08)*(vP>2.5?1.:0.)*uLight*(.4+up);
-        vec3 fog=vec3(.01,.04,.07)+vec3(.04,.14,.2)*uLight;
+        vec3 fog=vec3(.003,.012,.02)+vec3(.01,.03,.045)*uLight;
         float fa=1.-exp(-vD*(.07-.025*uLight)); body=mix(body,fog,fa);
         vec3 c=body;
         if(vP>.5&&vP<1.5){ c=vec3(.1,.1,.12)+vec3(1.,1.6,1.8)*uEye*3.2; }
@@ -104,14 +103,14 @@ export default function Cambrian() {
     fragmentShader: `varying vec3 vP; uniform float uW,uTime,uLight; ${NOISE}
       void main(){ float n=fbm(vec3(vP.xz*.6,0.)); float rip=pow(1.-abs(vnoise(vec3(vP.xz*1.0,uTime*.25))*2.-1.),8.)+pow(1.-abs(vnoise(vec3(vP.xz*1.6+4.,uTime*.3))*2.-1.),8.);
        float fade=exp(-length(vP.xz-vec2(0.,-4.))*.08);
-       gl_FragColor=vec4((vec3(.04,.1,.12)*(.4+n)+vec3(.35,.8,.9)*rip*.28*uLight)*fade*uW,1.); }`,
+       gl_FragColor=vec4((vec3(.012,.03,.04)*(.4+n)+vec3(.35,.8,.9)*rip*.06*uLight)*fade*uW,1.); }`,
   }), []);
   const flashMat = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 2.1, 2.2), transparent: true, opacity: 0, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, toneMapped: false }), []);
   const beamMat = useMemo(() => new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
     uniforms: { uW: { value: 0 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }',
-    fragmentShader: 'varying vec2 vUv; uniform float uW; void main(){ float a=pow(vUv.y,1.6)*exp(-pow((vUv.x-.5)*4.5,2.)); gl_FragColor=vec4(vec3(.35,.8,.95)*a*uW*.22,1.); }',
+    fragmentShader: 'varying vec2 vUv; uniform float uW; void main(){ float a=pow(vUv.y,1.6)*exp(-pow((vUv.x-.5)*4.5,2.)); gl_FragColor=vec4(vec3(.35,.8,.95)*a*uW*.025,1.); }',
   }), []);
   const beams = useRef<THREE.Group>(null);
   const flash = useRef<THREE.Mesh>(null);
@@ -127,7 +126,7 @@ export default function Cambrian() {
     const light = (0.12 + 0.88 * smoothstep(ev - 0.5, ev + 0.5, world.stationF)) * (0.3 + 0.7 * tail);
     U.uTime.value = time; U.uW.value = w; U.uEye.value = open * (0.8 + 0.4 * Math.sin(time * 2) * (world.reduced ? 0 : 1)) + fl * 1.5; U.uLight.value = light;
     floorMat.uniforms.uW.value = w; floorMat.uniforms.uTime.value = time; floorMat.uniforms.uLight.value = light;
-    flashMat.opacity = w * fl * fl * 0.09;
+    flashMat.opacity = w * fl * fl * 0.008;
     if (flash.current) flash.current.scale.setScalar(1 + (1 - fl) * 0.2);
     beamMat.uniforms.uW.value = w * open * (0.6 + 0.4 * tail);
     if (beams.current) beams.current.visible = open > 0.02;
@@ -156,11 +155,11 @@ export default function Cambrian() {
   const shafts = useMemo(() => Array.from({ length: 7 }, (_, i) => ({ x: -12 + i * 4 + (i % 2) * 1.2, w: 1.2 + (i % 3) * 0.8, tilt: 0.25 })), []);
   return (
     <group>
-      <Backdrop color="#46c4d8" caustics={0.5} shafts={0.55} haze={0.25} z={-18} uLight={() => U.uLight.value * 1.2} />
+      <Backdrop color="#46c4d8" caustics={0} shafts={0.04} haze={0} z={-18} uLight={() => U.uLight.value} />
       <mesh material={floorMat} rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.2, -4]} frustumCulled={false}>
         <planeGeometry args={[70, 40]} />
       </mesh>
-      <Plankton count={900} box={[26, 14, 16]} color="#c8f4ff" size={0.04} dir={[0.02, -0.04, 0]} intensity={0.8} />
+      <Plankton count={110} box={[26, 14, 16]} color="#c8f4ff" size={0.035} dir={[0.02, -0.04, 0]} intensity={0.7} />
       <group ref={beams}>
         {shafts.map((sh, i) => (
           <mesh key={i} position={[sh.x, 4, -9 - (i % 3) * 2]} rotation={[0, 0, sh.tilt]} material={beamMat} frustumCulled={false}>

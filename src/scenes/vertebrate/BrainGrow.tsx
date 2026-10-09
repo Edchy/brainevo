@@ -34,7 +34,7 @@ export default function BrainGrow() {
   const { geo, mat } = useBrain(220, 44);
   const stage = useMemo(() => {
     const head = latheX((x) => 1.05 * Math.sqrt(Math.max(0, 1 - Math.pow((x - 0.2) / 3.3, 2))) * (x > 1.5 ? 0.9 : 1), -3.1, 3.5, 80, 44, 0.95);
-    const headM = makeBodyMat('#58b8ff', { rim: 1.1, base: 0.02, stripe: 0 });
+    const headM = makeBodyMat('#58b8ff', { rim: 0.5, base: 0.01, stripe: 0 });
     const eyeM = makeBodyMat('#9be7ff', { rim: 2.5, base: 0.7 });
     const eyeG = new THREE.SphereGeometry(0.2, 24, 16);
     const n = Math.floor(900 * world.quality);

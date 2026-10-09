@@ -73,3 +73,77 @@ export function rimMaterial(base: string, rim: string, fog: string, fogNear = 8,
         vec3 c = uBase + uRim*fr*uK; c = mix(c, uFog, smoothstep(uNear,uFar,vD)); gl_FragColor = vec4(c*uW,1.); }`,
   });
 }
+
+/**
+ * One-sided rim-lit silhouette: near-black body, a thin fresnel rim that only catches on the side facing a back light
+ * (view-space direction `light`), plus a whisper of top fill. Weight via uW, rim strength via uK.
+ */
+export function silhouetteMaterial(rim = '#dfe8ff', base = '#010203', rimPow = 3.2, k = 1.4, light: [number, number] = [-0.62, 0.78]) {
+  return new THREE.ShaderMaterial({
+    toneMapped: false,
+    uniforms: {
+      uBase: { value: new THREE.Color(base) }, uRim: { value: new THREE.Color(rim) },
+      uW: { value: 1 }, uK: { value: k }, uPow: { value: rimPow }, uL: { value: new THREE.Vector2(light[0], light[1]).normalize() },
+    },
+    vertexShader: /* glsl */ `varying vec3 vN; varying vec3 vV;
+      void main(){
+        vec4 lp = vec4(position,1.); vec3 nn = normal;
+        #ifdef USE_INSTANCING
+          lp = instanceMatrix*lp; nn = mat3(instanceMatrix)*nn;
+        #endif
+        vec4 mv = modelViewMatrix*lp; vN = normalize(normalMatrix*nn); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }`,
+    fragmentShader: /* glsl */ `uniform vec3 uBase,uRim; uniform float uW,uK,uPow; uniform vec2 uL; varying vec3 vN; varying vec3 vV;
+      void main(){
+        vec3 n = normalize(vN);
+        float fr = pow(1.-abs(dot(n,normalize(vV))), uPow);
+        float side = dot(normalize(n.xy+1e-4), uL);
+        float lit = mix(.38, 1., smoothstep(-.35,.75,side));
+        vec3 c = uBase*(.5+.5*n.y) + uRim*fr*uK*lit;
+        gl_FragColor = vec4(c*uW,1.); }`,
+  });
+}
+
+/** tube with a radius that tapers from r0 to r1 along `curve` (rounded, closed by shrinking radius) */
+export function taperedTube(curve: THREE.Curve<THREE.Vector3>, r0: number, r1: number, segs = 24, radial = 10) {
+  const pos: number[] = [], idx: number[] = [];
+  const fr = curve.computeFrenetFrames(segs, false);
+  for (let i = 0; i <= segs; i++) {
+    const u = i / segs; const p = curve.getPoint(u);
+    const r = THREE.MathUtils.lerp(r0, r1, Math.pow(u, 0.85));
+    for (let j = 0; j < radial; j++) {
+      const a = (j / radial) * Math.PI * 2; const c = Math.cos(a), s = Math.sin(a);
+      pos.push(p.x + r * (c * fr.normals[i].x + s * fr.binormals[i].x), p.y + r * (c * fr.normals[i].y + s * fr.binormals[i].y), p.z + r * (c * fr.normals[i].z + s * fr.binormals[i].z));
+    }
+  }
+  for (let i = 0; i < segs; i++) for (let j = 0; j < radial; j++) {
+    const a = i * radial + j, b = i * radial + ((j + 1) % radial), c = (i + 1) * radial + j, d = (i + 1) * radial + ((j + 1) % radial);
+    idx.push(a, c, b, b, c, d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+
+/** one continuous smooth body: keys are [x, radius, centreY] along +x; cross-section is an ellipse (z radius r, y radius r*flat) */
+export function profileBody(keys: [number, number, number][], flat = 1, segs = 90, radial = 22) {
+  const cr = new THREE.SplineCurve(keys.map(([x, r]) => new THREE.Vector2(x, r)));
+  const cy = new THREE.SplineCurve(keys.map(([x, , y]) => new THREE.Vector2(x, y)));
+  const pos: number[] = [], idx: number[] = [];
+  for (let i = 0; i <= segs; i++) {
+    const u = i / segs; const a = cr.getPoint(u), b = cy.getPoint(u);
+    const r = Math.max(0, a.y);
+    for (let j = 0; j < radial; j++) {
+      const ang = (j / radial) * Math.PI * 2;
+      pos.push(a.x, b.y + Math.sin(ang) * r * flat, Math.cos(ang) * r);
+    }
+  }
+  for (let i = 0; i < segs; i++) for (let j = 0; j < radial; j++) {
+    const a = i * radial + j, b = i * radial + ((j + 1) % radial), c = (i + 1) * radial + j, d = (i + 1) * radial + ((j + 1) % radial);
+    idx.push(a, c, b, b, c, d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}

@@ -92,11 +92,11 @@ export default function Science() {
     const lmat = lineMat({ body: 'a=.8;' });
     // starfield
     const sb = new PBuf(123);
-    for (let i = 0; i < 900 * world.quality; i++) {
+    for (let i = 0; i < 160 * world.quality; i++) {
       const v = [sb.r() - .5, sb.r() - .5, sb.r() - .5]; const l = Math.hypot(v[0], v[1], v[2]) || 1; const R = 14 + sb.r() * 20;
       sb.add(v[0] / l * R, v[1] / l * R * .6, v[2] / l * R - 8, [.8, .9, 1.4], 0);
     }
-    const smat = pointMat({ size: .7, body: 'a=.5*(.3+.7*pow(.5+.5*sin(uTime*(.5+aSeed.y)+aSeed.z*60.),3.)); size=.4+aSeed.x*.6;' });
+    const smat = pointMat({ size: .7, body: 'a=.35*(.3+.7*pow(.5+.5*sin(uTime*(.5+aSeed.y)+aSeed.z*60.),3.)); size=.4+aSeed.x*.6;' });
     return { pgeo: pb.build(), pmat, lgeo: lb.build(), lmat, sgeo: sb.build(), smat };
   }, []);
   useEffect(() => () => { pgeo.dispose(); lgeo.dispose(); sgeo.dispose(); pmat.dispose(); lmat.dispose(); smat.dispose(); }, [pgeo, lgeo, sgeo, pmat, lmat, smat]);
@@ -118,9 +118,6 @@ export default function Science() {
     <group>
       <points geometry={sgeo} material={smat} frustumCulled={false} />
       <points geometry={pgeo} material={pmat} frustumCulled={false} />
-      <group position={[-3.9, -0.3, 2.4]} rotation={[-0.3, 0.7, 0]} scale={1.0}>
-        <lineSegments geometry={lgeo} material={lmat} frustumCulled={false} />
-      </group>
     </group>
   );
 }

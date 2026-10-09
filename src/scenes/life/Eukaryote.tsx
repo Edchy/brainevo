@@ -26,7 +26,7 @@ export default function Eukaryote() {
     fragmentShader: /* glsl */ `uniform float uW,uTime,uFill; varying vec3 vN; varying vec3 vV; varying vec3 vO; ${NOISE}
       void main(){ float f=pow(1.-abs(dot(normalize(vN),normalize(vV))),2.2);
         float n=fbm(vO*3.+uTime*.1);
-        vec3 c=vec3(.35,.55,1.)*(f*.85*(.6+n))+vec3(.12,.2,.5)*uFill*(.35+n)*.35;
+        vec3 c=vec3(.35,.55,1.)*(f*1.1*(.5+n))+vec3(.12,.2,.5)*uFill*(.35+n)*.08;
         gl_FragColor=vec4(c*uW,1.); }`,
   }), []);
   const mitoMat = useMemo(() => new THREE.ShaderMaterial({
@@ -141,7 +141,7 @@ export default function Eukaryote() {
   return (
     <group>
       <Backdrop color="#6d6bff" caustics={0.1} shafts={0.1} haze={0.15} />
-      <Plankton count={500} box={[20, 12, 8]} color="#a0b4ff" size={0.045} dir={[0.02, 0.0, 0]} />
+      <Plankton count={300} box={[20, 12, 8]} color="#a0b4ff" size={0.04} dir={[0.02, 0.0, 0]} />
       <group ref={grp}>
         <mesh material={hostMat} frustumCulled={false}>
           <sphereGeometry args={[R, 96, 64]} />

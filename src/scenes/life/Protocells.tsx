@@ -4,9 +4,9 @@ import * as THREE from 'three';
 import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, rng, smoothstep } from '../../world/util';
-import { Backdrop, NOISE, Plankton, POINT_FRAG, makeGlass, pxScale, timeNow, useDispose } from './common';
+import { NOISE, Plankton, POINT_FRAG, makeGlass, pxScale, timeNow, useDispose } from './common';
 
-const NV = 16; // vesicles
+const NV = 8; // vesicles
 const PER = 120; // lipids per vesicle
 const FLOOR = -3.6;
 /** alkaline hydrothermal chimney field: x, z, height, base radius, top radius */
@@ -14,10 +14,6 @@ const VENTS: Array<[number, number, number, number, number]> = [
   [0.7, -1.6, 4.0, 1.0, 0.42],
   [-2.7, -2.4, 3.0, 0.85, 0.36],
   [3.2, -2.8, 3.5, 0.92, 0.38],
-  [-5.3, -3.8, 2.5, 0.75, 0.3],
-  [5.8, -4.6, 2.9, 0.8, 0.34],
-  [-1.2, -0.3, 1.7, 0.55, 0.26],
-  [2.1, 0.2, 1.2, 0.44, 0.21],
 ];
 const NVENT = VENTS.length;
 const top = (v: number) => new THREE.Vector3(VENTS[v][0], FLOOR + VENTS[v][2] - 0.08, VENTS[v][1]);
@@ -117,7 +113,7 @@ export default function Protocells() {
         float band=fbm(vec3(p.xz*.8,p.y*3.4)+vec3(0,fbm(p*2.)*2.,0));
         float strata=smoothstep(.35,.7,band);
         float pores=smoothstep(.62,.7,fbm(p*10.+3.));
-        vec3 dark=vec3(.025,.035,.05), pale=vec3(.95,1.,.98), warm=vec3(.5,.34,.26);
+        vec3 dark=vec3(.025,.035,.05), pale=vec3(.55,.6,.6), warm=vec3(.5,.34,.26);
         vec3 mineral=mix(dark,pale,strata*.75+.15*b0);
         mineral=mix(mineral,warm,smoothstep(.55,.9,fbm(p*2.5+9.))*.35*hgt);
         float ambient=.16+.14*hgt;
@@ -126,7 +122,7 @@ export default function Protocells() {
         float cr=1.-abs(2.*fbm(p*vec3(3.,2.2,3.)+4.)-1.);
         float cracks=smoothstep(.945,.99,cr)*(.25+hgt)*uHeat;
         float mouth=smoothstep(.82,1.,hgt)*uHeat;
-        col+=vec3(2.4,.85,.25)*(cracks*1.1+mouth*.8*(.5+.5*fbm(p*4.-uTime*.3)));
+        col+=vec3(2.4,.85,.25)*(cracks*.55+mouth*.6*(.5+.5*fbm(p*4.-uTime*.3)));
         col+=vec3(.25,.7,.85)*fr*(.5+.7*hgt)*1.1;
         float sp=smoothstep(.93,1.,vnoise(p*34.))*lit;
         col+=vec3(.9,1.,1.)*sp*.9;
@@ -187,7 +183,7 @@ export default function Protocells() {
   }), [ventU]);
   const plumeGeo = useMemo(() => {
     const r = rng(9);
-    const n = Math.floor(2600 * world.quality);
+    const n = Math.floor(1100 * world.quality);
     const a = new Float32Array(n * 4), p = new Float32Array(n * 3), vi = new Float32Array(n);
     for (let i = 0; i < n * 4; i++) a[i] = r();
     for (let i = 0; i < n; i++) vi[i] = Math.min(NVENT - 1, Math.floor(Math.pow(r(), 1.3) * NVENT));
@@ -270,8 +266,7 @@ export default function Protocells() {
 
   return (
     <group>
-      <Backdrop color="#1c6a9a" caustics={0.12} shafts={0.1} haze={0.2} />
-      <Plankton count={900} box={[18, 11, 9]} color="#ffb070" size={0.05} dir={[0.0, 0.18, 0]} />
+            <Plankton count={140} box={[18, 11, 9]} color="#ffb070" size={0.04} dir={[0.0, 0.18, 0]} />
       <mesh material={floorMat} rotation={[-Math.PI / 2, 0, 0]} position={[0, FLOOR, -3]} frustumCulled={false} renderOrder={-2}>
         <planeGeometry args={[40, 30, 1, 1]} />
       </mesh>

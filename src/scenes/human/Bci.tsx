@@ -27,9 +27,9 @@ export default function Bci() {
     const r = b.r;
     const q = world.quality;
     // 0: cortex sheet
-    for (let i = 0; i < 2600 * q; i++) b.add(-5.2 + r() * 4.6, -1.25, (r() - 0.5) * 3.2, [1, 1, 1], 0, { aX: [r(), 0] });
+    for (let i = 0; i < 700 * q; i++) b.add(-5.2 + r() * 4.6, -1.25, (r() - 0.5) * 3.2, [1, 1, 1], 0, { aX: [r(), 0] });
     // 1: needle tips (10x10)
-    for (let ix = 0; ix < 10; ix++) for (let iz = 0; iz < 10; iz++) b.add(-4.6 + ix * 0.3, -1.0, -1.35 + iz * 0.3, [1, 1, 1], 1, { aX: [0, 0] });
+    for (let ix = 0; ix < 6; ix++) for (let iz = 0; iz < 6; iz++) b.add(-4.6 + ix * 0.5, -1.0, -1.25 + iz * 0.5, [1, 1, 1], 1, { aX: [0, 0] });
     // 3: data stream
     for (let i = 0; i < 700 * q; i++) b.add(0, 0, 0, [1, 1, 1], 3, { aX: [0, 0] });
     // 5: targets
@@ -42,10 +42,10 @@ export default function Bci() {
       if (k < .5) {
         p.y += sin(p.x*1.3)*.08 + sin(p.z*1.7+1.)*.07;
         col = mix(vec3(1.7,.55,.6), vec3(.8,.7,1.6), aSeed.x);
-        a = .1 + tw*(.4+uAct*.8)*.9; size=.35+tw*.6;
+        a = .05 + tw*(.4+uAct*.8)*.7; size=.3+tw*.5;
       } else if (k < 1.5) {
         float fire = pow(.5+.5*sin(uTime*(3.+aSeed.x*5.)+aSeed.y*40.+uT*20.),12.)*(.4+uAct);
-        col = vec3(2.0,1.6,.6); a = .35+fire*1.4; size = .55+fire*1.2;
+        col = vec3(2.0,1.6,.6); a = .5+fire*1.2; size = .5+fire*1.0;
       } else if (k < 3.5) {
         float u = fract(aSeed.x + uTime*(.18+.1*uAct) + uT*3.);
         vec3 P0=vec3(-3.,1.2,0.), P1=vec3(-.9,3.1,0.), P2=vec3(.5,.4,0.);
@@ -64,11 +64,11 @@ export default function Bci() {
     // needles + plate + screen frame
     const lb = new LBuf(152);
     const c: [number, number, number] = [1.7, 1.3, .55];
-    for (let ix = 0; ix < 10; ix++) for (let iz = 0; iz < 10; iz++) lb.seg([-4.6 + ix * 0.3, 1.1, -1.35 + iz * 0.3], [-4.6 + ix * 0.3, -1.0, -1.35 + iz * 0.3], 0, 1, c);
-    const pl: [number, number, number][] = [[-4.75, 1.1, -1.5], [-1.75, 1.1, -1.5], [-1.75, 1.1, 1.5], [-4.75, 1.1, 1.5]];
+    for (let ix = 0; ix < 6; ix++) for (let iz = 0; iz < 6; iz++) lb.seg([-4.6 + ix * 0.5, 1.1, -1.25 + iz * 0.5], [-4.6 + ix * 0.5, -1.0, -1.25 + iz * 0.5], 0, 1, c);
+    const pl: [number, number, number][] = [[-4.85, 1.1, -1.5], [-1.95, 1.1, -1.5], [-1.95, 1.1, 1.5], [-4.85, 1.1, 1.5]];
     for (let i = 0; i < 4; i++) lb.seg(pl[i], pl[(i + 1) % 4], 0, 1, [2.2, 1.6, .7]);
     const fr: [number, number, number][] = [[0.6, -1.5, 0], [4.6, -1.5, 0], [4.6, 1.7, 0], [0.6, 1.7, 0]];
-    for (let i = 0; i < 4; i++) lb.seg(fr[i], fr[(i + 1) % 4], 1, 1, [.5, 1.0, 1.8]);
+    for (let i = 0; i < 4; i++) lb.seg(fr[i], fr[(i + 1) % 4], 0.7, 0.7, [.5, 1.0, 1.8]);
     const lmat = lineMat({ body: 'a = mix(.06,.5,aG*aG) * (.8+.2*sin(uTime+aSeed.x*20.));' });
     // cursor trail (CPU-updated)
     const tpos = new Float32Array(NT * 3);

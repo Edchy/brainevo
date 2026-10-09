@@ -2,11 +2,9 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useScene } from '../../world/context';
-import { world } from '../../world/store';
-import { eventPos, lerp, near, rng, smoothstep } from '../../world/util';
+import { eventPos, lerp, near, smoothstep } from '../../world/util';
 import { Figure, ambientTime, makePose } from './common';
 import type { Pose } from './common';
-import { roundSprite } from '../../world/sprite';
 
 const A_X = -2.3, B_X = 2.3;
 const HEAD_Y_A = 2.5, HEAD_Y_B = 1.95;
@@ -26,52 +24,26 @@ function applyArms(pose: Pose, up: number, hit: number, prec: number) {
   pose.lean = 0.12 - 0.3 * up + 0.4 * hit;
 }
 
-const GLOW_V = /* glsl */ `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`;
-const GLOW_F = /* glsl */ `varying vec2 vUv; uniform vec3 uCol; uniform float uI;
-void main(){ float d=length(vUv-.5)*2.; float g=pow(smoothstep(1.,0.,d),2.2); gl_FragColor=vec4(uCol*g*uI, g*uI); }`;
-
-function Glow({ meshRef, col }: { meshRef: React.RefObject<THREE.Mesh | null>; col: [number, number, number] }) {
-  const u = useMemo(() => ({ uCol: { value: new THREE.Color(...col) }, uI: { value: 0 } }), [col]);
-  return (
-    <mesh ref={meshRef} renderOrder={4}>
-      <planeGeometry args={[1, 1]} />
-      <shaderMaterial transparent depthWrite={false} blending={THREE.AdditiveBlending} vertexShader={GLOW_V} fragmentShader={GLOW_F} uniforms={u} />
-    </mesh>
-  );
-}
-
 export default function Imitation() {
   const scene = useScene();
   const pA = useMemo(makePose, []);
   const pB = useMemo(makePose, []);
   const gA = useRef<THREE.Group>(null);
   const gB = useRef<THREE.Group>(null);
-  const glA = useRef<THREE.Mesh>(null);
-  const glB = useRef<THREE.Mesh>(null);
   const spark = useRef<THREE.Mesh>(null);
   const nut = useRef<THREE.Mesh>(null);
   const ring = useRef<THREE.Mesh>(null);
   const arc = useRef<THREE.Mesh>(null);
-  const dust = useRef<THREE.Points>(null);
 
-  const dustGeo = useMemo(() => {
-    const r = rng(3);
-    const n = Math.floor(260 * world.quality);
-    const a = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) a.set([(r() - 0.5) * 24, r() * 7 - 0.5, -3 - r() * 9], i * 3);
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(a, 3));
-    return g;
-  }, []);
   const arcGeo = useMemo(() => {
     const c = new THREE.QuadraticBezierCurve3(new THREE.Vector3(A_X, HEAD_Y_A + 0.5, 0), new THREE.Vector3(0, 4.4, 0), new THREE.Vector3(B_X, HEAD_Y_B + 0.5, 0));
     return new THREE.TubeGeometry(c, 40, 0.012, 5);
   }, []);
-  useEffect(() => () => { dustGeo.dispose(); arcGeo.dispose(); }, [dustGeo, arcGeo]);
+  useEffect(() => () => { arcGeo.dispose(); }, [arcGeo]);
 
   const tmp = useMemo(() => new THREE.Vector3(), []);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!scene.active) return;
     const w = scene.weight, t = scene.t;
     const ph = t * 5.5 + ambientTime() * 0.12;
@@ -93,16 +65,6 @@ export default function Imitation() {
     if (gA.current) { gA.current.position.set(A_X, 0, 0); gA.current.rotation.y = Math.PI / 2; gA.current.scale.setScalar(1.6); }
     if (gB.current) { gB.current.position.set(B_X, 0, 0); gB.current.rotation.y = -Math.PI / 2; gB.current.scale.setScalar(1.2); }
 
-    const gl = (m: THREE.Mesh | null, x: number, y: number, k: number, s: number) => {
-      if (!m) return;
-      m.position.set(x, y, 0.4);
-      m.scale.setScalar(s * (0.7 + k * 0.7));
-      (m.material as THREE.ShaderMaterial).uniforms.uI.value = w * (0.25 + k * 1.6);
-      m.quaternion.copy(state.camera.quaternion);
-    };
-    gl(glA.current, A_X, HEAD_Y_A + 0.3, pA.glow, 1.7);
-    gl(glB.current, B_X, HEAD_Y_B + 0.3, pB.glow, 1.4);
-
     // spark packet: leaves the demonstrator at the slam peak and lands in the observer's head
     const p = ph - Math.floor(ph);
     const sp = smoothstep(0.5, 0.72, p);
@@ -122,46 +84,29 @@ export default function Imitation() {
     if (ring.current) {
       const k = smoothstep(0.55, 0.9, p);
       ring.current.scale.setScalar(0.3 + k * 2.6);
-      (ring.current.material as THREE.MeshBasicMaterial).opacity = w * (1 - k) * (p > 0.55 ? 0.8 : 0);
-    }
-    if (dust.current) {
-      (dust.current.material as THREE.PointsMaterial).opacity = w * 0.6;
-      dust.current.position.x = -t * 1.5;
+      (ring.current.material as THREE.MeshBasicMaterial).opacity = w * (1 - k) * (p > 0.55 ? 0.3 : 0);
     }
   });
 
   return (
     <group>
-      <group ref={gA}><Figure tail={false} pose={pA} base="#0a0806" rim="#ffb86a" rimGlow={2.6} /></group>
-      <group ref={gB}><Figure tail={false} pose={pB} base="#07090c" rim="#7fd7ff" rimGlow={2.6} eyeColor="#cfeaff" /></group>
-      <Glow meshRef={glA} col={[1.5, 0.8, 0.25]} />
-      <Glow meshRef={glB} col={[0.3, 1.0, 1.7]} />
-      <mesh position={[0, 0.2, 0]}>
-        <sphereGeometry args={[0.32, 16, 10]} />
-        <meshBasicMaterial color="#0b0b0d" />
-      </mesh>
+      <group ref={gA}><Figure tail={false} pose={pA} rim="#ffddb8" rimGlow={2.3} /></group>
+      <group ref={gB}><Figure tail={false} pose={pB} rim="#cfe2ff" rimGlow={1.8} eyeColor="#dbeaff" /></group>
       <mesh ref={nut} position={[0, 0.58, 0]}>
         <sphereGeometry args={[1, 12, 10]} />
-        <meshBasicMaterial color={[2.6, 1.7, 0.6]} toneMapped={false} transparent />
+        <meshBasicMaterial color={[2.6, 2.4, 2.0]} toneMapped={false} transparent />
       </mesh>
       <mesh ref={ring} position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.9, 1, 48]} />
-        <meshBasicMaterial color={[2, 1.3, 0.5]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color={[1.6, 1.5, 1.3]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       <mesh ref={spark}>
         <sphereGeometry args={[1, 12, 10]} />
-        <meshBasicMaterial color={[3, 2.6, 1.6]} toneMapped={false} blending={THREE.AdditiveBlending} transparent />
+        <meshBasicMaterial color={[3, 2.9, 2.6]} toneMapped={false} blending={THREE.AdditiveBlending} transparent />
       </mesh>
       <mesh ref={arc} geometry={arcGeo}>
         <meshBasicMaterial color={[1.2, 1.4, 1.8]} toneMapped={false} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
-      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[7, 48]} />
-        <meshBasicMaterial color="#05080a" />
-      </mesh>
-      <points ref={dust} geometry={dustGeo}>
-        <pointsMaterial map={roundSprite()} alphaTest={0.01} size={0.09} color="#9fc9a8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
-      </points>
     </group>
   );
 }

@@ -30,9 +30,10 @@ void main(){
   float lit;
   if(vKind<.5){ // leaf: ellipse w/ midrib
     vec2 q = (vUv-.5)*vec2(2.,2.);
-    float yy=q.y*.5+.5; if(abs(q.x) > 1.05*sin(3.14159*pow(yy,.8))*(1.-.35*yy)) discard;
+    float yy=q.y*.5+.5; float hw = 1.05*sin(3.14159*pow(yy,.8))*(1.-.35*yy); if(abs(q.x) > hw) discard;
+    float edgeG = smoothstep(.55,.98,abs(q.x)/max(hw,.001))*smoothstep(0.,.1,yy)*smoothstep(1.,.9,yy);
     float rib = smoothstep(.08,.0,abs(q.x));
-    c *= .85+.35*vUv.y; c += rib*.05;
+    c *= .85+.35*vUv.y; c += rib*.025 + vec3(.2,.26,.22)*edgeG*.32;
     lit = .75+.25*abs(vN.z);
     c *= lit;
   } else { // fruit
@@ -45,9 +46,11 @@ void main(){
   vec3 d = vec3(dot(c,vec3(.625,.375,0.)), dot(c,vec3(.7,.3,0.)), dot(c,vec3(0.,.3,.7)));
   float lum = dot(d,vec3(.3,.5,.2));
   d = mix(vec3(lum), d, .65) * vec3(.82,.95,1.05); // muted and cool
+  // to a red-green dichromat the ripe fruit is just another dark leaf-coloured thing in the foliage
+  if(vKind>.5){ float l2 = clamp(dot(normalize(vN), normalize(vec3(-.4,.7,.6)))*.5+.5,0.,1.); d = vec3(.05,.07,.055)*(.6+.9*l2); }
   float sx = vNdc*.5+.5; float k = smoothstep(uWipe-.03, uWipe+.03, sx);
   vec3 full = c;
-  if(vKind>.5) full *= 1.0 + uPulse*1.2 + 1.4; // fruit pops (bloom)
+  if(vKind>.5) full *= 1.0 + uPulse*1.0 + 1.6; // fruit pops (bloom)
   vec3 outc = mix(full, d, k);
   float seam = exp(-pow((sx-uWipe)*18.,2.));
   outc += seam*vec3(.9,1.1,1.6)*.3;
@@ -65,14 +68,14 @@ export default function Trichromacy() {
 
   const data = useMemo(() => {
     const r = rng(99);
-    const nL = Math.floor(1500 * Math.max(0.5, world.quality));
-    const nF = 16;
+    const nL = Math.floor(64 * Math.max(0.5, world.quality));
+    const nF = 5;
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), s = new THREE.Vector3();
     const lm: THREE.Matrix4[] = [];
     const lc = new Float32Array(nL * 3), ls = new Float32Array(nL);
     const col = new THREE.Color();
     for (let i = 0; i < nL; i++) {
-      p.set((r() - 0.5) * 20, (r() - 0.5) * 9, -r() * 11 + 1.5);
+      p.set((r() - 0.5) * 17, (r() - 0.5) * 8, -r() * 9 - 0.5);
       e.set((r() - 0.5) * 1.2, (r() - 0.5) * 1.2, r() * Math.PI * 2);
       q.setFromEuler(e);
       const sc = 0.8 + r() * 0.9;
@@ -81,17 +84,17 @@ export default function Trichromacy() {
       lm.push(m.clone());
       const g = r();
       // greens; a few young reddish leaves (also invisible to dichromats)
-      if (r() < 0.07) col.setRGB(0.42 + g * 0.15, 0.32 + g * 0.1, 0.06);
-      else col.setHSL(0.27 + g * 0.08, 0.55, 0.14 + g * 0.1);
+      if (r() < 0.07) col.setRGB(0.2 + g * 0.08, 0.14 + g * 0.05, 0.03);
+      else col.setHSL(0.27 + g * 0.08, 0.4, 0.045 + g * 0.05);
       lc.set([col.r, col.g, col.b], i * 3);
       ls[i] = r();
     }
     const fm: THREE.Matrix4[] = [];
     const fc = new Float32Array(nF * 3), fs = new Float32Array(nF);
     for (let i = 0; i < nF; i++) {
-      p.set((r() - 0.5) * 12, (r() - 0.5) * 4.6, -0.5 - r() * 5);
+      if (i === 0) p.set(1.0, 0.1, -0.4); else p.set((r() - 0.5) * 9, (r() - 0.5) * 3.4, -1.2 - r() * 4);
       q.identity();
-      const sc = 0.2 + r() * 0.1;
+      const sc = i === 0 ? 0.42 : 0.14 + r() * 0.06;
       s.set(sc, sc, sc);
       m.compose(p, q, s);
       fm.push(m.clone());

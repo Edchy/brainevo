@@ -20,19 +20,18 @@ void main(){
   float on = smoothstep(0., .02, d);
   float tip = exp(-max(d,0.)*22.) * on;
   float ch = aInfo.y;
-  float ghost = mix(.34, .05, uChoose);
-  float a = on*(ghost*(1.-ch) + ch*mix(.34, 1.3, uChoose)) + tip*1.2;
-  vec3 ghostCol = mix(vec3(.35,.55,1.35), vec3(.75,.4,1.3), aInfo.w/5.);
-  vec3 goldCol = vec3(1.7,1.15,.4);
+  float ghost = mix(.5, .13, uChoose);
+  float a = on*(ghost*(1.-ch) + ch*mix(.3, 1.4, uChoose)) + tip*1.1;
+  vec3 ghostCol = mix(vec3(.75,.85,1.15), vec3(.9,.9,1.1), aInfo.w/5.);
+  vec3 goldCol = vec3(1.9,1.6,1.1);
   vCol = mix(ghostCol, goldCol, ch*uChoose) + vec3(1.,.9,.9)*tip*.6;
   vA = uW*a*(.75+.25*shimmer)*(1.+uBeat*.4);
-  gl_PointSize = aInfo.z*(1.+tip*1.5)*uScale/-mv.z;
+  gl_PointSize = aInfo.z*.8*(1.+tip*1.4)*uScale/-mv.z;
 }`;
 
 export default function Futures() {
   const scene = useScene();
   const agent = useRef<THREE.Mesh>(null);
-  const shell = useRef<THREE.Points>(null);
 
   const built = useMemo(() => {
     const r = rng(33);
@@ -99,23 +98,10 @@ export default function Futures() {
     g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 4));
     g.setAttribute('aInfo', new THREE.BufferAttribute(info, 4));
     const m = pointMaterial(VERT, { uGrow: { value: 0 }, uChoose: { value: 0 }, uBeat: { value: 0 } });
-    // a dim shell hinting at the frontal cortex that holds the tree
-    const sn = Math.floor(1400 * world.quality);
-    const sp = new Float32Array(sn * 3), ss = new Float32Array(sn * 4), si = new Float32Array(sn * 4);
-    for (let i = 0; i < sn; i++) {
-      const th = r() * Math.PI * 2, ph = Math.acos(2 * r() - 1);
-      sp.set([Math.sin(ph) * Math.cos(th) * 6.5, Math.cos(ph) * 4.2 + 0.6, Math.sin(ph) * Math.sin(th) * 4.5 - 1], i * 3);
-      ss.set([r(), r(), r(), r()], i * 4); si.set([-1, 0, 0.05, 0], i * 4);
-    }
-    const sg = new THREE.BufferGeometry();
-    sg.setAttribute('position', new THREE.BufferAttribute(sp, 3));
-    sg.setAttribute('aSeed', new THREE.BufferAttribute(ss, 4));
-    sg.setAttribute('aInfo', new THREE.BufferAttribute(si, 4));
-    const sm = pointMaterial(VERT, { uGrow: { value: 1 }, uChoose: { value: 0 }, uBeat: { value: 0 } });
-    return { g, m, sg, sm, chosenCurve: new THREE.CatmullRomCurve3(chosenPath) };
+    return { g, m, chosenCurve: new THREE.CatmullRomCurve3(chosenPath) };
   }, []);
-  useEffect(() => () => { built.g.dispose(); built.m.dispose(); built.sg.dispose(); built.sm.dispose(); }, [built]);
-  const agentMat = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.0, 1.2), toneMapped: false }), []);
+  useEffect(() => () => { built.g.dispose(); built.m.dispose(); }, [built]);
+  const agentMat = useMemo(() => new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 2.4, 2.0), toneMapped: false }), []);
   useEffect(() => () => agentMat.dispose(), [agentMat]);
 
   useFrame((state) => {
@@ -126,23 +112,20 @@ export default function Futures() {
     const beat = near(eventPos('agranular-prefrontal-simulation'), 0.7);
     const grow = range(0.08, 0.62, t) * 1.45;   // the futures fan out ahead of the animal
     const choose = smoothstep(0.62, 0.92, t);   // one is selected, the rest dim
-    for (const m of [built.m, built.sm]) {
+    for (const m of [built.m]) {
       const u = m.uniforms;
       u.uW.value = w; u.uScale.value = k; u.uTime.value = time; u.uBeat.value = beat; u.uChoose.value = choose;
     }
     built.m.uniforms.uGrow.value = grow;
-    built.sm.uniforms.uW.value = w * 0.55;
-    if (shell.current) shell.current.rotation.y = t * 0.6 + time * 0.02;
     const a = agent.current!;
     const prog = smoothstep(0.7, 1.0, t);
     built.chosenCurve.getPoint(prog, a.position);
     a.scale.setScalar((0.9 + 0.15 * Math.sin(time * 5)) * (1 + beat * 0.4));
-    agentMat.color.setRGB(2.4 * w, 2.0 * w, 1.2 * w);
+    agentMat.color.setRGB(2.6 * w, 2.4 * w, 2.0 * w);
   });
 
   return (
     <group>
-      <points ref={shell} geometry={built.sg} material={built.sm} frustumCulled={false} />
       <points geometry={built.g} material={built.m} frustumCulled={false} />
       <mesh ref={agent} material={agentMat}><sphereGeometry args={[0.12, 14, 12]} /></mesh>
     </group>

@@ -36,7 +36,7 @@ export default function Africa() {
       }
     });
     // stars
-    for (let i = 0; i < 500 * world.quality; i++) {
+    for (let i = 0; i < 120 * world.quality; i++) {
       const v = new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).normalize().multiplyScalar(14 + r() * 20);
       b.add(v.x, v.y, v.z, [0.7, 0.8, 1.2], 9, { aR: [0, 0, 0] });
     }
@@ -53,7 +53,7 @@ export default function Africa() {
         float vis = step(0., d) * step(.0001, pr);
         float head = exp(-max(d,0.)*45.);
         float trail = exp(-max(d,0.)*3.);
-        a = vis*(.18+.5*trail+1.6*head);
+        a = vis*(.25+.7*trail+1.8*head);
         a *= .75+.25*sin(uTime*3.+aSeed.x*30.);
         size = .5+1.0*head+.2*trail;
         col = col*(.6+head*1.6);
@@ -78,8 +78,8 @@ export default function Africa() {
       g.rotation.y = (-lon * Math.PI) / 180;
       g.rotation.x = 0.42;
       const k = 0.8 + 0.2 * smoothstep(0, 0.3, scene.weight);
-      g.scale.setScalar(2.15 * k);
-      g.position.y = 0.35;
+      g.scale.setScalar(1.95 * k);
+      g.position.set(1.7, 0.1, 0);
     }
   });
   return (

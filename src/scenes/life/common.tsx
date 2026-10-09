@@ -38,7 +38,7 @@ export function Plankton({
   count = 1200, box = [16, 10, 10], color = '#7fd8ff', size = 0.05, speed = 1, dir = [0.05, 0.08, 0], scroll = 1, intensity = 1,
 }: { count?: number; box?: [number, number, number]; color?: string; size?: number; speed?: number; dir?: [number, number, number]; scroll?: number; intensity?: number }) {
   const scene = useScene();
-  const n = Math.floor(count * world.quality);
+  const n = Math.floor(count * 0.45 * world.quality);
   const geo = useMemo(() => {
     const r = rng(11 + n);
     const p = new Float32Array(n * 3), a = new Float32Array(n * 4);
@@ -105,7 +105,7 @@ export function Backdrop({
         float c=pow(r1,9.)+pow(r2,9.);
         float fall=smoothstep(.0,.9,vUv.y);
         vec3 col=uColor*(s*uShaft+c*uCaus*fall*.4+uHaze*(.3+.7*g));
-        gl_FragColor=vec4(col*uW,1.);
+        gl_FragColor=vec4(col*uW*.4,1.);
       }`,
   }), []); // eslint-disable-line react-hooks/exhaustive-deps
   useDispose(mat);

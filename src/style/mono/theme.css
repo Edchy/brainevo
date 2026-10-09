@@ -21,6 +21,11 @@
   --title-spacing: 0.02;
   --title-size: 0.42;
   --title-softness: 0.5;
+  --title-placement: art;
+  --title-kicker-mode: era;
+  --title-kicker-opacity: 0.4;
+  --title-year-opacity: 0;
+  --title-parallax: 0.3;
 }
 [data-style='mono'] .app { --accent: #f4f4f2 !important; }
 [data-style='mono'] body { background: #000; letter-spacing: 0.01em; }

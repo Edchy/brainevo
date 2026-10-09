@@ -131,6 +131,6 @@ export default function Social() {
 
 export const socialCamera = (t: number) => ({
   pos: [Math.sin(t * 1.2) * 2, lerp(2.5, 1, t), lerp(13, 9.5, t)] as [number, number, number],
-  look: [0, 0, 0] as [number, number, number],
+  look: [-1.0, -0.3, 0] as [number, number, number],
   fov: 50,
 });
