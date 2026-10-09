@@ -50,21 +50,21 @@ export const cosmicScenes: SceneDef[] = [
     },
   },
   {
-    id: 'primordial-soup', from: 'oceans-prebiotic-chemistry', to: 'oceans-prebiotic-chemistry', lead: 0.0, tail: 0.9, fade: 0.35, Component: Soup,
+    id: 'primordial-soup', from: 'oceans-prebiotic-chemistry', to: 'oceans-prebiotic-chemistry', lead: 0.0, tail: 0.7, fade: 0.3, Component: Soup,
     camera: () => {
       const f = world.stationF;
-      const dive = easeInOutCubic(range(3.3, 3.65, f));
-      const settle = smoothstep(3.7, 4.1, f);
+      const dive = easeInOutCubic(range(3.3, 3.5, f));
+      const settle = smoothstep(3.5, 3.75, f);
       const y = lerp(SURF_Y + 1.4, 0.2, dive);
-      return { pos: [Math.sin(f * 1.5) * 0.6 * dive, y, lerp(7, 9, settle)], look: [0, lerp(SURF_Y + 2, 0, dive), lerp(-10, 0, dive)], fov: 46 };
+      return { pos: [Math.sin(f * 1.5) * 0.35 * dive, y, lerp(7, 9, settle)], look: [0, lerp(SURF_Y + 2, 0.3, dive), lerp(-10, 0, dive)], fov: 46 };
     },
     mood: () => {
       const f = world.stationF;
       const fl = flashAt(f);
-      const under = smoothstep(3.37, 3.62, f);
-      const deep = smoothstep(3.75, 4.15, f);
-      const sky = mixHex('#02050c', '#223055', Math.min(1, fl * 0.7));
-      return { bg: mixHex(mixHex(sky, '#052a3c', under), '#03050b', deep), bloom: 1.1 + 0.8 * fl };
+      const under = smoothstep(3.33, 3.5, f);
+      const deep = smoothstep(3.5, 3.75, f);
+      const sky = mixHex('#02050c', '#1c2644', Math.min(1, fl * 0.5));
+      return { bg: mixHex(mixHex(sky, '#031a27', under), '#03050b', deep), bloom: 1.05 + 0.5 * fl };
     },
   },
 ];

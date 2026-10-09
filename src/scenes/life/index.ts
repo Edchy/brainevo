@@ -8,14 +8,18 @@ import Sponge from './Sponge';
 import NerveNet from './NerveNet';
 import Worm from './Worm';
 import Cambrian from './Cambrian';
-import { near } from '../../world/util';
+import { near, smoothstep } from '../../world/util';
+import { Color } from 'three';
+
+const c1 = new Color(), c2 = new Color();
+const mixHex = (a: string, b: string, t: number) => '#' + c1.set(a).lerp(c2.set(b), t).getHexString();
 import { eventPos } from '../../world/util';
 
 export const lifeScenes: SceneDef[] = [
   {
-    id: 'life-protocells', from: 'first-life', to: 'first-life', lead: 1.3, tail: 0.4, Component: Protocells,
+    id: 'life-protocells', from: 'first-life', to: 'first-life', lead: 0.05, tail: 0.45, fade: 0.3, Component: Protocells,
     camera: (t) => ({ pos: [Math.sin(t * 2) * 0.6, 0.3 + t * 0.4, 7.5 - t * 1.2], look: [0, 0.2 + t * 0.4, 0], fov: 55 }),
-    mood: (t) => ({ bg: t < 0.5 ? '#03050b' : '#041320', bloom: 1.1 + t * 0.5 }),
+    mood: (t) => ({ bg: mixHex('#03050b', '#041320', smoothstep(0.1, 0.8, t)), bloom: 1.0 + t * 0.4 }),
   },
   {
     id: 'life-membrane', from: 'chemical-signalling', to: 'ion-channels', lead: 0.15, tail: 0.3, fade: 0.4, Component: Membrane,

@@ -3,8 +3,8 @@
 
 [data-style='mono'] {
   --ui-ink: #f4f4f2;
-  --ui-ink-dim: rgba(244, 244, 242, 0.56);
-  --ui-line: rgba(255, 255, 255, 0.14);
+  --ui-ink-dim: rgba(244, 244, 242, 0.74);
+  --ui-line: rgba(255, 255, 255, 0.2);
   --ui-panel: rgba(0, 0, 0, 0.72);
   --ui-panel-blur: 10px;
   --ui-radius: 0px;
@@ -23,7 +23,7 @@
   --title-softness: 0.5;
   --title-placement: art;
   --title-kicker-mode: era;
-  --title-kicker-opacity: 0.4;
+  --title-kicker-opacity: 0.55;
   --title-year-opacity: 0;
   --title-parallax: 0.3;
 }
@@ -34,17 +34,17 @@
 
 /* ---- caption: a quiet whisper, lower left ---- */
 [data-style='mono'] .caption { width: min(var(--card-w), 340px); }
-[data-style='mono'] .caption > * { text-shadow: 0 0 18px #000, 0 0 6px #000; }
+[data-style='mono'] .caption > * { text-shadow: 0 0 22px #000, 0 0 8px #000, 0 1px 2px rgba(0,0,0,0.8); }
 [data-style='mono'] .kicker { margin-bottom: 8px; gap: 2px 12px; font-family: var(--ui-font-mono); font-weight: 300; font-size: 0.6rem; letter-spacing: 0.3em; color: var(--ui-ink-dim); }
 [data-style='mono'] .year { color: var(--ui-ink); font-weight: 300; font-size: 0.62rem; letter-spacing: 0.3em; }
 [data-style='mono'] .kicker-bt,
 [data-style='mono'] .kicker-era { display: none; }
 [data-style='mono'] .ev-title { font-weight: 300; font-size: 1.55rem; line-height: 1.15; letter-spacing: 0.005em; margin-bottom: 8px; }
-[data-style='mono'] .summary { font-size: 1.02rem; font-weight: 400; line-height: 1.45; color: var(--ui-ink-dim); }
+[data-style='mono'] .summary { font-size: 1.08rem; font-weight: 400; line-height: 1.5; letter-spacing: 0.012em; color: var(--ui-ink-dim); }
 [data-style='mono'] .caption .summary { -webkit-line-clamp: 2; line-clamp: 2; }
 [data-style='mono'] .card { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; border: 0; }
 [data-style='mono'] .card .summary { color: var(--ui-ink-dim); }
-[data-style='mono'] .station { opacity: 0.35; }
+[data-style='mono'] .station { opacity: 0.4; }
 [data-style='mono'] .station.is-active { opacity: 1; }
 
 /* buttons: text with a hairline underline, nothing else */
@@ -55,13 +55,13 @@
 [data-style='mono'] .caption .btn-more {
   border: 0; border-radius: 0; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
   font-family: var(--ui-font-mono); font-weight: 300; font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
-  color: var(--ui-ink-dim); padding: 6px 0; box-shadow: inset 0 -1px 0 var(--ui-line); transition: color 0.4s, box-shadow 0.4s;
+  color: var(--ui-ink-dim); padding: 8px 0; box-shadow: inset 0 -1px 0 var(--ui-line); transition: color 0.4s, box-shadow 0.4s;
 }
 [data-style='mono'] .btn-more:hover,
 [data-style='mono'] .btn-quiet:hover,
 [data-style='mono'] .btn-about:hover,
 [data-style='mono'] .btn-begin:hover { color: #fff; background: transparent; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.8); }
-[data-style='mono'] .btn-about { opacity: 0.5; }
+[data-style='mono'] .btn-about { opacity: 0.65; }
 [data-style='mono'] .btn-play { border-color: var(--ui-line); color: var(--ui-ink); background: transparent !important; backdrop-filter: none; }
 [data-style='mono'] .audio-label { font-family: var(--ui-font-mono); font-size: 0.6rem; letter-spacing: 0.24em; text-transform: uppercase; font-weight: 300; }
 
@@ -118,7 +118,7 @@
 [data-style='mono'] .menu h3 { font-family: var(--ui-font-mono); font-weight: 300; letter-spacing: 0.3em; font-size: 0.58rem; }
 [data-style='mono'] .menu-list button:hover { color: #fff; }
 [data-style='mono'] .mi-n { color: var(--ui-ink-dim); }
-[data-style='mono'] .menu-btn { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: transparent; opacity: 0.5; transition: opacity 0.4s; }
+[data-style='mono'] .menu-btn { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: transparent; opacity: 0.65; transition: opacity 0.4s; }
 [data-style='mono'] .menu-btn:hover { opacity: 1; border-color: var(--ui-line); }
 
 /* ---- Lab: ghosted until hover ---- */
