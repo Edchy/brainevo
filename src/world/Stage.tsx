@@ -10,6 +10,7 @@ import { STYLE_DEFS } from '../style/registry';
 import { getSettings, useSettings } from '../style/store';
 import TitleLayer from '../style/titles';
 import PerfHud from './PerfHud';
+import Dip from './Dip';
 import { titleState } from '../style/titles/state';
 import Ambient from '../scenes/Ambient';
 import { SceneCtx } from './context';
@@ -22,24 +23,58 @@ const MOUNT_MARGIN = 3; // stations beyond the fade at which a scene is mounted 
 const KEEP_DIST = 9; // once mounted, a scene stays mounted until the viewer is this many stations away.
 // Unmounting disposes materials, and three then has to RECOMPILE the shaders on the next mount (a visible stall).
 
-interface Resolved { def: SceneDef; a: number; b: number; fade: number; state: SceneState }
+/** a..b is the scene's story window (drives t); wa..wb is where it is fully visible (drives weight) */
+interface Resolved { def: SceneDef; a: number; b: number; wa: number; wb: number; fade: number; state: SceneState }
+
+// Frames after mount at which a scene's shaders are (re-)compiled: once its children exist, and again to catch materials
+// created lazily in effects/first frames. Later compiles are cheap cache hits for programs that already exist.
+const WARM_AT = [2, 30];
+
+/**
+ * Pre-compile every material under `g`, including objects the scene keeps hidden until its story beat (moons, rings,
+ * shells...). three's compile only visits VISIBLE objects, so we force the whole subtree visible for the synchronous part
+ * of compileAsync and restore it. Compiling against the real scene keeps fog/lights in the program key identical.
+ * The program key also depends on the bound render target (tone mapping + output colour space): with post-processing the
+ * scene draws into the composer's buffer, so compile with a render target bound too, or every warmed program is the wrong
+ * variant and gets recompiled on the scene's first visible frame.
+ */
+let warmTarget: THREE.WebGLRenderTarget | null = null;
+function warm(gl: THREE.WebGLRenderer, g: THREE.Object3D, camera: THREE.Camera, scene: THREE.Scene) {
+  if (!SAFE && !warmTarget) warmTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });
+  const prevTarget = gl.getRenderTarget();
+  const hidden: THREE.Object3D[] = [];
+  g.traverse((o) => { if (!o.visible) { hidden.push(o); o.visible = true; } });
+  gl.setRenderTarget(SAFE ? null : warmTarget);
+  try { gl.compileAsync(g, camera, scene).catch(() => {}); }
+  finally {
+    gl.setRenderTarget(prevTarget);
+    for (const o of hidden) o.visible = false;
+  }
+}
 
 function resolve(): Resolved[] {
-  return SCENES.flatMap((def) => {
+  const out = SCENES.flatMap((def) => {
     const a = world.eventIndex[def.from];
     const b = world.eventIndex[def.to];
     if (a === undefined || b === undefined) {
       if (import.meta.env.DEV) console.warn(`[scene ${def.id}] unknown event id`, def.from, def.to);
       return [];
     }
-    return [{
-      def,
-      a: a - (def.lead ?? 0.4),
-      b: b + (def.tail ?? 0.4),
-      fade: def.fade ?? 0.6,
-      state: { t: 0, weight: 0, active: false },
-    }];
-  });
+    const wa = a - (def.lead ?? 0.4), wb = b + (def.tail ?? 0.4);
+    return [{ def, a: wa, b: wb, wa, wb, fade: def.fade ?? 0.6, state: { t: 0, weight: 0, active: false } }];
+  }).sort((x, y) => x.a - y.a);
+  // Neighbouring windows often abut or overlap by most of a station, which left both scenes at full weight on top of each other
+  // (a busy double exposure). Give every such hand-off one crossfade centred in the overlap, with each scene at half
+  // weight at the cut, so the dip-to-dark lands there. `t` still runs over the full story window; scenes flagged
+  // `layer` deliberately play over their predecessor and keep the overlap.
+  for (let i = 1; i < out.length; i++) {
+    const prev = out[i - 1], cur = out[i];
+    if (cur.def.layer) continue; // only ever shrinks windows, so abutting and gapped neighbours are handled too
+    const cut = (prev.wb + cur.wa) / 2;
+    prev.wb = Math.max(prev.wa, Math.min(prev.wb, cut - prev.fade / 2));
+    cur.wa = Math.min(cur.wb, Math.max(cur.wa, cut + cur.fade / 2));
+  }
+  return out;
 }
 
 /**
@@ -72,6 +107,7 @@ const PostFX = memo(function PostFX({ bloom }: { bloom: RefObject<BloomEffect | 
     <EffectComposer multisampling={0}>
       <Bloom ref={(b) => { bloom.current = b; sanitizeBloom(b); }} intensity={0.5} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
       <Vignette eskil={false} offset={0.2} darkness={0.7} />
+      <Dip />
       {titles ? <TitleLayer /> : <></>}
       <StyleEffects />
     </EffectComposer>
@@ -82,14 +118,18 @@ function World() {
   if (import.meta.env.DEV) (window as unknown as Record<string, number>).__worldRenders = ((window as unknown as Record<string, number>).__worldRenders ?? 0) + 1;
   const resolved = useMemo(resolve, []);
   const advance = useThree((s) => s.advance);
+  const getState = useThree((s) => s.get);
   const gl = useThree((s) => s.gl);
-  const camera = useThree((s) => s.camera);
   const keep = useRef(new Set<string>());
   if (import.meta.env.DEV) {
     // hidden/throttled tabs never fire rAF: window.__tick(n) renders n frames (16ms apart) manually
     (window as unknown as Record<string, unknown>).__tick = (n = 1) => {
-      for (let i = 0; i < n; i++) advance(performance.now() + i * 16.7, true);
+      // with frameloop 'always' R3F takes dt from the wall clock, which is ~0 between back-to-back manual frames; that
+      // left every damped value (camera, title depth) frozen in test captures. Backdate the clock so each frame is 16.7ms.
+      const clock = getState().clock;
+      for (let i = 0; i < n; i++) { clock.oldTime = performance.now() - 16.7; advance(performance.now(), true); }
     };
+    (window as unknown as Record<string, unknown>).__gl = gl;
   }
   const groups = useRef<Record<string, THREE.Group | null>>({});
   const ambientW = useRef(0);
@@ -113,21 +153,27 @@ function World() {
     const f = world.stationF;
     let sumW = 0;
     const p = tmp.p.set(0, 0, 0), l = tmp.l.set(0, 0, 0), bg = tmp.bg.setRGB(0, 0, 0);
-    let fov = 0, bl = 0, moodW = 0, td = 0;
+    let fov = 0, bl = 0, moodW = 0, td = 0, w1 = 0, w2 = 0;
+    let d1: SceneDef | null = null, d2: SceneDef | null = null;
     const live: string[] = [];
 
     for (const r of resolved) {
       const t = clamp01((f - r.a) / (r.b - r.a));
-      const dist = f < r.a ? r.a - f : f > r.b ? f - r.b : 0;
+      const dist = f < r.wa ? r.wa - f : f > r.wb ? f - r.wb : 0;
       // sharpened: overlap only in the middle of the fade so neighbouring scenes don't bleed through each other
       const w = smoothstep(0.2, 0.8, 1 - dist / r.fade);
       r.state.t = t; r.state.weight = w; r.state.active = w > 0.001;
       const g = groups.current[r.def.id];
-      if (g) g.visible = r.state.active;
+      if (g) {
+        const age = (g.userData.age = (g.userData.age ?? 0) + 1);
+        if (WARM_AT.includes(age)) warm(gl, g, state.camera, state.scene);
+        g.visible = r.state.active;
+      }
       if (dist < r.fade + MOUNT_MARGIN || (keep.current.has(r.def.id) && dist < KEEP_DIST)) { live.push(r.def.id); keep.current.add(r.def.id); }
       else keep.current.delete(r.def.id);
       if (w <= 0.001) continue;
       sumW += w;
+      if (w > w1) { w2 = w1; d2 = d1; w1 = w; d1 = r.def; } else if (w > w2) { w2 = w; d2 = r.def; }
       const pose = r.def.camera ? r.def.camera(t) : DEFAULT_POSE;
       p.x += pose.pos[0] * w; p.y += pose.pos[1] * w; p.z += pose.pos[2] * w;
       l.x += pose.look[0] * w; l.y += pose.look[1] * w; l.z += pose.look[2] * w;
@@ -158,6 +204,9 @@ function World() {
     (state.scene.background as THREE.Color).lerp(bg.multiplyScalar(1 / moodW), k);
     if (bloom.current) bloom.current.intensity += (bl / moodW * (STYLE_DEFS[getSettings().style].bloomScale ?? 1) - bloom.current.intensity) * k;
 
+    // Hand-off depth: the weaker of the two leading scenes relative to an even split (1 at the crossfade midpoint).
+    // Scenes flagged `layer` continue the previous shot and never dip.
+    world.overlap = d2 && !d1?.layer && !d2.layer ? clamp01(2 * w2 / (w1 + w2)) : 0;
     ambientW.current = clamp01(1 - sumW);
     const key = live.join('|');
     if (key !== mountedKey.current) { mountedKey.current = key; setMounted(live); }
@@ -168,16 +217,7 @@ function World() {
       <color attach="background" args={['#000000']} />
       <Ambient weight={ambientW} />
       {resolved.filter((r) => mounted.includes(r.def.id)).map((r) => (
-        <group key={r.def.id} visible={false} ref={(g) => {
-          groups.current[r.def.id] = g;
-          if (g && !g.userData.warmed) {
-            // pre-compile this scene's shaders off the main thread so the first visible frame doesn't stall
-            g.userData.warmed = true;
-            g.visible = true;
-            gl.compileAsync(g, camera).catch(() => {});
-            g.visible = false;
-          }
-        }}>
+        <group key={r.def.id} visible={false} ref={(g) => { groups.current[r.def.id] = g; }}>
           <SceneCtx.Provider value={r.state}>
             <Suspense fallback={null}><r.def.Component /></Suspense>
           </SceneCtx.Provider>
@@ -215,6 +255,9 @@ export default function Stage() {
         dpr={DPR_OVERRIDE || DPR_LEVELS[level]}
         gl={{ antialias: false, powerPreference: 'high-performance', alpha: false }}
         camera={{ fov: 55, near: 0.05, far: 4000, position: DEFAULT_POSE.pos }}
+        // Error checking reads the shader info logs, which blocks until a (parallel) compile finishes: a stall on each
+        // scene's first frame. Keep it in dev, where shader errors would otherwise be silent.
+        onCreated={({ gl }) => { gl.debug.checkShaderErrors = import.meta.env.DEV; }}
       >
         {ADAPTIVE && <PerformanceMonitor ms={400} iterations={10} bounds={() => [30, 70]} flipflops={0} onDecline={stepDown} />}
         <World />

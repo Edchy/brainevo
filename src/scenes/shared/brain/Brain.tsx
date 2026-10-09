@@ -144,7 +144,7 @@ export function Brain({ ctl, children, ...rest }: BrainProps) {
     };
     const nuc = { striatum: nucMat(), thalamus: nucMat(), hippocampus: nucMat(), amygdala: nucMat() };
     const geos = {
-      cerebrum: cubeSphere(q < 0.6 ? 72 : 120), cerebellum: cubeSphere(q < 0.6 ? 48 : 80), stem: axialTube(q < 0.6 ? 120 : 220, 40),
+      cerebrum: cubeSphere(q < 0.6 ? 72 : 150), cerebellum: cubeSphere(q < 0.6 ? 48 : 80), stem: axialTube(q < 0.6 ? 120 : 220, 40),
       small: cubeSphere(28, true),
     };
     const ng = {

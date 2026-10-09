@@ -8,12 +8,16 @@ import { Brain, stageGrow, useBrainCtl } from '../shared/brain';
 
 const BOX: [number, number, number] = [18, 12, 8];
 
+// Monochrome diagram with a single colour splash: the parts are neutral tissue and grey leader lines, and only the
+// brainstem "reptile core" carries colour, so the eye goes to the one idea the frame is about.
+const NEUTRAL = '#c9d2da';
+const CORE = '#ff8a3c';
 const LAYERS = [
-  { name: 'pallium', color: '#6fe08a', y: 0.62, rx: 1.3, rz: 0.8, glow: 0.6 },
-  { name: 'basal ganglia', color: '#58b8ff', y: 0.22, rx: 1.3, rz: 1.0, glow: 0.7 },
-  { name: 'tectum', color: '#42e8ff', y: -0.08, rx: 1.3, rz: 1.1, glow: 0.7 },
-  { name: 'cerebellum', color: '#c06bff', y: -0.5, rx: 1.3, rz: 1.0, glow: 0.7 },
-  { name: 'brainstem', color: '#ff8a3c', y: -1.3, rx: 1.3, rz: 1.15, glow: 1.2 },
+  { name: 'pallium', color: NEUTRAL, y: 0.62, rx: 1.3, rz: 0.8, glow: 0.6 },
+  { name: 'basal ganglia', color: NEUTRAL, y: 0.22, rx: 1.3, rz: 1.0, glow: 0.7 },
+  { name: 'tectum', color: NEUTRAL, y: -0.08, rx: 1.3, rz: 1.1, glow: 0.7 },
+  { name: 'cerebellum', color: NEUTRAL, y: -0.5, rx: 1.3, rz: 1.0, glow: 0.7 },
+  { name: 'brainstem', color: CORE, y: -1.3, rx: 1.3, rz: 1.15, glow: 1.2 },
 ];
 
 /** the reptile brain as an exploded, layered diagram in space; the brainstem "reptile core" glows through the stack */
@@ -22,13 +26,12 @@ export default function ReptileBrain() {
   const grp = useRef<THREE.Group>(null);
   const brain = useBrainCtl({ grow: stageGrow('reptile'), tissue: '#d9d2cd' });
   const regs = useMemo(() => [
-    { at: 'brainstem' as const, color: '#ff8a3c', i: 0 },
-    { at: 'pallium' as const, color: '#6fe08a', i: 0 },
-    { at: 'tectum' as const, color: '#42e8ff', i: 0 },
-    { at: 'cerebellum' as const, color: '#c06bff', i: 0 },
+    { at: 'brainstem' as const, color: CORE, i: 0 },
+    { at: 'pallium' as const, color: NEUTRAL, i: 0 },
+    { at: 'tectum' as const, color: NEUTRAL, i: 0 },
+    { at: 'cerebellum' as const, color: NEUTRAL, i: 0 },
   ], []);
   brain.regions = regs;
-  brain.tintColors = { cerebrum: '#6fe08a', tectum: '#42e8ff', cerebellum: '#c06bff', stem: '#ff8a3c', bulbs: '#ffd24a' };
   const S = useMemo(() => {
     const lines = LAYERS.map((l) => new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(l.rx * 0.95, l.y, 0), new THREE.Vector3(3.9, l.y, 0)), 2, 0.012, 4, false));
     const lineMats = LAYERS.map((l) => makeTubeMat(l.color, { base: 0.9, count: 1 }));
@@ -41,11 +44,12 @@ export default function ReptileBrain() {
     if (!scene.active) return;
     const w = scene.weight, t = scene.t, tm = TM(), n = near(p26, 0.8);
     const ex = smoothstep(0.08, 0.6, t);
-    brain.alpha = w; brain.explode = ex * 0.72; brain.tint = smoothstep(0.1, 0.5, t) * 0.85;
+    brain.alpha = w; brain.explode = ex * 0.72; brain.tint = 0;
     brain.glass = 0.0;
     const core = 0.45 + 0.25 * Math.sin(tm * 2.2) + n * 0.9;
     regs[0].i = smoothstep(0.15, 0.45, t) * core;
-    regs[1].i = ex * 0.7 * (0.65 + 0.35 * Math.sin(tm * 1.3)); regs[2].i = ex * 0.8 * (0.65 + 0.35 * Math.sin(tm * 1.7 + 1)); regs[3].i = ex * 0.8 * (0.65 + 0.35 * Math.sin(tm * 1.1 + 2));
+    // the other parts only breathe faintly, in white light
+    regs[1].i = ex * 0.18 * (0.65 + 0.35 * Math.sin(tm * 1.3)); regs[2].i = ex * 0.2 * (0.65 + 0.35 * Math.sin(tm * 1.7 + 1)); regs[3].i = ex * 0.2 * (0.65 + 0.35 * Math.sin(tm * 1.1 + 2));
     LAYERS.forEach((_, i) => {
       S.lineMats[i].uniforms.uOpacity.value = w * smoothstep(0.55, 0.8, t); S.lineMats[i].uniforms.uGrow.value = smoothstep(0.55, 0.8, t); S.lineMats[i].uniforms.uPulseAmt.value = 0;
     });

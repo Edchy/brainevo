@@ -69,6 +69,12 @@ const ringFrag = /* glsl */ `
 uniform float uI; varying vec3 vN; varying vec3 vV;
 void main(){ float f=1.-abs(dot(normalize(vN),normalize(vV))); float g=pow(f,22.)+.015*pow(f,6.); gl_FragColor=vec4(vec3(2.6,2.3,2.0)*g*uI,1.); }`;
 
+/**
+ * The detonation runs this many stations ahead of the event, so the white-out flash happens on the way in and arriving
+ * exactly on "The Big Bang" (arrow keys stop there) shows the fireball and expanding shell, not a blank white frame.
+ */
+export const BANG_SHIFT = 0.1;
+
 export default function BigBang() {
   const scene = useScene();
   const core = useRef<THREE.Mesh>(null);
@@ -118,7 +124,7 @@ export default function BigBang() {
 
   useFrame((state) => {
     if (!scene.active) return;
-    const f = world.stationF;
+    const f = world.stationF + BANG_SHIFT;
     const w = scene.weight;
     const px = pxScale(state);
     const tb = range(-0.08, 0.75, f);

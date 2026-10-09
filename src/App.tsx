@@ -94,10 +94,12 @@ export default function App() {
     if (s) scrollToX(xToScroll(s.x));
   }, [layout, scrollToX, xToScroll]);
 
-  const begin = () => {
+  // stable callbacks: Track is memoised and App re-renders on every scroll frame
+  const begin = useCallback(() => {
     const b = layout.banners[0];
     scrollToX(b ? xToScroll(b.x) : vw);
-  };
+  }, [layout, scrollToX, xToScroll, vw]);
+  const restart = useCallback(() => scrollToX(0), [scrollToX]);
 
   // keyboard
   useEffect(() => {
@@ -138,7 +140,7 @@ export default function App() {
         tabIndex={0}
         aria-label="Timeline of brain evolution. Use the left and right arrow keys to move between events."
       >
-        <Track layout={layout} activeIndex={activeIndex} cards={ui === 'tidy'} onBegin={begin} onRestart={() => scrollToX(0)} />
+        <Track layout={layout} activeIndex={activeIndex} cards={ui === 'tidy'} onBegin={begin} onRestart={restart} />
       </main>
       <LabPanel />
       {ui !== 'tidy' && <Caption event={capEvent} opacity={capOpacity} />}

@@ -17,6 +17,10 @@ No image/model/audio downloads. Make it the coolest thing anyone has seen in a b
   (1 when the viewer is exactly on that event). Each important event deserves a visible *moment*.
 - The engine blends camera pose (`camera(t)`), background and bloom (`mood(t)`) across overlapping scenes by weight.
   Do not touch `state.camera` yourself; return poses from `camera(t)`.
+- Hand-offs: the engine trims neighbouring scenes' *visibility* windows so each hand-off is one short crossfade centred
+  between them, and the frame dips through dark at its midpoint (`world.overlap`, `src/world/Dip.tsx`). `t` still runs over
+  your full `[from-lead, to+tail]` window. Set `layer: true` on a scene that continues the previous shot (it then plays over
+  its predecessor with no trim and no dip; used by first-stars and planet).
 - Overlapping scenes crossfade: your scene must look right at any weight. Fade with `weight` (opacity uniform, scale,
   emissive intensity). Hidden scenes (weight 0) are `group.visible=false`, but their useFrame still runs: early-return
   when `!scene.active`.

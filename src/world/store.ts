@@ -20,6 +20,8 @@ export const world = {
   velocity: 0,
   /** px moved since last frame (internal) */
   pendingDx: 0,
+  /** 0..1, how deep we are in a crossfade between two scenes (1 = both at equal weight); drives the dip-to-dark */
+  overlap: 0,
   /** seconds since start */
   time: 0,
   /** user prefers reduced motion: skip ambient animation, keep scroll-driven motion */

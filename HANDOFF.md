@@ -56,7 +56,8 @@ bar, colour-splash rules). Project memory note: `~/.claude/projects/-Users-eddie
 ## Testing and verification gotchas (these cost hours)
 - The browser tool's tab is **hidden**: `requestAnimationFrame` and `ResizeObserver` stall. A screenshot wakes it. The stage mounts lazily, so
   after navigating: take a screenshot, wait ~8-10s, take another, then use hooks.
-- Hooks (dev only): `window.__setF(f|null)` pins the scene position; `window.__tick(n)` renders n frames; `window.__set('style'|'ui'|'titles'|'lab', v)`;
+- Hooks (dev only): `window.__setF(f|null)` pins the scene position; `window.__tick(n)` renders n frames of 16.7ms each
+  (before 2026-10-09 it rendered with dt ~0, so damped cameras never moved in test captures: older screenshots misframe); `window.__gl` is the renderer; `window.__set('style'|'ui'|'titles'|'lab', v)`;
   `window.__world`. **`__setF` pins only the scene, not the HTML caption/headline.** For a true paused still, scroll the real scroller:
   ```js
   const el=document.querySelector('.scroller');

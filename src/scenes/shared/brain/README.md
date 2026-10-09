@@ -37,4 +37,4 @@ glow a whole part. Use saturated hues so the mono grade keeps them.
 
 ## Files
 `Brain.tsx` component + ctl, `params.ts` stage presets/regions, `glsl.ts` shaders, `geometry.ts` cached cube-sphere/lathe/constellation meshes.
-Shared geometry is cached module-wide; shader programs are shared across instances. Cost is ~85k-vertex displaced meshes (72 per cube face when `world.quality < 0.6`).
+Shared geometry is cached module-wide; shader programs are shared across instances. Cost is ~140k-vertex displaced cerebrum (72 per cube face when `world.quality < 0.6`).

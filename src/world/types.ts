@@ -34,6 +34,11 @@ export interface SceneDef {
   tail?: number;
   /** station units over which weight ramps 0..1 outside the window (default 0.6) */
   fade?: number;
+  /**
+   * This scene continues the previous one as a single shot (it plays over it rather than replacing it), so the engine
+   * skips the dip-to-dark at the hand-off. Default false: overlapping scenes dip through dark at the crossfade midpoint.
+   */
+  layer?: boolean;
   /** The 3D content. Render into the parent <group>. Use useScene() + useFrame() to animate. */
   Component: ComponentType;
   /** Camera pose as a function of local progress t. Blended by weight across scenes. */

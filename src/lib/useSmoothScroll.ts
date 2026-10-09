@@ -11,6 +11,9 @@ export function usePrefersReducedMotion(): boolean {
   return r;
 }
 
+/** Follow rate of the eased scroll (1/s): ~0.15 of the remaining distance per 60Hz frame. */
+const FOLLOW = 10;
+
 /** Maps wheel + mouse drag to horizontal scroll with easing; touch and keys stay native/explicit. */
 export function useSmoothScroll(ref: RefObject<HTMLElement | null>, reduced: boolean) {
   const target = useRef(0);
@@ -34,16 +37,23 @@ export function useSmoothScroll(ref: RefObject<HTMLElement | null>, reduced: boo
     written.current = el.scrollLeft;
   };
 
-  const tick = useCallback(() => {
+  const lastT = useRef(0);
+  const tick = useCallback((now: number) => {
     const el = ref.current;
     if (!el) return;
     const d = target.current - pos.current;
     if (Math.abs(d) < 0.25) {
       write(el, target.current);
       animating.current = false;
+      lastT.current = 0;
       return;
     }
-    write(el, pos.current + Math.sign(d) * Math.min(Math.abs(d), Math.max(0.25, Math.abs(d) * 0.14)));
+    // Exponential follow on real elapsed time, so the glide is identical at 60Hz, 120Hz or after a dropped frame
+    // (a fixed per-frame fraction runs twice as fast on a 120Hz display).
+    const dt = lastT.current ? Math.min(0.05, (now - lastT.current) / 1000) : 1 / 60;
+    lastT.current = now;
+    const step = d * (1 - Math.exp(-dt * FOLLOW));
+    write(el, pos.current + Math.sign(d) * Math.min(Math.abs(d), Math.max(0.25, Math.abs(step))));
     raf.current = requestAnimationFrame(tick);
   }, [ref]);
 
@@ -111,6 +121,7 @@ export function useSmoothScroll(ref: RefObject<HTMLElement | null>, reduced: boo
         dragging = true;
         cancelAnimationFrame(raf.current);
         animating.current = false;
+        lastT.current = 0;
         el.setPointerCapture(pid);
         el.classList.add('is-dragging');
       }

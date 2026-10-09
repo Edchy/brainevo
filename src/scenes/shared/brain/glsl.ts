@@ -36,13 +36,40 @@ uniform float uCbS,uCbFolia,uCbK,uCbAt; uniform vec2 uCb;
 uniform float uTecS;
 
 float foldAmp(float fold){ return smoothstep(0.03,0.3,fold); }
+float profileW(float fold){ return mix(0.12,0.5,fold); }
+// fold cross-section: a narrow sulcus floor rising into a domed gyral crown (not a flat plateau with cliff walls, which
+// the mesh cannot resolve and renders as zipper-serrated edges)
 float profile(float n1,float n2,float fold){
-  float w=mix(0.07,0.3,fold);
-  float h1=smoothstep(0.,w,abs(n1));
-  float h2=smoothstep(0.,w*1.3,abs(n2));
-  return mix(1.,h1*(0.88+0.12*h2),foldAmp(fold));
+  float s=clamp(abs(n1)/profileW(fold),0.,1.);
+  float h1=1.-pow(1.-s,1.8);
+  float h2=smoothstep(0.,.4,abs(n2));
+  return mix(1.,h1*(0.93+0.07*h2),foldAmp(fold));
 }
 float foldDepth(){ return 0.05*dot(uCer,vec3(.3333)); }
+
+// Gyri follow regional grain, not isotropic noise (whose zero-sets close into brain-coral loops). On the unit direction d
+// (+x front, +y up, |z| lateral) a smooth flow field says which way the folds run: frontal gyri front-to-back, the
+// pre/postcentral gyri down the side leaning forward, temporal gyri horizontal, parietal/occipital looser and oblique.
+// Noise is stretched along that direction, so its zero lines (the sulci) become long, roughly parallel, evenly spaced folds.
+vec3 gyralFlow(vec3 d,out float aniso){
+  vec3 a=vec3(d.x,d.y,abs(d.z));
+  float wc=exp(-pow(dot(a,vec3(.93,.09,-.37))/.3,2.))*smoothstep(-.15,.25,d.y);
+  float wt=smoothstep(.05,-.35,d.y)*smoothstep(.25,.6,a.z)*smoothstep(-.8,-.4,d.x);
+  float wf=smoothstep(-.05,.35,d.x)*(1.-wc)*(1.-wt);
+  float wp=smoothstep(.05,-.35,d.x)*(1.-wc)*(1.-wt);
+  vec3 t=vec3(1.,.1,0.)*wf+vec3(.42,-.9,0.)*wc*sign(d.y+.5)+vec3(1.,.18,0.)*wt+vec3(.6,.75,0.)*wp+vec3(1.,0.,0.)*.05;
+  aniso=clamp(wf*.85+wc*1.+wt*.6+wp*.4,0.,1.);
+  return normalize(t);
+}
+float gyri(vec3 d,float f,out float n2){
+  float an; vec3 t=gyralFlow(d,an);
+  vec3 q=d*f;
+  q-=t*dot(q,t)*(1.-1./mix(1.,2.,an));      // lower frequency along the grain = elongated folds
+  vec3 w=vec3(snoise(q*.55+1.7),snoise(q*.55+8.3),snoise(q*.55+15.1));
+  q+=.5*w;                                    // gentle meander only
+  n2=snoise(q*2.1+4.);
+  return snoise(q);
+}
 
 vec2 axisDir(){
   vec2 v=normalize(vec2(-.28,-1.));
@@ -108,19 +135,16 @@ vec3 cerebrumShape(vec3 d,out vec4 aux){
   // central sulcus
   float cs=uPrim*exp(-pow(dot(a,vec3(.93,.09,-.37))/.035,2.))*smoothstep(.05,.3,a.y)*smoothstep(.98,.85,a.y);
   p*=1.-.045*cs;
-  // gyri / sulci: domain-warped ridged noise on the sphere of directions
-  float f=uFF;
-  vec3 q=d*f;
-  vec3 w=vec3(snoise(q*.6+1.7),snoise(q*.6+8.3),snoise(q*.6+15.1));
-  q+=1.25*w;
-  float n1=snoise(q);
-  float n2=snoise(q*2.35+4.);
+  // gyri / sulci: grain-aligned ridged noise on the sphere of directions
+  float n2;
+  float n1=gyri(d,uFF*1.15,n2);
   float H=profile(n1,n2,uFold);
   float fm=1.-.75*exp(-pow(a.z/.07,2.));
   float dr=-foldDepth()*uFold*fm*(1.-H);
   float wob=snoise(d*1.9+3.)*.028+snoise(d*4.1+9.)*.012;
   vec3 nn=normalize(d/max(R*s,vec3(.02)));
-  p+=nn*(dr+wob*(1.-.6*uFold));
+  // unfolded (fish..early mammal) pallium is a smooth, glossy lobe: keep only a whisper of irregularity there
+  p+=nn*(dr+wob*mix(.3,.4,uFold));
   p+=vec3(uCerOff.xy,0.);
   aux=vec4(n1,n2,fm,clamp(fis*1.2+sy+cs*.7,0.,1.));
   return p;
@@ -299,9 +323,11 @@ void main(){
       float wob=.035*snoise(u*6.)+.02*snoise(u*13.);
       float rc=.9+wob;
       vec3 dr=normalize(u+1e-4);
-      vec3 qq=dr*uFF; vec3 w3=vec3(snoise(qq*.6+1.7),snoise(qq*.6+8.3),snoise(qq*.6+15.1)); qq+=.95*w3;
-      float Hc=profile(snoise(qq),snoise(qq*2.35+4.),uFold);
-      vec3 wm=vec3(.58,.55,.52)*(.92+.08*snoise(u*11.)), gm=vec3(.22,.2,.22);
+      float c2; float c1=gyri(dr,uFF*1.15,c2);
+      float Hc=profile(c1,c2,uFold);
+      // white matter: bright, with faint fibre tracts radiating toward the cortex; grey matter: a distinct darker ribbon
+      float fib=snoise(vec3(dr*vec3(26.,26.,26.))+rr*1.5)*.5+snoise(u*9.)*.5;
+      vec3 wm=vec3(.8,.77,.73)*(.9+.1*fib), gm=vec3(.3,.27,.29);
       col=mix(wm,gm,smoothstep(rc-.025,rc+.01,rr));
       col*=1.-.1*step(.5,fract((rr-rc)/(1.-rc+.001)*6.))*smoothstep(rc-.01,rc+.02,rr);
       float sulc=(1.-smoothstep(.12,.34,Hc))*smoothstep(rc-.1,rc-.03,rr)*uFold*(1.-smoothstep(rc+.02,rc+.08,rr));
@@ -317,9 +343,17 @@ void main(){
       float cc=abs(length(vec2((u.x+.02)/.5,(u.y-.03)/.3))-1.)*(1.-smoothstep(.35,.5,ca));
       col+=vec3(.06)*(1.-smoothstep(0.,.05,cc))*step(.1,u.y);
       col*=1.-.55*smoothstep(.97,1.06,rr);
+      col*=1.-.22*smoothstep(.35,.95,rr);                  // falls off toward the rim: the slice reads as a volume
       col+=regionsCap(u)*2.2;
+    } else if(uPart<1.5){
+      // cerebellum slice: grey folia around a branching white core (arbor vitae)
+      float br=abs(sin(q.y*uCbK*.32+2.2*snoise(q*2.6)+q.x*3.));
+      float core=smoothstep(.75,.0,length((q.xy-vec2(uCerOff.x-uCer.x*.55,uCerOff.y-uCer.y*.35))*vec2(1.,1.4)));
+      col=mix(vec3(.3,.27,.29),vec3(.78,.75,.71),max(core*.85,smoothstep(.22,.05,br)*.75));
+      col=mix(col,uPartGlow*.9+col*.5,clamp(dot(uPartGlow,vec3(1.)),0.,1.));
     } else {
-      col=vec3(.45,.43,.42)*(.85+.15*snoise(q*14.));
+      // stem / bulbs / tectum: long fibre bundles
+      col=vec3(.66,.63,.6)*(.86+.14*snoise(q*vec3(4.,22.,22.)));
       col=mix(col,uPartGlow*.9+col*.5,clamp(dot(uPartGlow,vec3(1.)),0.,1.));
     }
     col=mix(col,col*uTint*1.5,uTintAmt*.7);
@@ -333,11 +367,13 @@ void main(){
   float lineM=0.; float h=0.;
   if(uPart<.5){
     H=profile(vAux.x,vAux.y,uFold); fm=vAux.z;
-    float pxw=mix(0.07,0.3,uFold)/(fwidth(vAux.x)+1e-4);
+    float pxw=profileW(uFold)/(fwidth(vAux.x)+1e-4);
     float kd=smoothstep(.8,2.5,pxw)*foldAmp(uFold);
     H=mix(.78,H,kd);
     h=-foldDepth()*uFold*fm*(1.-H)*kd;
-    float w1=fwidth(vAux.x)*1.2+1e-4;
+    // vAux.x is interpolated per triangle, so a pixel-thin line at its zero would trace triangle edges (jagged);
+    // a band in fold units reads as the same sulcus but smoothly
+    float w1=max(fwidth(vAux.x)*1.2,.07);
     lineM=(1.-smoothstep(0.,w1,abs(vAux.x)))*uFold;
     crown=H;
   } else if(uPart<1.5){
@@ -353,7 +389,7 @@ void main(){
   }
   N=perturb(N,vVp,h);
 
-  float ao=mix(1.,mix(.1,1.,pow(H,.8)),clamp(uFold*1.5,0.,1.)*(uPart<.5?fm:1.));
+  float ao=mix(1.,mix(.18,1.,smoothstep(0.,.85,H)),clamp(uFold*1.5,0.,1.)*(uPart<.5?fm:1.));
   if(uPart>.5&&uPart<1.5) ao=mix(1.,mix(.15,1.,H),clamp(vAux.z*1.5,0.,1.));
   float cav=uPart<.5?vAux.w:0.;
   ao*=1.-.75*cav;
