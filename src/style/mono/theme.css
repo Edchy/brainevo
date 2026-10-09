@@ -1,1 +1,123 @@
-/* Theme for [data-style="mono"] */
+/* Monochrome: museum-title restraint. Newsreader / Instrument-style serif display, tiny neutral sans labels, hairlines. */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400&display=swap');
+
+[data-style='mono'] {
+  --ui-ink: #f4f4f2;
+  --ui-ink-dim: rgba(244, 244, 242, 0.56);
+  --ui-line: rgba(255, 255, 255, 0.14);
+  --ui-panel: rgba(0, 0, 0, 0.72);
+  --ui-panel-blur: 10px;
+  --ui-radius: 0px;
+  --ui-font-display: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --ui-font-body: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+  --ui-font-mono: 'Inter', system-ui, -apple-system, sans-serif;
+  --accent: #f4f4f2 !important;
+
+  --title-color: #ffffff;
+  --title-blend: normal;
+  --title-opacity: 0.95;
+  --title-weight: 300;
+  --title-transform: none;
+  --title-spacing: 0.02;
+  --title-size: 0.42;
+  --title-softness: 0.5;
+}
+[data-style='mono'] .app { --accent: #f4f4f2 !important; }
+[data-style='mono'] body { background: #000; letter-spacing: 0.01em; }
+[data-style='mono'] ::selection { background: rgba(255, 255, 255, 0.25); }
+[data-style='mono'] :focus-visible { outline: 1px solid rgba(255, 255, 255, 0.7); outline-offset: 4px; border-radius: 0; }
+
+/* ---- caption: a quiet whisper, lower left ---- */
+[data-style='mono'] .caption { width: min(var(--card-w), 340px); }
+[data-style='mono'] .caption > * { text-shadow: 0 0 18px #000, 0 0 6px #000; }
+[data-style='mono'] .kicker { margin-bottom: 8px; gap: 2px 12px; font-family: var(--ui-font-mono); font-weight: 300; font-size: 0.6rem; letter-spacing: 0.3em; color: var(--ui-ink-dim); }
+[data-style='mono'] .year { color: var(--ui-ink); font-weight: 300; font-size: 0.62rem; letter-spacing: 0.3em; }
+[data-style='mono'] .kicker-bt,
+[data-style='mono'] .kicker-era { display: none; }
+[data-style='mono'] .ev-title { font-weight: 300; font-size: 1.55rem; line-height: 1.15; letter-spacing: 0.005em; margin-bottom: 8px; }
+[data-style='mono'] .summary { font-size: 1.02rem; font-weight: 400; line-height: 1.45; color: var(--ui-ink-dim); }
+[data-style='mono'] .caption .summary { -webkit-line-clamp: 2; line-clamp: 2; }
+[data-style='mono'] .card { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; border: 0; }
+[data-style='mono'] .card .summary { color: var(--ui-ink-dim); }
+[data-style='mono'] .station { opacity: 0.35; }
+[data-style='mono'] .station.is-active { opacity: 1; }
+
+/* buttons: text with a hairline underline, nothing else */
+[data-style='mono'] .btn-more,
+[data-style='mono'] .btn-quiet,
+[data-style='mono'] .btn-about,
+[data-style='mono'] .btn-begin,
+[data-style='mono'] .caption .btn-more {
+  border: 0; border-radius: 0; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
+  font-family: var(--ui-font-mono); font-weight: 300; font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--ui-ink-dim); padding: 6px 0; box-shadow: inset 0 -1px 0 var(--ui-line); transition: color 0.4s, box-shadow 0.4s;
+}
+[data-style='mono'] .btn-more:hover,
+[data-style='mono'] .btn-quiet:hover,
+[data-style='mono'] .btn-about:hover,
+[data-style='mono'] .btn-begin:hover { color: #fff; background: transparent; box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.8); }
+[data-style='mono'] .btn-about { opacity: 0.5; }
+[data-style='mono'] .btn-play { border-color: var(--ui-line); color: var(--ui-ink); background: transparent !important; backdrop-filter: none; }
+[data-style='mono'] .audio-label { font-family: var(--ui-font-mono); font-size: 0.6rem; letter-spacing: 0.24em; text-transform: uppercase; font-weight: 300; }
+
+/* ---- intro / outro ---- */
+[data-style='mono'] .intro h1 { font-weight: 300; letter-spacing: 0.01em; font-size: clamp(2.6rem, 7vw, 5.4rem); }
+[data-style='mono'] .intro-kicker { font-family: var(--ui-font-mono); font-weight: 300; font-size: 0.62rem; letter-spacing: 0.5em; }
+[data-style='mono'] .intro-sub { font-style: italic; font-weight: 300; color: var(--ui-ink-dim); font-size: clamp(1.05rem, 2vw, 1.3rem); }
+[data-style='mono'] .intro-hint { font-family: var(--ui-font-mono); font-weight: 300; font-size: 0.58rem; letter-spacing: 0.4em; text-transform: uppercase; }
+[data-style='mono'] .btn-begin { font-size: 0.62rem; letter-spacing: 0.4em; padding: 12px 0; color: var(--ui-ink); }
+[data-style='mono'] .outro h2 { font-weight: 300; font-size: 2.2rem; }
+[data-style='mono'] .outro p { font-style: italic; }
+
+/* ---- chrome we do not want: banners, chapter markers, glyph, tags, chips ---- */
+[data-style='mono'] .banner,
+[data-style='mono'] .bt-marker,
+[data-style='mono'] .glyph,
+[data-style='mono'] .mm-bts,
+[data-style='mono'] .mm-era,
+[data-style='mono'] .mm-seg span,
+[data-style='mono'] .ax-tick { display: none !important; }
+[data-style='mono'] .tags { display: none; }
+
+/* ---- time axis: one hairline and a year readout ---- */
+[data-style='mono'] .axis { padding-bottom: 14px; }
+[data-style='mono'] .ax-read { margin-bottom: 8px; font-family: var(--ui-font-mono); font-size: 0.6rem; letter-spacing: 0.3em; font-weight: 300; text-transform: uppercase; }
+[data-style='mono'] .ax-read strong { font-weight: 300; color: var(--ui-ink); }
+[data-style='mono'] .ax-read span { display: none; }
+[data-style='mono'] .ax-line { background: rgba(255, 255, 255, 0.1); }
+[data-style='mono'] .ax-fill { background: rgba(255, 255, 255, 0.5); }
+[data-style='mono'] .ax-head { width: 3px; height: 3px; margin-left: -1.5px; top: -1px; background: #fff; box-shadow: 0 0 8px rgba(255, 255, 255, 0.7); }
+
+/* hud / tidy variants: same restraint */
+[data-style='mono'] .minimap { background: linear-gradient(0deg, rgba(0, 0, 0, 0.7), transparent); border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+[data-style='mono'] .mm-years { font-family: var(--ui-font-mono); font-weight: 300; font-size: 0.6rem; letter-spacing: 0.3em; }
+[data-style='mono'] .mm-bar { height: 10px; }
+[data-style='mono'] .mm-seg { background: transparent; border-left: 1px solid var(--ui-line); }
+[data-style='mono'] .mm-seg:hover { background: rgba(255, 255, 255, 0.06); }
+[data-style='mono'] .mm-head { width: 1px; margin-left: 0; background: #fff; }
+[data-style='mono'] .ruler-tick b { font-family: var(--ui-font-mono); font-weight: 300; letter-spacing: 0.2em; font-size: 0.56rem; }
+[data-style='mono'] .ruler-line, [data-style='mono'] .ruler-tick i { background: var(--ui-line); }
+[data-style='mono'] .deep { border-top: 1px solid var(--ui-line); }
+[data-style='mono'] .deep > summary { font-family: var(--ui-font-mono); font-size: 0.58rem; letter-spacing: 0.3em; text-transform: uppercase; font-weight: 300; }
+[data-style='mono'] .deep > summary::after { color: var(--ui-ink); }
+[data-style='mono'] .significance h3 { font-family: var(--ui-font-mono); font-weight: 300; letter-spacing: 0.3em; font-size: 0.6rem; }
+[data-style='mono'] .volume-fill { background: rgba(255, 255, 255, 0.7); }
+[data-style='mono'] .volume-bar { height: 1px; }
+[data-style='mono'] .tags li::before { color: var(--ui-ink-dim); }
+
+/* ---- sheets, menu, about ---- */
+[data-style='mono'] .sheet,
+[data-style='mono'] .about,
+[data-style='mono'] .menu { background: rgba(0, 0, 0, 0.88); border: 1px solid var(--ui-line); box-shadow: none; }
+[data-style='mono'] .sheet h2, [data-style='mono'] .about h2, [data-style='mono'] .menu h2 { font-weight: 300; }
+[data-style='mono'] .menu h3 { font-family: var(--ui-font-mono); font-weight: 300; letter-spacing: 0.3em; font-size: 0.58rem; }
+[data-style='mono'] .menu-list button:hover { color: #fff; }
+[data-style='mono'] .mi-n { color: var(--ui-ink-dim); }
+[data-style='mono'] .menu-btn { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border-color: transparent; opacity: 0.5; transition: opacity 0.4s; }
+[data-style='mono'] .menu-btn:hover { opacity: 1; border-color: var(--ui-line); }
+
+/* ---- Lab: ghosted until hover ---- */
+[data-style='mono'] .lab { opacity: 0.1; transition: opacity 0.5s; font-family: var(--ui-font-mono); }
+[data-style='mono'] .lab:hover, [data-style='mono'] .lab:focus-within { opacity: 1; }
+[data-style='mono'] .lab-toggle, [data-style='mono'] .lab-pop { border-radius: 0; background: rgba(0, 0, 0, 0.8); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; }
+[data-style='mono'] .hint-arrow { margin-right: 1.2em; }

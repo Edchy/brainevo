@@ -92,7 +92,7 @@ function World() {
     };
   }
   const groups = useRef<Record<string, THREE.Group | null>>({});
-  const ambientW = useRef(1);
+  const ambientW = useRef(0);
   const bloom = useRef<BloomEffect>(null);
   const mountedKey = useRef('');
   const [mounted, setMounted] = useState<string[]>([]);

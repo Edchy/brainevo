@@ -6,6 +6,7 @@ import { world } from '../../world/store';
 import { eventPos, lerp, near, rng, smoothstep } from '../../world/util';
 import { Figure, ambientTime, makePose } from './common';
 import type { Arm, Pose } from './common';
+import { roundSprite } from '../../world/sprite';
 
 const MZ = -2.4; // mirror plane z
 const MY = 2.0;
@@ -137,7 +138,7 @@ export default function Mirror() {
         <meshBasicMaterial color="#05080a" />
       </mesh>
       <points ref={dust} geometry={dustGeo}>
-        <pointsMaterial size={0.09} color="#b0b8d8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        <pointsMaterial map={roundSprite()} alphaTest={0.01} size={0.09} color="#b0b8d8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </points>
     </group>
   );

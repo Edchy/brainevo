@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { world } from '../world/store';
 import { rng } from '../world/util';
+import { roundSprite } from '../world/sprite';
 
 /** Placeholder dust that fills any stretch of time no real scene covers yet. Weight is driven by the engine. */
 export default function Ambient({ weight }: { weight: { current: number } }) {
@@ -34,7 +35,7 @@ export default function Ambient({ weight }: { weight: { current: number } }) {
   });
   return (
     <points ref={pts} geometry={geo}>
-      <pointsMaterial size={0.06} sizeAttenuation transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+      <pointsMaterial map={roundSprite()} alphaTest={0.01} size={0.06} sizeAttenuation transparent depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }

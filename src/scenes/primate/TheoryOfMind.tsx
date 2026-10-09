@@ -5,6 +5,7 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { lerp, rng, smoothstep } from '../../world/util';
 import { Figure, ambientTime, makePose } from './common';
+import { roundSprite } from '../../world/sprite';
 
 const A_X = -3.1, B_X = 3.1, WALL_X = 1.2, FRUIT_X = -0.3;
 
@@ -192,7 +193,7 @@ export default function TheoryOfMind() {
         <meshBasicMaterial color="#05080a" />
       </mesh>
       <points ref={dust} geometry={dustGeo}>
-        <pointsMaterial size={0.09} color="#9fb8d8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        <pointsMaterial map={roundSprite()} alphaTest={0.01} size={0.09} color="#9fb8d8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </points>
     </group>
   );

@@ -6,6 +6,7 @@ import { world } from '../../world/store';
 import { eventPos, lerp, near, rng, smoothstep } from '../../world/util';
 import { Figure, ambientTime, makePose } from './common';
 import type { Pose } from './common';
+import { roundSprite } from '../../world/sprite';
 
 const A_X = -2.3, B_X = 2.3;
 const HEAD_Y_A = 2.5, HEAD_Y_B = 1.95;
@@ -159,7 +160,7 @@ export default function Imitation() {
         <meshBasicMaterial color="#05080a" />
       </mesh>
       <points ref={dust} geometry={dustGeo}>
-        <pointsMaterial size={0.09} color="#9fc9a8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+        <pointsMaterial map={roundSprite()} alphaTest={0.01} size={0.09} color="#9fc9a8" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </points>
     </group>
   );
