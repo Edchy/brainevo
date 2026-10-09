@@ -66,7 +66,7 @@ Units: quadrupeds are ~1 unit of body (rat ~2.4 incl. tail), bipeds are metres.
 
 ### Biped rig (hominins)
 
-Up to 80 prims: tapered muscled limbs, a trapezius/deltoid shoulder girdle, ribcage + pelvis, a modelled face (cranial vault, brow ridge,
+Up to 88 prims (MAXP; a dev warning fires if a pose overflows): tapered muscled limbs, a trapezius/deltoid shoulder girdle, ribcage + pelvis, a modelled face (cranial vault, brow ridge,
 orbits with recessed eyes, cheekbones, nose with alae, lips + mouth line, mandible with chin, ears), hair/beard caps and hands with a
 curling thumb and three finger groups; feet have heel, arch, ball, hallux and toes. Facing +x, z+ is the figure's RIGHT (the near side for a
 camera on +z). Per-preset knobs: `vault, brow, prognath, jaw, chin, noseL/noseW, cheek, hairy (fur vs skin body), hair, beard, barrel, hallux, arch`...

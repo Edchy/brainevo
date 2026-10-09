@@ -196,7 +196,7 @@ export function solvePrimate(ps: PrimSet, Q: QuadParams, st: RigState) {
     const rr = sR * 0.95 - Q.eyeR * 0.1;
     vx *= rr / vl; vy *= rr / vl; vz *= rr / vl;
     const px = sfx + vx, py = sfy + vy, pz = sfz + vz;
-    ps.add(px, py, pz, Q.eyeR, px + vx / rr * 0.003, py + vy / rr * 0.003, pz + vz / rr * 0.003, Q.eyeR * 0.98, 0.004, MAT.eye, 1);
+    ps.add(px, py, pz, Q.eyeR, px + vx / rr * 0.003, py + vy / rr * 0.003, pz + vz / rr * 0.003, Q.eyeR * 0.98, 0.004, MAT.eye, 1, 0.3); // tone 0.3: dark ape sclera
   }
   // ears
   if (Q.earSize > 0.005) {

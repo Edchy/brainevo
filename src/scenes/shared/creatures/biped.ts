@@ -171,7 +171,7 @@ function finger(ps: PrimSet, base: number[], r: number, l1: number, l2: number, 
   dirv(c1, s1, spreadC, A);
   const px = base[0] + A[0] * l1, py = base[1] + A[1] * l1, pz = base[2] + A[2] * l1;
   dirv(c2, s2, spreadC * 0.6, Cv);
-  ps.add(base[0], base[1], base[2], r, px, py, pz, r * 0.92, k, MAT.skin, 1);
+  ps.add(base[0], base[1], base[2], r * 1.08, px, py, pz, r * 0.9, k, MAT.skin, 1);   // fuller at the knuckle
   ps.add(px, py, pz, r * 0.92, px + Cv[0] * l2, py + Cv[1] * l2, pz + Cv[2] * l2, r * 0.72, k, MAT.skin, 1.04);
   Cv[0] = px + Cv[0] * l2; Cv[1] = py + Cv[1] * l2; Cv[2] = pz + Cv[2] * l2;
 }
@@ -188,12 +188,18 @@ function buildHand(ps: PrimSet, Q: BipedParams, grip: number, prop: number, deta
   ps.add(A[0], A[1], A[2], 0.019 * hk, Bv[0], Bv[1], Bv[2], 0.02 * hk, 0.012, MAT.skin, 1, 0.97);
   hw(0.012 * hk, 0, -0.02 * hk, A); hw(0.088 * hk, 0, -0.028 * hk, Bv);
   ps.add(A[0], A[1], A[2], 0.018 * hk, Bv[0], Bv[1], Bv[2], 0.018 * hk, 0.012, MAT.skin, 1, 0.97);
-  // fingers: index, middle, ring+little
+  // fingers: index, middle, ring (two segments each) and a slimmer one-segment little finger; the knuckle line falls away
+  // toward the little finger as on a real hand
   const kb = 0.094 * hk;
   if (detail > 0.5) {
-    hw(kb, 0.002, 0.029 * hk, B0); finger(ps, B0, 0.0092 * hk, 0.04 * hk * fl, 0.046 * hk * fl, curl(0.22), curl2(0.22), spread, 0.006);
-    hw(kb + 0.002, 0.002, 0.007 * hk, B0); finger(ps, B0, 0.0097 * hk, 0.046 * hk * fl, 0.05 * hk * fl, curl(0.3), curl2(0.3), spread * 0.2, 0.006);
-    hw(kb - 0.002, 0.002, -0.0175 * hk, B0); finger(ps, B0, 0.0125 * hk, 0.042 * hk * fl, 0.046 * hk * fl, curl(0.42), curl2(0.42), -spread * 1.1, 0.006);
+    hw(kb, 0.002, 0.029 * hk, B0); finger(ps, B0, 0.0088 * hk, 0.04 * hk * fl, 0.046 * hk * fl, curl(0.22), curl2(0.22), spread, 0.006);
+    hw(kb + 0.002, 0.002, 0.009 * hk, B0); finger(ps, B0, 0.0092 * hk, 0.046 * hk * fl, 0.05 * hk * fl, curl(0.3), curl2(0.3), spread * 0.2, 0.006);
+    hw(kb - 0.003, 0.002, -0.0105 * hk, B0); finger(ps, B0, 0.0086 * hk, 0.043 * hk * fl, 0.047 * hk * fl, curl(0.38), curl2(0.38), -spread * 0.8, 0.006);
+    hw(kb - 0.012, 0.002, -0.027 * hk, B0);
+    const lc = curl(0.5) + 0.35 * curl2(0.5) * 0.5;
+    dirv(Math.cos(lc), Math.sin(lc), -spread * 1.5, A);
+    const ll = 0.068 * hk * fl;
+    ps.add(B0[0], B0[1], B0[2], 0.0078 * hk, B0[0] + A[0] * ll, B0[1] + A[1] * ll, B0[2] + A[2] * ll, 0.0058 * hk, 0.006, MAT.skin, 1.04);
   } else {
     hw(kb, 0.002, 0.02 * hk, B0); finger(ps, B0, 0.011 * hk, 0.045 * hk * fl, 0.045 * hk * fl, curl(0.3), curl2(0.3), spread, 0.008);
     hw(kb, 0.002, -0.014 * hk, B0); finger(ps, B0, 0.013 * hk, 0.043 * hk * fl, 0.043 * hk * fl, curl(0.4), curl2(0.4), -spread, 0.008);
@@ -393,27 +399,38 @@ export function solveBiped(ps: PrimSet, Q: BipedParams, st: RigState) {
     hp(0.55, -0.24, 0.6 * s, A); hp(0.78 + pg * 0.5, -0.24, 0.4 * s, Bv);
     ps.add(A[0], A[1], A[2], cr * 0.1, Bv[0], Bv[1], Bv[2], cr * 0.1, 0.014, MAT.skin, 1, 1);
   }
-  // eyes recessed under the brow
+  // eyes recessed under the brow. The capsule's tiny A->B offset runs along the gaze (head forward, toed out a little),
+  // which the shader reads to place iris and pupil; an upper lid hoods each eye.
   const er = 0.085 * Q.eyeR;
   for (let s = -1; s <= 1; s += 2) {
-    hp(0.84 + pg * 0.2, 0.02, 0.33 * s * Q.eyeSet, A); hp(0.85 + pg * 0.2, 0.02, 0.335 * s * Q.eyeSet, Bv);
+    const ef = 0.91 + pg * 0.2, es = 0.33 * s * Q.eyeSet;  // cornea at the face plane, so the eyeball itself is visible
+    hp(ef, 0.02, es, A); hp(ef + 0.004 / cr, 0.02 - 0.0006 / cr, es + 0.0005 / cr * s, Bv);  // 4mm gaze axis, a few degrees down
     ps.add(A[0], A[1], A[2], cr * er, Bv[0], Bv[1], Bv[2], cr * er * 0.99, 0.004, MAT.eye, 1);
+    // lids wrap the eyeball: capsules centred on it, offset up / down, radius just over the eye's, so they leave an almond
+    // opening from ~18 degrees below to ~15 above the gaze
+    hp(ef, 0.02 + er * 0.38, es - 0.07 * s, A); hp(ef, 0.02 + er * 0.36, es + 0.08 * s, Bv);
+    ps.add(A[0], A[1], A[2], cr * er * 1.03, Bv[0], Bv[1], Bv[2], cr * er * 0.98, 0.01, MAT.skin, 1, 0.97);
+    hp(ef - 0.004, 0.02 - er * 0.45, es - 0.06 * s, A); hp(ef - 0.004, 0.02 - er * 0.43, es + 0.07 * s, Bv);
+    ps.add(A[0], A[1], A[2], cr * er * 0.99, Bv[0], Bv[1], Bv[2], cr * er * 0.95, 0.008, MAT.skin, 1, 0.97);
   }
-  // nose: bridge + tip, alar wings
-  hp(0.8 + pg * 0.35, 0.05, 0, A); hp(0.98 + pg * 0.55 + Q.noseL / cr * 0.5, -0.3 + Q.noseUp * 0.1, 0, Bv);
-  ps.add(A[0], A[1], A[2], cr * 0.1 * Q.noseW, Bv[0], Bv[1], Bv[2], cr * 0.15 * Q.noseW, 0.012, MAT.skin, 0.95, 1);
-  hp(0.9 + pg * 0.55 + Q.noseL / cr * 0.3, -0.36, -0.13 * Q.noseW, A); hp(0.9 + pg * 0.55 + Q.noseL / cr * 0.3, -0.36, 0.13 * Q.noseW, Bv);
-  ps.add(A[0], A[1], A[2], cr * 0.075, Bv[0], Bv[1], Bv[2], cr * 0.075, 0.01, MAT.skin, 1, 0.97);
+  // nose: a narrow bridge widening to a rounded tip, and two separate alar wings either side of it
+  const ntf = 0.98 + pg * 0.55 + Q.noseL / cr * 0.5, nty = -0.3 + Q.noseUp * 0.1;
+  hp(0.8 + pg * 0.35, 0.05, 0, A); hp(ntf, nty, 0, Bv);
+  ps.add(A[0], A[1], A[2], cr * 0.075 * Q.noseW, Bv[0], Bv[1], Bv[2], cr * 0.13 * Q.noseW, 0.012, MAT.skin, 0.95, 1);
+  for (let s = -1; s <= 1; s += 2) {
+    hp(ntf - 0.1, nty - 0.06, 0.1 * Q.noseW * s, A); hp(ntf - 0.06, nty - 0.08, 0.15 * Q.noseW * s, Bv);
+    ps.add(A[0], A[1], A[2], cr * 0.062, Bv[0], Bv[1], Bv[2], cr * 0.055, 0.012, MAT.skin, 1, 0.95);
+  }
   // lips and mouth line
   const mfx = 0.96 + pg * 1.25;
   hp(mfx, -0.5, -0.27, A); hp(mfx, -0.5, 0.27, Bv);
-  ps.add(A[0], A[1], A[2], cr * 0.075 * Q.lip, Bv[0], Bv[1], Bv[2], cr * 0.075 * Q.lip, 0.008, MAT.skin, 1, 0.9);
+  ps.add(A[0], A[1], A[2], cr * 0.058 * Q.lip, Bv[0], Bv[1], Bv[2], cr * 0.058 * Q.lip, 0.008, MAT.skin, 1, 0.9);
   const lfx = mfx - 0.03 * cm + (0.0), lfy = -0.65;
   const lx = hxj + (lfx - hxj) * cm + (lfy - hyj) * sm, ly = hyj - (lfx - hxj) * sm + (lfy - hyj) * cm;
   hp(lx, ly, -0.25, A); hp(lx, ly, 0.25, Bv);
-  ps.add(A[0], A[1], A[2], cr * 0.085 * Q.lip, Bv[0], Bv[1], Bv[2], cr * 0.085 * Q.lip, 0.008, MAT.skin, 1, 0.9);
+  ps.add(A[0], A[1], A[2], cr * 0.068 * Q.lip, Bv[0], Bv[1], Bv[2], cr * 0.068 * Q.lip, 0.008, MAT.skin, 1, 0.9);
   hp(mfx + 0.045, -0.575 - mo * 0.25, -0.24, A); hp(mfx + 0.045, -0.575 - mo * 0.25, 0.24, Bv);
-  ps.add(A[0], A[1], A[2], cr * (0.022 + mo * 0.12), Bv[0], Bv[1], Bv[2], cr * (0.022 + mo * 0.12), 0.002, MAT.wet, 1, 0.12);
+  ps.add(A[0], A[1], A[2], cr * (0.022 + mo * 0.12), Bv[0], Bv[1], Bv[2], cr * (0.022 + mo * 0.12), 0.002, st.mouth > 0.15 ? MAT.wet : MAT.skin, 1, 0.12);  // closed: a dark crease, not a glossy slot
   // ears
   for (let s = -1; s <= 1; s += 2) {
     hp(-0.05, 0.12, 0.97 * s, A); hp(-0.14, -0.22, 0.99 * s, Bv);

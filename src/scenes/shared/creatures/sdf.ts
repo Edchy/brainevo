@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 
 /** Max primitives per creature (per-ray culling keeps the real per-pixel cost to a handful). */
-export const MAXP = 80;
+// 88 x 5 vec4 arrays ~ 470 fragment uniform vectors (WebGL2 desktop limits are 1024). A loaded biped (face with lids,
+// torch + carried infant) needs 85; per-pixel cost does not grow with this, rays only walk their culled shortlist.
+export const MAXP = 88;
 /** thin hair-like capsules (whiskers) kept outside the main primitive list: drawn as soft sub-pixel lines */
 export const MAXW = 16;
 
@@ -14,6 +16,7 @@ export const MAT = { fur: 0, skin: 1, eye: 2, wet: 3, bone: 4, whisker: 5 } as c
  */
 export class PrimSet {
   n = 0;
+  static warned = false;
   readonly A = new Float32Array(MAXP * 4); // xyz endpoint a (z pre-divided by zs), w radius a
   readonly B = new Float32Array(MAXP * 4); // xyz b - a (z pre-divided by zs), w radius b
   readonly P = new Float32Array(MAXP * 4); // x blend k, y material id, z 1/zs (lateral squash), w tone (albedo multiplier)
@@ -47,7 +50,11 @@ export class PrimSet {
    */
   add(ax: number, ay: number, az: number, ra: number, bx: number, by: number, bz: number, rb: number,
     k = 0.05, mat = 0, zs = 1, tone = 1) {
-    if (this.n >= MAXP) return;
+    if (this.n >= MAXP) {
+      // silently dropping prims loses whatever is built last (hands, props): make it loud in dev
+      if (import.meta.env.DEV && !PrimSet.warned) { PrimSet.warned = true; console.warn(`[creatures] PrimSet full (${MAXP}): primitives dropped`); }
+      return;
+    }
     const i = this.n++;
     let dx = bx - ax, dy = by - ay, dz = bz - az;
     let len = Math.hypot(dx, dy, dz);
@@ -250,12 +257,12 @@ void main(){
   vec3 N = calcNormal(p, mask, 0.0015 + pix*0.5);
 
   // nearest primitive decides the surface material; nearby primitives of other materials blend softly (no hard seams)
-  float bd = 1e5; float mat = 0.;
+  float bd = 1e5; float mat = 0.; int bi = 0;
   for (int j = 0; j < MAXP; j++){
     if (j >= gCnt) break;
     int i = gIds[j];
     float di = prim(i, p);
-    if (di < bd){ bd = di; mat = uP[i].y; }
+    if (di < bd){ bd = di; mat = uP[i].y; bi = i; }
   }
   vec4 wm = vec4(0.); float wBone = 0., tone = 0., wsum = 0.;
   for (int j = 0; j < MAXP; j++){
@@ -325,10 +332,24 @@ void main(){
   if (gl > 0.) col += uKeyCol*pow(max(dot(reflect(-V, Nv), Lk), 0.), 40.)*0.25*gl*ao + uRim*pow(max(dot(reflect(-V, Nv), Lr), 0.), 24.)*0.15*gl;
 
   if (mat > 1.5 && mat < 2.5){
-    // moist eye: dark lens, optional splash iris glow, two specular glints
+    // moist eye. Rigs whose eye capsule axis is >= 2mm (biped, primate: it runs along the gaze) get anatomy: a shaded
+    // sclera (brightness = the prim's tone: pale for humans, dark for apes), a dark iris with a darker limbal ring and a
+    // black pupil. Shorter axes (small mammals) keep the all-dark lens.
     vec3 R = reflect(-V, Nv);
     float ring = smoothstep(0.25, 0.6, nv)*smoothstep(0.995, 0.8, nv);
-    col = alb + uSplash*uSplashK*(0.15 + 0.85*ring)*smoothstep(0.1, 0.5, nv);
+    vec3 gz = uB[bi].xyz;
+    if (dot(gz, gz) > 4e-6){
+      // angle from the eyeball's centre (not the surface normal, which the smooth blend with the lids bends into swirls)
+      vec3 ec = vec3(uA[bi].xy, uA[bi].z/uP[bi].z);
+      float c = dot(normalize(p - ec), normalize(gz));
+      vec3 sclera = mix(vec3(0.16, 0.1, 0.07), vec3(0.29, 0.27, 0.25), uP[bi].w)*(0.5 + 0.5*wrap)*mix(0.75, 1., ao);
+      sclera *= 1. - 0.5*smoothstep(-0.15, 0.55, (p.y - ec.y)/uA[bi].w);     // the upper lid's shadow on the eyeball
+      // iris ~29 degrees half-angle (cos 0.875) like a real eye: an even dark disc (a lighter centre reads as a cartoon
+      // target), the pupil only a shade darker, as it looks at conversational distance
+      float irisM = smoothstep(0.855, 0.88, c), pup = smoothstep(0.962, 0.972, c);
+      col = mix(mix(sclera, vec3(0.05, 0.034, 0.024), irisM), vec3(0.012), pup);
+    } else col = alb;
+    col += uSplash*uSplashK*(0.15 + 0.85*ring)*smoothstep(0.1, 0.5, nv);
     col += vec3(1.)*pow(max(dot(R, Lk), 0.), 200.)*1.4 + uRim*pow(max(dot(R, Lr), 0.), 120.)*0.5;
     col += uRim*pow(1. - nv, 3.)*0.12;
   } else if (mat > 2.5 && mat < 3.5){
