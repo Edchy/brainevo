@@ -1,12 +1,12 @@
 import { useSyncExternalStore } from 'react';
 import type { Settings, StyleId, UiVariant } from './types';
 
-const STYLES: StyleId[] = ['original', 'ink', 'specimen', 'signal', 'cartoon', 'oil'];
+const STYLES: StyleId[] = ['mono', 'original', 'ink', 'specimen', 'signal', 'cartoon', 'oil'];
 const UIS: UiVariant[] = ['minimal', 'hud', 'tidy'];
-const KEY = 'brainevo.settings.v1';
+const KEY = 'brainevo.settings.v2';
 
 function load(): Settings {
-  const d: Settings = { style: 'ink', ui: 'minimal', titles: true, lab: true };
+  const d: Settings = { style: 'mono', ui: 'minimal', titles: true, lab: true };
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Partial<Settings>;
     Object.assign(d, saved);
@@ -18,7 +18,7 @@ function load(): Settings {
   if (u && UIS.includes(u)) d.ui = u;
   if (q.has('titles')) d.titles = q.get('titles') !== '0';
   if (q.has('lab')) d.lab = q.get('lab') !== '0';
-  if (!STYLES.includes(d.style)) d.style = 'ink';
+  if (!STYLES.includes(d.style)) d.style = 'mono';
   if (!UIS.includes(d.ui)) d.ui = 'minimal';
   return d;
 }
