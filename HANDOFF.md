@@ -1,103 +1,116 @@
 # Handoff: Evolution of the Brain
 
-Read this first, then the docs it points to. It records what exists, what the user wants, what is unverified, and the traps
-that cost time. Written at commit `a9aadf1` on branch `style-and-ui-iteration`. `main` holds only the first working version
-(`09bb579`) and nothing has been merged back. Do not merge or push without the user asking.
+Read this first, then the docs it points to (SCENES.md, STYLE.md, ILLUSTRATION.md, the READMEs in `src/scenes/shared/*`).
+State as of 2026-10-16: everything is merged to `main` and deployed on Vercel (see "Deploy").
 
 ## What it is
-A side-scrolling, scroll-driven "journey through evolution", Big Bang to now, ending on the modern brain and AI.
-84 events, 9 eras, five "breakthroughs" as a narrative spine. The experience is a single full-screen WebGL canvas
-(three.js via react-three-fiber) behind a minimal HTML UI. **Everything is procedural: no downloaded assets.**
+A side-scrolling, scroll-driven journey through evolution, Big Bang to now: 84 events, 9 eras, the five "breakthroughs" of
+Max Bennett's *A Brief History of Intelligence* (2023) as the spine. One full-screen WebGL canvas (three.js via
+react-three-fiber), painted by an oil-painting pass, behind a minimal HTML reading layer. Everything visual is procedural.
 Vite + React 19 + TypeScript. Deps: three, @react-three/fiber, drei, postprocessing.
 
 ## Run it
 ```
 npm install
-npm run dev -- --port 5199      # any port; agents used 5199
+npm run dev -- --port 5199      # any port
 npm run build                   # tsc -b && vite build, must stay clean
-npx tsc -p tsconfig.app.json --noEmit 2>&1 | grep <path>   # fast check while other work is in flight
+npx tsx scripts/list-events.ts  # events with their station indices
+npx tsx scripts/narration.ts export   # regenerate narration/SCRIPT.md from the data
 ```
-Default look is `mono`. URL params (all optional): `?style=mono|original|ink|specimen|signal|cartoon|oil`, `?ui=minimal|hud|tidy`,
-`?titles=0|1`, `?lab=0|1` (Lab switcher button), `?perf=1` (FPS/GPU/context-loss overlay), `?safe=1` (no post-processing at all),
-`?dpr=1` (force pixel ratio), `?adaptive=0` (disable automatic resolution step-down).
-Settings persist in localStorage (key `brainevo.settings.v2`); URL params override them. A stale `?lab=0` can hide the Lab button.
+URL params (all optional, they override the saved settings): `?palette=prussian|grisaille|umber|verdigris|oxblood`,
+`?brush=fine|full`, `?text=scrim|band|overlay`, `?headline=text|top`, `?titles=0|1`, `?lab=0|1`, `?perf=1` (FPS/GPU overlay),
+`?safe=1` (no post-processing), `?dpr=1`, `?adaptive=0`. Settings persist in localStorage `brainevo.settings.v3`.
 
 ## Where things are
 | Path | What |
 |---|---|
-| `src/types.ts`, `src/data/events.*.ts` | `TimelineEvent` schema and the 84 events (text, dates, tags, audio transcripts). Merged and sorted by `yearsAgo` in `src/data/index.ts`. |
-| `src/lib/` | layout (non-linear log spacing, `focusX`), eras, smooth scroll (`useSmoothScroll`), breakthroughs. |
-| `src/components/`, `src/App.tsx`, `src/index.css` | HTML UI: Caption, Axis, Menu, sheet, Track/cards, Minimap, LabPanel. Three variants via `data-ui`. |
-| `src/world/` | The engine. `store.ts` (mutable scroll state `world.stationF`), `Stage.tsx` (Canvas, scene blending, camera/bloom/background blending, `PostFX`, adaptive DPR), `PerfHud.tsx`, `sprite.ts`. |
-| `src/scenes/<group>/` | 65 scenes in 7 groups (cosmic, life, vertebrate, mammal, primate, hominin, human), registered in `src/scenes/index.ts`. |
-| `src/scenes/shared/creatures/` | SDF-raymarched creature toolkit: quadruped, biped, primate, aquatic rigs. See its `README.md`. |
-| `src/scenes/shared/brain/` | The shared anatomical brain (stages tube to human, glass/holo/cutaway looks, activity regions). See its `README.md`. |
-| `src/style/<id>/` | Seven looks, each a global post-process `Effects` plus `theme.css`. `src/style/titles/` is the depth-sandwiched headline layer (`anchors.ts` places titles per scene). |
-
-Docs: `SCENES.md` (engine/scene contract, dev hooks), `STYLE.md` (style system, UI tokens, ownership), `ILLUSTRATION.md` (the quality
-bar, colour-splash rules). Project memory note: `~/.claude/projects/-Users-eddietovebeppearonelsa-dev-wip-brainevo/memory/`.
+| `src/types.ts`, `src/data/events.*.ts` | `TimelineEvent` schema and the 84 events: text, dates, narration transcript, **sources**. |
+| `src/lib/` | layout (log spacing, `focusX`), eras, breakthroughs, smooth scroll, date formatting (`fmtWhen`). |
+| `src/components/`, `src/App.tsx`, `src/index.css` | Reading layer: Caption (+ Read more sheet), Menu (with Sound), Axis, SoundButton, LabPanel, Track (intro, chapter and breakthrough interstitials, outro). `readingGeometry()` in App is the single source of the layout numbers. |
+| `src/world/` | Engine: `store.ts` (`world.stationF`), `Stage.tsx` (Canvas, scene blending, PostFX chain, dev tools), `Dip.tsx`, `Scrim.tsx`, `PerfHud.tsx`. |
+| `src/style/` | `oil/` (the paint pass + theme tokens), `palettes.ts`, `store.ts` (settings), `titles/` (depth headlines). |
+| `src/audio/` | `engine.ts` (graph, unlock on gesture, ducking), `narration.ts` (auto-play director), `score.ts` (generative music). |
+| `src/scenes/<group>/` | 65 scenes in 7 groups; `shared/brain` (anatomical brain, BrainLab), `shared/creatures` (SDF rigs). |
+| `narration/` | `SCRIPT.md` (the ElevenLabs script, generated) and `lines.json`. |
+| `scripts/narration.ts` | export the script; record missing lines and compose era music through the ElevenLabs API. |
 
 ## Core concepts
-- `world.stationF` is a continuous index into the sorted events (12.5 = halfway between event 12 and 13; negative = intro; >83 = outro).
-  Scrolling writes it; scenes read it inside `useFrame`. Scenes are scrub-reversible, so drive visuals from it, not from elapsed time.
-- A scene (`SceneDef`) owns `[from, to]` events plus `lead/tail/fade`; the engine gives it `t` (0..1) and a crossfade `weight`, and blends
-  camera pose and mood (bg, bloom) across overlapping scenes. Scenes stay mounted until ~9 stations away and are pre-compiled.
-- Style is global post-processing, so scenes must not hard-code a look. The Monochrome grade keeps colour only where the source is strongly
-  saturated (a "splash"), so author pure saturated accents sparingly.
+- `world.stationF` is a continuous index into the sorted events (12.5 = halfway between 12 and 13; negative = intro; >83 = outro).
+  Scenes are scrub-reversible: drive visuals from it, not from elapsed time. Engine contract: SCENES.md.
+- Post chain: scene -> bloom -> vignette -> dip -> reading shade | oil (own pass) -> depth headline. Why the split matters: STYLE.md.
+- Reading layer: the headline is painted into the frame and rests on its own caption (lower left); captions are measured from
+  hidden copies so each headline knows its baseline. The text layouts are `scrim` (default), `band`, `overlay`.
+- Audio: off until "Begin with sound" or the speaker button (a click or key is required by browsers). Narration auto-plays for
+  the event at the focus after a 0.45 s dwell, fades between events, pauses/resumes, does not repeat a clip finished in the last
+  45 s, resumes one interrupted in the last minute. Files: `src/assets/narration/<event-id>.mp3` (picked up at build time);
+  until they exist the system voice reads the transcript (Lab toggle). Music ducks under the voice.
 
 ## What the user wants (their words, paraphrased)
-- Super immersive, cinematic, "the coolest thing ever", not static illustrations.
-- Then: **more minimal**, black-and-white dominant, colour as splashes only where it makes sense, "professional and organic", and
-  *"when you pause on a screen it must not feel like a first draft"*. They liked the Original's clean black-and-white Big Bang.
-- Cleaner UI, headlines that sit between scene layers (done), animals with real anatomy, more detailed illustrations.
-- They have not yet chosen a final style. Monochrome is the current direction; the other looks remain in the Lab for comparison.
-  Expect to cut the Lab down to one look eventually.
+- Earlier: super immersive; then more minimal, black-and-white dominant with colour splashes, "professional and organic", and
+  *"when you pause on a screen it must not feel like a first draft"*.
+- 2026-10-16: **oil painting** as the look, **minimal** interface. Try a "follo-style" oil painting (word unclear, see open work) and
+  a few colour worlds: keep the blue one, add a monochrome one and two or three others (done: five palettes, two brushworks).
+- Headlines: keep them **in depth** ("pretty cool"), but they were too big, too screamy, took too much space. Visuals are the focal
+  point, text secondary. The explanatory text must be very readable. They were unsure between overlay / separate dark band /
+  bottom gradient: all three are in the Lab (default: painted shade = gradient), plus two headline placements.
+- Narration from a script they will put into ElevenLabs; it should **play by itself as you slide**, no play button needed, but
+  pausable; a fluent experience. Also a cool cinematic soundtrack. Scrolling a little slower (done: wheel gain 0.8, longer glide).
+
+## Session 2026-10-16 (what changed)
+- Oil only: deleted the six other styles and the HUD/tidy UIs; palettes and brushwork as live uniforms; oil in its own pass.
+- Reading layer redesign (headline ~6% of frame height, rests on the caption; EB Garamond caption with an italic gilt date);
+  only lit geometry occludes the headline; headline plane at 0.7 x focal distance; scroll-driven fade on interstitials.
+- Audio system and generative score; ElevenLabs tooling; dev silent mode.
+- Fact-check of all 84 events: every event has verified sources (DOIs resolved against Crossref by title, web pages fetched
+  with HTTP 200 on 2026-10-16); 54 events corrected or hedged (see commit `feeec4a` for the list). Breakthrough markers now
+  follow the animal groups Bennett names, dated from the fossil record.
+- Visual polish under oil: early brain stages (mid-tone glossy tissue, pial vessels, contiguous fish/reptile anatomy), first
+  vertebrate as a small jawless fish, neocortex slice with readable layers, first cells on time, Phoenician letters, marble brain
+  on a column for Philosophy, a Sunghir-style bead burial with a stone lamp, thicker family tree, portrait-screen framing.
 
 ## Testing and verification gotchas (these cost hours)
-- The browser tool's tab is **hidden**: `requestAnimationFrame` and `ResizeObserver` stall. A screenshot wakes it. The stage mounts lazily, so
-  after navigating: take a screenshot, wait ~8-10s, take another, then use hooks.
-- Hooks (dev only): `window.__setF(f|null)` pins the scene position; `window.__tick(n)` renders n frames of 16.7ms each
-  (before 2026-10-09 it rendered with dt ~0, so damped cameras never moved in test captures: older screenshots misframe); `window.__gl` is the renderer; `window.__set('style'|'ui'|'titles'|'lab', v)`;
-  `window.__world`. **`__setF` pins only the scene, not the HTML caption/headline.** For a true paused still, scroll the real scroller:
-  ```js
-  const el=document.querySelector('.scroller');
-  window.__goF=(f)=>{window.__setF(null);let lo=0,hi=el.scrollWidth-el.clientWidth;for(let i=0;i<30;i++){const m=(lo+hi)/2;el.scrollLeft=m;el.dispatchEvent(new Event('scroll'));if(window.__world.stationF<f)lo=m;else hi=m;}el.scrollLeft=hi;el.dispatchEvent(new Event('scroll'));window.__tick(60);return window.__world.stationF};
-  ```
-- Use ONE Chrome tab and close it. Several agents each running heavy WebGL tabs froze everything; other agents' hot reloads also reset your page.
-- After adding a dependency, restart Vite with `--force` or the page white-screens on a stale optimised-deps cache.
-- Editing a hook-bearing file can crash the page via Fast Refresh ("change in the order of Hooks"). A full reload fixes it; it is not a real bug.
-- Black-frame detector used to verify the flash fix: step `__setF` in small increments, `__tick(1)`, `readPixels` a grid, flag frames with ~0 brightness.
+- The browser tool's tab is **hidden**: `requestAnimationFrame` stalls; a screenshot wakes it. After navigating: screenshot, wait
+  ~8 s, then use hooks (`__setF`, `__tick`, `__set`, `__world`, `__gl`). `__setF` pins only the scene, not the HTML caption: for true
+  stills move the real scroller (the `__goF` bisection helper in SCENES.md and earlier notes).
+- **Contact sheets need awaits** between stations (React must commit scene mounts); a synchronous loop renders empty scenes.
+  Long walks exceed the tool's 45 s script timeout but keep running in the page: wait and screenshot.
+- The test tab is the user's real Chrome: **set `window.__silent = true` before any audio test**, or narration plays aloud.
+- The window could not be resized on this machine: test phone width with an iframe of 390 x 780 on the same origin.
+- Shader/effect edits need a full reload (HMR keeps the old postprocessing Effect instance). After adding a dependency restart
+  Vite with `--force`. Editing a hook-bearing file can crash Fast Refresh: reload.
+- Dev tools: `?brainlab=<stage>` (brain turntable), `?creatures=<kind>` (rig lineup), `__td`, `__scoreTest`, `__narration`, `__bus`.
 
 ## Bugs already fixed, do not regress
-- **Black flashes:** (1) bloom's luminance pass let a NaN/Inf texel smear across the frame; now scrubbed in `sanitizeBloom` (`Stage.tsx`). (2) The post chain was rebuilt
-  every time a scene mounted; `PostFX` is now a memoised component, keep `EffectComposer` out of `World`'s render path. (3) Scenes recompiled on every remount;
-  now kept mounted and pre-compiled with `compileAsync`. (4) Adaptive resolution is discrete and downward-only (continuous changes cleared the canvas).
-  The user confirmed `?safe=1` made the flash disappear, which located it in post-processing. After the bloom fix my sweep showed 0 dips, but I could not
-  observe the user's real display, so **ask the user to confirm** it is gone on their machine.
-- **Slow-scroll backward jitter:** wheel axis is locked per gesture and the smoother owns a float position (`useSmoothScroll.ts`). Confirmed by simulation, not by a real trackpad.
-- Plain `THREE.PointsMaterial` draws squares: use `roundSprite()` (`src/world/sprite.ts`). Passing a `uniforms` object to JSX `<shaderMaterial>` does not keep the reference.
+- Black flashes (bloom NaN scrub `sanitizeBloom`; memoised `PostFX`; scenes kept mounted and pre-compiled against a render target;
+  discrete downward-only adaptive resolution). Not re-confirmed by the user on their machine: ask.
+- Oil sampling the raw scene when merged into the first pass (everything before it at ~20% strength): keep `Scrim`'s `mainUv`.
+- Slow-scroll backward jitter (wheel axis locked per gesture, float scroll position).
+- `THREE.PointsMaterial` draws squares: use `roundSprite()`. A JSX `<shaderMaterial uniforms>` object does not keep its reference.
 
 ## Open work, roughly in priority order
-1. **Ask the user** whether the flash and the scroll jitter are actually gone.
-2. **Performance is unmeasured.** The hidden test tab cannot give real GPU numbers. Phase 2 added heavy shaders (raymarched creatures up to 80 prims, an ~85k-vertex brain,
-   a raymarched press, 21-tap oil filter). Have the user run `?perf=1`; profile hominin-savanna, neocortex, cave, canopy, fire, the press, and crossfades that draw up to 5 creatures.
-   The creature shader raised its prim limit 32 to 80 (uniform count could fail on very low-limit GPUs). Not re-verified against the quadruped/primate scenes after that merge
-   (build is clean).
-3. **Brain refinement.** Folds look chaotic (brain-coral/walnut), stem is bulb-like, fish/reptile forms are odd. It appears in ~14 scenes, so it is the highest-leverage fix.
-4. **Faces and hands** on hominins/primates (soft, clay-like, no eyelids); seated primates look stocky; tetrapod reads as salamander; lancelet stripes zebra-like.
-5. Remaining weak frames the agents reported: crude Earth coastlines/grey globe; press wood toy-like; Neuron/AiMirror impulse reads lavender not electric blue; Egg desaturates
-   under mono; hominin Skulls/Tissue/Broca still use an ellipsoid skull ghost; Oldowan has no brain pulse target; Laetoli shows unexplained dark ground blobs; a few
-   mid-crossfade frames are busy (about 9.5, 10.5, 66.5, 76.5, 80.5); at ~3.62 the headline overlaps the soup helix (anchor mismatch).
-6. **Sources and fact-check (not started).** The text was written by AI agents from general knowledge, with no web access and no citations; only 13 of 84 date labels are hedged.
-   The Bennett framework (*A Brief History of Intelligence*, 2023) was reconstructed from memory and the book was never consulted. The schema has no `sources` field.
-   Plan: add `sources` per event, run web-enabled fact-check agents, fix or hedge dates, show a "Sources" line in the expanded view, and check breakthrough assignments against the book.
-7. Narration audio does not exist (transcripts do; `audio.src` files are missing and the UI shows "coming soon").
-8. A few late-sapiens events sort slightly out of chronological order (burial, flutes). Data is untouched since the sort fix.
-9. Housekeeping once a look is chosen: delete losing styles and the Lab, dev-only demo hook `?creatures=` in `mammal/Cynodont.tsx`, debug hooks (`__inkDbg`, `__signalSurge`, `__worldRenders`), and old `ImageSlot` if unused.
-10. Deployment (Vercel) was never done.
+1. **The user chooses**: palette, brushwork, text layout, headline placement (Lab). Then delete the losing options and, if they
+   want, hide the Lab (`?lab=0` default) for the public site.
+2. **"follo-style" oil painting**: the word was unclear. Interpreted as a fuller, more painterly oil ("Full" brushwork). Ask which
+   painter or style they meant (a specific artist? fauvist?) and add it as a brush or palette.
+3. **Narration**: record with ElevenLabs (`narration/SCRIPT.md`; `scripts/narration.ts voice`). Then listen through the whole
+   piece: clip lengths (~15 s) vs. scroll pace, the dwell and fade timings in `src/audio/narration.ts`.
+4. **Listen to the score**: it was written and level-checked offline (bed about -28 dB RMS, ducks ~7.5 dB under voice) but never
+   heard. Tune `HARMONY` / `LEVEL` in `src/audio/score.ts`, or compose recorded beds (`scripts/narration.ts music`).
+5. **Performance on real GPUs is still unmeasured** (`?perf=1`): heavy scenes are hominin-savanna, neocortex, cave, canopy, fire,
+   the press, and crossfades with several creatures. The oil pass is a 21-tap fullscreen pass in its own EffectPass.
+6. **Remaining weak frames** (from the 2026-10-16 contact sheets under oil): the eukaryote cell (#8) is diagrammatic, oceans (#3)
+   and first stars (#1) are sparse, the Denisovan family tree (#61) still reads weakly, four similar brain-in-glass frames
+   (#50, 51, 54, 55), the band layout shows an empty band on the intro.
+7. **Fact-check caveats**: claims were checked against the cited sources and corrected where wrong, but not every sentence of every
+   transcript was traced to a page; the Bennett book itself was never consulted (breakthrough dates come from the fossil record of
+   the groups he names). A domain expert read would still be worth it.
+8. Late cleanup once options are chosen: unused palettes/text layouts, BrainLab and CreatureDemo can stay (dev-only, not bundled).
+
+## Deploy
+Vercel project `brainevo` (CLI, account linked in `.vercel/`). `vercel deploy --prod` from the repo root after `npm run build`
+passes; Vercel builds with `npm run build` and serves `dist`. Narration/music files in `src/assets/` are bundled at build time.
 
 ## How the work was run (reusable)
-Parallel sub-agents with strict **file ownership** (each told which files it may edit; shared files edited additively), a written contract
-(`SCENES.md`/`STYLE.md`/`ILLUSTRATION.md`), and a mandatory screenshot-based verification step. Agents reliably under-report what they did not check; I spot-checked key frames
-myself and ran `tsc` + `npm run build` after every merge. Commit after each integrated pass (all commits end with the Co-Authored-By line from the session's attribution rules).
-Their self-reports list weak spots honestly: mine them for the next task list.
+Earlier sessions used parallel sub-agents with strict file ownership and screenshot verification (see git history). This session
+ran inline: contact sheets of all 84 stations under oil, targeted fixes, re-checks. Commit after each integrated pass; all commits
+end with the Co-Authored-By line from the session's attribution rules.

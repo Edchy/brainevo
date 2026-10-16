@@ -1,38 +1,57 @@
-# Style & UI experiments
+# Look and reading layer
 
-Goal: find a **distinct, non-generic visual identity**. We are experimenting with five looks, three UI densities and
-depth-sandwiched headlines, all switchable live from the "Lab" button (top right). Be bold: each look must be
-unmistakably different, beautiful and cohesive across ALL 65 scenes (they were authored without any style in mind,
-so styles act globally: post-processing + palette + typography + UI theme).
+The piece has one look: an **oil painting**, applied globally to every scene, in five colour worlds (palettes) and two
+brushworks. The reading layer (depth headline + caption) is designed to stay secondary to the picture. Everything here is
+switchable live from the **Lab** button (top right; hide it with `?lab=0`).
 
-Read SCENES.md first for the engine, dev hooks and verification workflow. Everything there still applies.
+## Post-processing chain (`src/world/Stage.tsx`, `PostFX`)
+```
+scene -> Bloom -> Vignette -> Dip (crossfade dip-to-dark) -> Scrim (reading shade)   [pass 1]
+      -> Oil (convolution, own pass: samples the finished frame) -> TitleLayer (depth headline, crisp)   [pass 2]
+```
+- `Scrim` (`src/world/Scrim.tsx`) carries a no-op `mainUv`, which makes the composer end the pass there, so the oil taps see
+  bloom, the dip and the shade. Without that split the oil sampled the raw scene and everything merged in pass 1 came out at
+  ~20% strength.
+- Oil: `src/style/oil/index.ts`. Palette and brush are uniforms that ease toward the current setting (switching cross-dissolves,
+  never recompiles). `OIL_BLOOM` scales the mood-driven bloom.
 
-## Architecture
-- `src/style/types.ts`, `store.ts` (settings: style / ui / titles; sets `<html data-style data-ui data-titles>`), `registry.ts`.
-- Each look lives in `src/style/<id>/`: `index.ts` (exports a `StyleDef`; `Effects` = react-postprocessing effects rendered inside
-  the EffectComposer after bloom and after the title layer) and `theme.css` (scoped under `[data-style="<id>"]`; also imported by index.ts).
-- Stage (`src/world/Stage.tsx`) renders: scene -> Bloom -> Vignette -> TitleLayer -> style Effects. `StyleDef.bloomScale` multiplies bloom.
-- Switching must work at runtime without reload. `window.__set('style','oil')` (dev) or `?style=oil&lab=0` in the URL.
-- Custom effects: subclass `Effect` from `postprocessing` (GLSL `mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)`),
-  wrap with `<primitive object={...} />` or `wrapEffect`. Animate uniforms in useFrame (e.g. `world.velocity`, `world.time`, `world.stationF`).
-  Mind perf: one fullscreen pass, few texture taps, consider cheaper approximations. Memoise/dispose effects.
+## Palettes and brushwork (`src/style/palettes.ts`)
+| id | look |
+|---|---|
+| `prussian` (default) | night-blue ground, warm lamplit highlights (the original oil look) |
+| `grisaille` | monochrome underpainting in greys; only strongly saturated, lit areas keep their colour |
+| `umber` | Rembrandt browns: warm dark ground, golden light |
+| `verdigris` | deep green-teal ground, cool shadows, warm light |
+| `oxblood` | deep crimson ground, like a red-primed canvas |
 
-## UI design tokens (themes set these under `[data-style="x"]`; UI code must use them, never hard-code)
-`--ui-ink`, `--ui-ink-dim`, `--ui-line`, `--ui-panel` (bg), `--ui-panel-blur`, `--ui-radius`, `--ui-font-display`, `--ui-font-body`,
-`--ui-font-mono` (defaults in `src/index.css`). Event/era accent colours still come from `--accent` per station. Webfonts: use Google Fonts
-`@import url(...)` at the top of your theme.css (one or two families max, `display=swap`). Themes may also restyle panels, buttons, scrollbars,
-focus rings, the minimap, with selectors scoped to `[data-style="x"]`.
+Each palette sets `ground` (what thin dark paint sinks into), `cast`, split `toneLo/toneHi`, `spec`, `sat` and `mono`.
+Brushwork: `fine` (default) or `full` (broader strokes, heavier impasto). To add a palette: an entry in `PALETTES_DEF`, the id in
+`PaletteId` + `PALETTES` (store), CSS tokens under `:root[data-palette='id']` in `src/style/oil/theme.css`, a Lab swatch.
+`--ground` / `--ground-deep` in the theme are sampled from the rendered canvas so the text band and dialogs match the paint.
 
-## Ownership (do NOT edit outside your area; report needs instead)
-- style agents: only `src/style/<id>/`.
-- titles agent: `src/style/titles/` plus MINIMAL additive edits to `src/world/types.ts` and `src/world/Stage.tsx`.
-- ui agent: `src/components/*`, `src/App.tsx`, `src/index.css` (keep the token block and Lab block), `src/lib/*` if needed.
-- weak-spot agent: only the scene files named in its brief.
+## Reading layer
+- **Headline in depth** (`src/style/titles`): drawn into the frame after the oil pass; Cormorant Garamond 600 at ~6% of the frame
+  height, no kicker; it rests on its own caption (each caption's height is measured from hidden copies in `Caption.tsx`), so
+  headline + date + summary read as one block at the lower left. Plane at 0.7 x focal distance; only lit geometry occludes; glow
+  (no depth) dims letters only lightly (`--title-key`). Lab alternative: "Top, placed per scene" (`anchors.ts`).
+- **Caption** (`src/components/Caption.tsx`): EB Garamond (variable weight, 430 for light-on-dark), measure 30em, an italic gilt
+  date run in ahead of the summary, then Listen / Read more. Read more opens the sheet with significance, details, the
+  narration script and **Sources**.
+- **Text layout** (`settings.text`): `scrim` (default; the painting darkens under the text, painted by the oil pass), `band` (the
+  canvas stops above a strip of ground-coloured margin that holds the text), `overlay` (text straight on the picture with a halo).
+- Geometry lives in one place, `readingGeometry()` in `App.tsx` (band height, caption bottom, headline baseline, measure), shared
+  with CSS variables and with the title layer through `titleState`.
 
-## Verification (REQUIRED, with screenshots; same hooks as SCENES.md)
-Dev server http://localhost:5199 is running (don't start another). Use ONE Chrome tab of your own and CLOSE it when done
-(parallel agents each running heavy WebGL tabs will freeze everything). The tab is hidden: a screenshot wakes the page; then
-`window.__setF(f); window.__tick(40)`; switch looks with `window.__set('style', id)`. To see the real UI with cards, scroll the real scroller:
-`const el=document.querySelector('.scroller'); el.scrollLeft=frac*(el.scrollWidth-el.clientWidth); el.dispatchEvent(new Event('scroll')); window.__tick(30)`.
-Judge at least these stations (f): -1, 0.12, 0.45, 1.0, 2.0, 7, 11, 21, 29, 35, 48, 62, 78, 84.6. Typecheck: `npx tsc -p tsconfig.app.json --noEmit 2>&1 | grep <your path>`.
-After adding dependencies the dev server needs a restart: ask me instead (avoid new deps).
+## Tokens (`src/style/oil/theme.css`)
+`--ink`, `--ink-dim`, `--ink-faint`, `--rule`, `--gilt` (the one accent), `--ground`, `--ground-deep`, mapped onto the UI tokens
+`--ui-ink`, `--ui-ink-dim`, `--ui-line`, `--ui-panel`, `--accent`, `--ui-font-display`, `--ui-font-body`. Title knobs:
+`--title-font`, `--title-color`, `--title-weight`, `--title-size`, `--title-spacing`, `--title-opacity`, `--title-softness`,
+`--title-parallax`, `--title-shadow`, `--title-key`, `--title-blend`. UI code uses tokens only.
+
+## Settings (`src/style/store.ts`, localStorage `brainevo.settings.v3`; URL params override)
+`?palette=`, `?brush=fine|full`, `?text=scrim|band|overlay`, `?headline=text|top`, `?titles=0|1`, `?lab=0|1`. Also stored:
+`sound`, `narration`, `music`, `previewVoice` (see `src/audio`). `<html>` gets `data-palette/brush/text/titles/headline`.
+
+## Verification
+Judge paused stills through the real scroller (see SCENES.md for the hooks and the contact-sheet recipe), in more than one
+palette, and at phone width (an iframe of 390 x 780 works when the window cannot be resized).

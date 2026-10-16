@@ -53,9 +53,9 @@ streaking/warp/motion-blur-like effects, `world.eraAccent`).
 - Performance: target 60fps on a laptop iGPU. Budget ≈ 50–150k particles total on screen, instancing over many meshes,
   no per-frame allocations in useFrame (reuse vectors/colors), dispose geometries you create. Scale counts by `world.quality`.
   Prefer vertex-shader animation over CPU loops for >5k elements.
-- Keep the HTML cards usable: they overlay the canvas near the lower-middle of the screen (a ~380px wide panel) with a
-  top-of-screen title area and a ~110px minimap at the bottom. Put the hero action where it is visible (screenshot to check),
-  e.g. upper-centre, or let it fill the whole screen behind the card.
+- Keep the reading block clear: the headline (painted into the frame) and its caption sit lower left, about the left 45% of
+  the width and the bottom 40% of the height, over a darkened 'painted shade'. Put the hero centre or centre-right, above the
+  bottom third, or let it fill the frame behind the shade (screenshot to check).
 - Boundaries between groups: your first scene's `mood.bg` at t=0 and your last scene's at t=1 should be near `#03050b`
   so crossfades with neighbours are seamless. Camera poses blend by weight, so keep start/end poses near `pos [0,0,6] look [0,0,0]`.
 - TypeScript strict; project uses `verbatimModuleSyntax` (use `import type`), `erasableSyntaxOnly` (no enums), `noUnusedLocals`.
@@ -72,3 +72,31 @@ and the crossfade edges) and look at the images critically: is it beautiful, leg
 Also check the console for errors/warnings (shader compile errors are silent otherwise!).
 Type-check just your folder: `npx tsc -p tsconfig.app.json --noEmit 2>&1 | grep "src/scenes/<group>"` (other agents are editing concurrently,
 so the full build may transiently fail elsewhere).
+
+## Painting for the oil pass (read before authoring)
+Every frame goes through the oil painting pass (`src/style/oil`): an anisotropic Kuwahara filter plus impasto relief.
+It decides what survives:
+- **Detail smaller than a brush stroke disappears.** Lines thinner than ~3 px, fine specks and pixel-scale texture are
+  painted away (the family-tree tubes and pial vessels had to be thickened). Put detail at stroke scale or larger.
+- **Avoid albedo mottling on big, bright, smooth surfaces.** The relief turns it into lumps ("cauliflower"). Model the form
+  with light instead: mid-tone colours (not near-white), gloss highlights, rim light.
+- Saturated, emissive accents survive as colour; under the Grisaille palette only strongly saturated, lit areas keep hue.
+- The pass samples its neighbours from the finished frame (it runs in its own EffectPass), so bloom, the dip and the
+  reading shade are painted too. The headline is drawn after it and stays crisp.
+
+## Headlines in depth
+`SceneDef.titleDepth` defaults to 0.7 x the focal distance, so the hero sits behind the words and only clear foreground
+(near particles, a passing creature) slips in front; and only lit geometry occludes (dark ground does not). The headline
+rests on its own caption at the lower left (`src/style/titles`, geometry from `App.tsx`); `titleAnchor` / `anchors.ts`
+only apply when the Lab's headline placement is set to "Top".
+
+## More dev hooks
+- `?brainlab=fish` (tube | fish | reptile | mammal | primate | hominin | human) `&yaw=-0.5&tissue=%23ab9fa6&cut=0.35`: a turntable
+  of the shared brain through the real post chain, instead of the timeline. `?creatures=quadruped|biped|<preset>`: the creature
+  lineup. Both dev-only (lazy imports, absent from production bundles). Scroll a little way in so the intro does not cover them.
+- `window.__silent = true` runs all audio logic at zero volume (the test tab is the user's real browser and would play sound).
+- `window.__td = 2.5` overrides the headline depth plane; `window.__scoreTest('mammal', 20)` renders the score offline and
+  returns levels; `window.__narration()` / `window.__bus()` inspect audio state.
+- Contact sheets: React must commit between stations, so walk with `await` pauses, e.g. step `__goF` in 0.1 increments with a
+  `__tick(2)` each and `await new Promise(r => setTimeout(r, 16))` every few steps, then `__tick(60)` and `drawImage` the stage
+  canvas into a 2D canvas right after a tick (the drawing buffer is not preserved). A synchronous loop renders empty scenes.

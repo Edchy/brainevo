@@ -11,16 +11,17 @@ better. they feel like a first draft now. it's cool but it can be a lot better a
   rim light, soft fresnel, plausible shadowing), eyes/faces/hands that read. No capsules-on-sticks, no floating spheres,
   no clip-art, no grey low-poly.
 - Motion is natural: eased, secondary motion (breathing, sway, settle), planted feet, no mechanical loops.
-- Composition stays minimal: ONE hero, black negative space, headlines sit top-left (see src/style/titles/anchors.ts) so keep the hero
-  centre-right/below-left unless a scene override exists. Detail and minimalism are compatible: few things, each rich.
+- Composition stays minimal: ONE hero, dark negative space. The headline and caption form one block at the lower left, so keep
+  the hero centre or centre-right and above the bottom third. Detail and minimalism are compatible: few things, each rich.
 - DETAIL WITHOUT CLUTTER: add richness to the hero (surface, light, micro-motion), not more objects.
 
-## Colour splashes
-The Monochrome grade (src/style/mono) now keeps colour per pixel when the SOURCE is strongly saturated (a coherent area >= ~10px,
-emissive, saturation >= ~0.5-0.85; pastels and noisy specks are desaturated). So author ONE deliberate accent per scene only
-where it earns it: ember/fire orange, dopamine gold, blood red, ripe-fruit red, bioluminescent cyan, impulse electric-blue,
-ochre pigment, lightning blue-white. Everything else stays neutral white/grey light. Pick pure saturated hues (not pastels).
-Check under `window.__set('style','mono')` that the accent reads as intentional and elegant.
+## Colour and the oil pass
+The look is now an oil painting in five palettes (STYLE.md). The painting keeps saturated, emissive colour as colour; under
+the Grisaille palette only strongly saturated, lit areas keep their hue, so the old rule still holds: author ONE deliberate
+accent per scene where it earns it (ember orange, dopamine gold, blood red, ripe-fruit red, bioluminescent cyan, impulse
+electric blue, ochre, lightning blue-white) and keep the rest neutral. What the brush does to detail is in SCENES.md
+("Painting for the oil pass"): detail below stroke size vanishes, mottling on smooth bright surfaces turns into lumps,
+mid-tone colour with gloss and rim light models form best. Check every scene in at least Prussian and Grisaille.
 
 ## Tools
 - Creature toolkit: src/scenes/shared/creatures/README.md (SDF raymarched quadruped/biped rigs, IK gait, fur shading, depth-correct).
@@ -31,5 +32,5 @@ Check under `window.__set('style','mono')` that the accent reads as intentional 
 
 ## Verification (REQUIRED)
 STYLE.md workflow: ONE Chrome tab of your own, close it at the end. Judge PAUSED stills with the real scroller (the headline and caption
-follow the real scroll; `__setF` pins only the scene) under `window.__set('style','mono')`, and glance at 'original'. For each
+follow the real scroll; `__setF` pins only the scene) under `window.__set('palette','prussian')`, and glance at 'grisaille'. For each
 station in your files: critique honestly as a premium still; iterate until it is genuinely good. Report what remains weak.
