@@ -34,7 +34,7 @@
   --title-spacing: 0.004;
   --title-opacity: 0.94;
   --title-softness: 0.45;
-  --title-parallax: 0.3;
+  --title-parallax: 0.1; /* a gentle drift as you travel; more slides the lower-left headline off the frame before it fades */
   --title-shadow: 0.55;
   --title-blend: normal;
   /* glowing particles (no depth) dim the letters they cross only a little, so a star never deletes a word */

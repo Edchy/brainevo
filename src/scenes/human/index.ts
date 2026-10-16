@@ -51,7 +51,8 @@ export const humanScenes: SceneDef[] = [
   {
     id: 'human-burial', from: 'burial-ritual', to: 'behavioural-modernity', lead: 0.5, tail: 0.5,
     Component: Burial,
-    camera: (t) => ({ pos: [0, 0.6 + t * 5.2, 3.8 + t * 5.4], look: [0, 0.1, -1.0 - t * 1.5], fov: 50 }),
+    // close over the beaded grave and the lamp first, then rising to show the network of fires (behavioural modernity)
+    camera: (t) => ({ pos: [-0.35, 2.7 + t * 3.6, 2.3 + t * 6.8], look: [-0.3, 0.0, -0.15 - t * 2.3], fov: 50 }),
     mood: () => ({ bg: '#040307', bloom: 1.3 }),
   },
   {

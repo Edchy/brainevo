@@ -5,63 +5,14 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { eventPos, near, range } from '../../world/util';
 import { GLSL_UTIL } from './common';
+import { Brain, useBrainCtl } from '../shared/brain';
 
-// 75: "I think": a single orb of luminous filaments inside a thin engraved shell.
+// 75: the seat of the mind: a marble brain on a fluted column, as if carved for a Greek stoa ("from the brain, and from the
+//     brain only, arise our pleasures, joys, laughter"), with a warm glow of thought in the frontal lobe.
 // 76: a wooden screw press, raymarched; its sheets fly off into the dark, set in two columns of type.
 
 const BB_VS = 'varying vec3 vWorld; void main(){ vec4 w=modelMatrix*vec4(position,1.); vWorld=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }';
 
-// ---------------- the mind ----------------
-const ORB_FS = /* glsl */ `${GLSL_UTIL}
-uniform float uW,uTime,uPulse; varying vec3 vWorld;
-void main(){
-  vec3 ro=cameraPosition, rd=normalize(vWorld-cameraPosition);
-  vec3 c0=vec3(0.,.1,0.); float R=1.05;
-  vec3 oc=ro-c0; float b=dot(oc,rd), cc=dot(oc,oc)-R*R, h=b*b-cc;
-  vec3 col=vec3(0.);
-  float t=uTime*.12;
-  // glow halo around the sphere
-  float dMin=length(cross(rd,c0-ro));
-  col+=vec3(.55,.62,.9)*exp(-pow(max(dMin-R,0.)*2.6,2.))*.035*(1.+uPulse*.5);
-  if(h>0.){
-    float s=sqrt(h); float t0=-b-s, t1=-b+s;
-    vec3 pF=ro+rd*t0; vec3 nF=normalize(pF-c0);
-    // inside: filaments, ridged noise integrated along the chord
-    float acc=0.; vec3 tint=vec3(0.);
-    for(int i=0;i<10;i++){
-      float u=(float(i)+.5)/10.; vec3 q=ro+rd*mix(t0,t1,u)-c0;
-      float rr=length(q)/R;
-      vec3 w=q*2.1; w.xz*=mat2(cos(t),-sin(t),sin(t),cos(t));
-      float f1=1.-abs(2.*fbm(w+vec3(0.,t*.6,0.))-1.);
-      float f2=1.-abs(2.*fbm(w*2.3+7.+vec3(t*.4))-1.);
-      float fil=pow(f1,28.)*2.4+pow(f2,32.)*1.8;
-      acc+=fil*(.35+.65*rr)*(1.-smoothstep(.96,1.,rr));
-    }
-    acc/=10.;
-    col+=vec3(1.1,1.12,1.3)*acc*1.5*(1.+uPulse*.8);
-    // a hotter nucleus
-    col+=vec3(1.5,1.25,.8)*exp(-dMin*dMin*9.)*.05*(1.+uPulse);
-    // engraved shell: meridians and parallels in thin lines, rotating slowly
-    vec3 ns=nF; ns.xz*=mat2(cos(t*1.5),-sin(t*1.5),sin(t*1.5),cos(t*1.5));
-    float lat=asin(clamp(ns.y,-1.,1.)), lon=atan(ns.z,ns.x);
-    float gl=exp(-pow((fract(lat/.2618+.5)-.5)*20.,2.)) + exp(-pow((fract(lon/.3927)-.5)*20.*max(.2,cos(lat)),2.))*step(abs(lat),1.3);
-    float fres=pow(1.-max(dot(nF,-rd),0.),2.4);
-    col+=vec3(.8,.9,1.2)*(gl*(.1+.45*fres) + fres*.55);
-    // specular glint, as on glass
-    vec3 L=normalize(vec3(-.5,.7,.6)); col+=vec3(1.)*pow(max(dot(reflect(-L,nF),-rd),0.),60.)*.9;
-  }
-  // thought rings in the dark, thin and few
-  float ry=(vWorld.y-c0.y);
-  vec2 pr=vec2(length(vWorld.xz-c0.xz), ry*3.2);
-  for(int k=0;k<3;k++){
-    float ph=fract(uTime*.05+float(k)/3.);
-    float rad=1.45+ph*3.2; float d2=abs(length(pr)-rad);
-    col+=vec3(.7,.8,1.)*exp(-pow(d2/.012,2.))*(1.-ph)*(1.-ph)*smoothstep(0.,.15,ph)*.22*step(abs(ry),.001+3.);
-  }
-  gl_FragColor=vec4(col*uW*.4,1.);
-}`;
-
-// ---------------- the press ----------------
 const PRESS_FS = /* glsl */ `${GLSL_UTIL}
 uniform float uW,uTime,uTurn,uDown,uPage; varying vec3 vWorld;
 float sdBox(vec3 p, vec3 b){ vec3 q=abs(p)-b; return length(max(q,0.))+min(max(q.x,max(q.y,q.z)),0.); }
@@ -229,14 +180,53 @@ void main(){
   gl_FragColor=vec4(c*vA*1.3,1.);
 }`;
 
+// fluted marble column with a simple Doric capital; lit like the brain (camera-relative key from the upper left)
+const COL_VS = 'varying vec3 vN; varying vec3 vV; varying vec3 vP; void main(){ vP=position; vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=-mv.xyz; gl_Position=projectionMatrix*mv; }';
+const COL_FS = /* glsl */ `${GLSL_UTIL}
+uniform float uW; varying vec3 vN; varying vec3 vV; varying vec3 vP;
+void main(){
+  float ang=atan(vP.z,vP.x);
+  float shaft=step(vP.y,-.62)*step(-3.05,vP.y);
+  // flutes: concave channels around the shaft, as a normal perturbation
+  float fl=sin(ang*20.);
+  vec3 N=normalize(vN+shaft*.22*vec3(0.,0.,1.)*fl);
+  vec3 V=normalize(vV), L=normalize(vec3(-.5,.72,.55));
+  float wrap=clamp((dot(N,L)+.35)/1.35,0.,1.);
+  float veins=smoothstep(.62,.75,fbm(vP*vec3(2.,.6,2.)+3.))*.12;
+  vec3 base=vec3(.86,.82,.76)*(1.-veins)*(.92+.08*fbm(vP*9.));
+  vec3 col=base*(.05+.95*pow(wrap,1.3));
+  col+=vec3(1.,.95,.88)*pow(max(dot(N,normalize(L+V)),0.),30.)*.12;
+  col*=mix(1.,.82,shaft*(.5-.5*fl));                  // channels sit in their own shadow
+  col*=smoothstep(-3.6,-1.4,vP.y);                    // the shaft sinks into the dark below
+  gl_FragColor=vec4(col*uW,uW);
+}`;
+
+function columnGeo() {
+  const pts: THREE.Vector2[] = [];
+  const add = (r: number, y: number) => pts.push(new THREE.Vector2(r, y));
+  add(0.0, -3.6); add(0.46, -3.6);
+  for (let i = 0; i <= 16; i++) { const u = i / 16; add(0.46 - 0.07 * u + 0.025 * Math.sin(u * Math.PI), -3.6 + u * 2.98); } // entasis
+  add(0.42, -0.6); add(0.5, -0.55); add(0.62, -0.42); add(0.66, -0.36); // echinus
+  add(0.7, -0.36); add(0.7, -0.22); add(0.0, -0.22);                      // abacus (round, for the lathe)
+  return new THREE.LatheGeometry(pts, 96);
+}
+
 export default function Enlightenment() {
   const scene = useScene();
-  const { orb, press, pageGeo, pageMat } = useMemo(() => {
+  const brain = useBrainCtl({ grow: 1, tissue: '#e3ddd3' });
+  const thought = useMemo(() => [{ at: 'prefrontal' as const, color: '#ffb44a', i: 0 }], []);
+  brain.regions = thought;
+  const col = useMemo(() => ({
+    geo: columnGeo(),
+    mat: new THREE.ShaderMaterial({ transparent: true, uniforms: { uW: { value: 0 } }, vertexShader: COL_VS, fragmentShader: COL_FS }),
+  }), []);
+  useEffect(() => () => { col.geo.dispose(); col.mat.dispose(); }, [col]);
+  const bust = useMemo(() => ({ current: null as THREE.Group | null }), []);
+  const { press, pageGeo, pageMat } = useMemo(() => {
     const mk = (fs: string, uni: Record<string, THREE.IUniform>) => new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
       uniforms: uni, vertexShader: BB_VS, fragmentShader: fs,
     });
-    const orb = mk(ORB_FS, { uW: { value: 0 }, uTime: { value: 0 }, uPulse: { value: 0 } });
     const press = mk(PRESS_FS, { uW: { value: 0 }, uTime: { value: 0 }, uTurn: { value: 0 }, uDown: { value: 0 }, uPage: { value: 0 } });
     // sheets
     const NP = Math.floor(44 * Math.max(0.6, world.quality));
@@ -257,9 +247,9 @@ export default function Enlightenment() {
       uniforms: { uFlood: { value: 0 }, uTime: { value: 0 }, uW: { value: 0 } },
       vertexShader: PAGE_VS, fragmentShader: PAGE_FS,
     });
-    return { orb, press, pageGeo, pageMat };
+    return { press, pageGeo, pageMat };
   }, []);
-  useEffect(() => () => { orb.dispose(); press.dispose(); pageGeo.dispose(); pageMat.dispose(); }, [orb, press, pageGeo, pageMat]);
+  useEffect(() => () => { press.dispose(); pageGeo.dispose(); pageMat.dispose(); }, [press, pageGeo, pageMat]);
 
   useFrame((state) => {
     if (!scene.active) return;
@@ -268,7 +258,10 @@ export default function Enlightenment() {
     const A = 1 - range(e76 - 0.5, e76 - 0.12, f);
     const B = range(e76 - 0.5, e76 - 0.2, f);
     const tm = world.reduced ? 0 : world.time;
-    orb.uniforms.uW.value = scene.weight * A; orb.uniforms.uTime.value = tm; orb.uniforms.uPulse.value = near(e75, 0.5);
+    brain.alpha = scene.weight * A;
+    thought[0].i = (0.25 + 0.75 * near(e75, 0.6)) * (0.8 + 0.2 * Math.sin(tm * 1.4));
+    col.mat.uniforms.uW.value = scene.weight * A;
+    if (bust.current) { bust.current.rotation.y = -0.55 + 0.25 * Math.sin(tm * 0.08) + range(e75 - 0.3, e76, f) * 0.5; bust.current.visible = A > 0.001; }
     press.uniforms.uW.value = scene.weight * B; press.uniforms.uTime.value = tm;
     // the screw turns with the scroll; a stroke every ~0.5 station, eased
     const stroke = (range(e76 - 0.35, e76 + 0.95, f)) * 3.0;
@@ -287,7 +280,11 @@ export default function Enlightenment() {
   const group = { current: null as THREE.Group | null };
   return (
     <group ref={(g) => { group.current = g; }} position={[0, 0.2, 0]}>
-      <mesh userData={{ bb: true }} material={orb} position={[0, 0.1, 0]} frustumCulled={false}><planeGeometry args={[6.5, 5]} /></mesh>
+      <group ref={(g) => { bust.current = g; }} position={[0.9, 0.05, 0]}>
+        <mesh geometry={col.geo} material={col.mat} />
+        {/* resting on the capital like a carved sculpture: the stem sinks into the stone */}
+        <Brain ctl={brain} position={[0, 0.36, 0]} scale={0.6} />
+      </group>
       <mesh userData={{ bb: true }} material={press} position={[0, 0.1, 0]} frustumCulled={false}><planeGeometry args={[6.8, 6.8]} /></mesh>
       <mesh geometry={pageGeo} material={pageMat} frustumCulled={false} />
     </group>

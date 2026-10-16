@@ -59,17 +59,23 @@ float cuneiform(vec2 p, out float fresh){
   fresh = on*exp(-max(uE1-order*.95-.05,0.)*30.)*step(order*.95,uE1)*smoothstep(0.,.3,acc);
   return acc*on;
 }
+// the first alphabet: early Phoenician letter forms (written right to left, so they face left), not Latin capitals
 float glyph(int id, vec2 p){   // letters on [-.5,.5]^2, stroke distance
   float d=1e3;
-  if(id==0){ d=min(sdSeg(p,vec2(-.38,-.45),vec2(0.,.45)),sdSeg(p,vec2(0.,.45),vec2(.38,-.45))); d=min(d,sdSeg(p,vec2(-.18,-.05),vec2(.2,-.05))); }
-  else if(id==1){ d=min(sdSeg(p,vec2(-.3,.45),vec2(-.3,-.45)),sdSeg(p,vec2(-.3,.45),vec2(.25,.28))); d=min(d,sdSeg(p,vec2(.25,.28),vec2(-.3,.0))); d=min(d,sdSeg(p,vec2(-.3,.0),vec2(.3,-.2))); d=min(d,sdSeg(p,vec2(.3,-.2),vec2(-.3,-.45))); }
-  else if(id==2){ d=abs(length(p*vec2(1.,.9))-.38); }
-  else if(id==3){ d=min(sdSeg(p,vec2(-.32,.45),vec2(-.32,-.45)),sdSeg(p,vec2(-.32,.0),vec2(.32,.45))); d=min(d,sdSeg(p,vec2(-.32,.0),vec2(.32,-.45))); }
-  else if(id==4){ d=min(sdSeg(p,vec2(-.4,-.4),vec2(-.4,.4)),sdSeg(p,vec2(-.4,.4),vec2(0.,-.1))); d=min(d,sdSeg(p,vec2(0.,-.1),vec2(.4,.4))); d=min(d,sdSeg(p,vec2(.4,.4),vec2(.4,-.4))); }
-  else if(id==5){ d=min(sdSeg(p,vec2(-.42,.4),vec2(.42,.4)),sdSeg(p,vec2(0.,.4),vec2(0.,-.45))); d=min(d,sdSeg(p,vec2(-.28,-.1),vec2(.28,.1))); }
-  else if(id==6){ d=min(sdSeg(p,vec2(-.3,.45),vec2(-.3,-.4)),sdSeg(p,vec2(-.3,-.4),vec2(.32,-.4))); d=min(d,sdSeg(p,vec2(-.3,.1),vec2(.2,.1))); }
-  else if(id==7){ d=min(sdSeg(p,vec2(-.38,.45),vec2(0.,.0)),sdSeg(p,vec2(.38,.45),vec2(0.,.0))); d=min(d,sdSeg(p,vec2(0.,.0),vec2(0.,-.45))); }
-  else { d=min(sdSeg(p,vec2(-.3,.45),vec2(-.3,-.45)),sdSeg(p,vec2(-.3,.45),vec2(.22,.3))); d=min(d,sdSeg(p,vec2(.22,.3),vec2(-.3,.05))); d=min(d,sdSeg(p,vec2(-.3,.05),vec2(.32,-.45))); }
+  if(id==0){ // aleph, the ox head: a sideways V with a cross stroke
+    d=min(sdSeg(p,vec2(.38,.42),vec2(-.36,.02)),sdSeg(p,vec2(-.36,.02),vec2(.38,-.38))); d=min(d,sdSeg(p,vec2(.08,.42),vec2(.02,-.42))); }
+  else if(id==1){ // beth, the house: a triangular head on a stem with a foot
+    d=min(sdSeg(p,vec2(.22,.45),vec2(-.28,.2)),sdSeg(p,vec2(-.28,.2),vec2(.22,-.02))); d=min(d,sdSeg(p,vec2(.22,.45),vec2(.22,-.45))); d=min(d,sdSeg(p,vec2(.22,-.45),vec2(-.18,-.45))); }
+  else if(id==2){ d=abs(length(p*vec2(1.,.9))-.36); } // ayin, the eye
+  else if(id==3){ // kaph, the palm: three prongs on a stem
+    d=min(sdSeg(p,vec2(0.,-.45),vec2(0.,.08)),sdSeg(p,vec2(0.,.08),vec2(-.34,.45))); d=min(d,sdSeg(p,vec2(0.,.08),vec2(.34,.45))); d=min(d,sdSeg(p,vec2(0.,.08),vec2(0.,.45))); }
+  else if(id==4){ // mem, water: a zigzag with a long tail
+    d=min(sdSeg(p,vec2(-.42,.38),vec2(-.2,.05)),sdSeg(p,vec2(-.2,.05),vec2(0.,.38))); d=min(d,sdSeg(p,vec2(0.,.38),vec2(.2,.05))); d=min(d,sdSeg(p,vec2(.2,.05),vec2(.42,.38))); d=min(d,sdSeg(p,vec2(-.2,.05),vec2(-.26,-.45))); }
+  else if(id==5){ d=min(sdSeg(p,vec2(-.34,.4),vec2(.34,-.4)),sdSeg(p,vec2(.34,.4),vec2(-.34,-.4))); } // taw, the mark
+  else if(id==6){ // he: three strokes off a stem
+    d=sdSeg(p,vec2(-.26,.45),vec2(-.26,-.45)); d=min(d,sdSeg(p,vec2(-.26,.42),vec2(.3,.42))); d=min(d,sdSeg(p,vec2(-.26,.1),vec2(.3,.1))); d=min(d,sdSeg(p,vec2(-.26,-.22),vec2(.3,-.22))); }
+  else if(id==7){ d=min(sdSeg(p,vec2(-.34,.45),vec2(0.,.08)),sdSeg(p,vec2(.34,.45),vec2(0.,.08))); d=min(d,sdSeg(p,vec2(0.,.08),vec2(0.,-.45))); } // waw, the hook
+  else { d=min(sdSeg(p,vec2(.28,-.45),vec2(-.1,.45)),sdSeg(p,vec2(-.1,.45),vec2(-.32,.08))); } // gimel
   return d;
 }
 float letters(vec2 p, out float fresh){

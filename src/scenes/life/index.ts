@@ -17,7 +17,7 @@ import { eventPos } from '../../world/util';
 
 export const lifeScenes: SceneDef[] = [
   {
-    id: 'life-protocells', from: 'first-life', to: 'first-life', lead: 0.05, tail: 0.45, fade: 0.3, Component: Protocells,
+    id: 'life-protocells', from: 'first-life', to: 'first-life', lead: 0.6, tail: 0.45, fade: 0.3, Component: Protocells, // lead: the first cells are formed when their caption shows
     camera: (t) => ({ pos: [Math.sin(t * 2) * 0.6, 0.3 + t * 0.4, 7.5 - t * 1.2], look: [0, 0.2 + t * 0.4, 0], fov: 55 }),
     mood: (t) => ({ bg: mixHex('#03050b', '#041320', smoothstep(0.1, 0.8, t)), bloom: 1.0 + t * 0.4 }),
   },

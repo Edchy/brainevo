@@ -39,7 +39,8 @@ export default function Lineages() {
           float head=exp(-(uG-vU)*18.)*1.8; float flow=.5+.5*sin(vU*40.-uT*2.);
           gl_FragColor=vec4(uC*(.2+f*.7+head+flow*.18)*uAlpha*.55,1.); }`,
     });
-    const branches = BR.map((b) => ({ geo: new THREE.TubeGeometry(new THREE.CatmullRomCurve3(b.pts), 140, b.r, 8), mat: mk(b.col), b }));
+    // branches are drawn ~2.4x their old radius: the oil pass erases lines thinner than a brush stroke
+    const branches = BR.map((b) => ({ geo: new THREE.TubeGeometry(new THREE.CatmullRomCurve3(b.pts), 140, b.r * 2.4, 10), mat: mk(b.col), b }));
     const floor = new THREE.ShaderMaterial({
       transparent: true, uniforms: { uAlpha: { value: 1 } },
       vertexShader: 'varying vec3 vW; varying float vD; void main(){ vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; vec4 mv=viewMatrix*w; vD=-mv.z; gl_Position=projectionMatrix*mv; }',
@@ -90,7 +91,7 @@ export default function Lineages() {
     <group>
       <points geometry={R.sg} material={R.sm} frustumCulled={false} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} material={R.floor}><circleGeometry args={[16, 40]} /></mesh>
-      <group position={[-3.1, -1.0, -3.2]} scale={0.95}>
+      <group position={[-2.3, -0.75, -2.6]} scale={0.95}>
         {R.branches.map((b, i) => <mesh key={i} geometry={b.geo} material={b.mat} frustumCulled={false} />)}
         {leaves.map((l, i) => (
           <mesh key={i} ref={(m) => { leafRef.current[i] = m; }} position={l.p} material={R.leafM[l.m]}><sphereGeometry args={[1, 16, 12]} /></mesh>

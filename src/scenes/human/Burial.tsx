@@ -7,36 +7,32 @@ import { eventPos, near, range } from '../../world/util';
 import { GLSL_UTIL, LBuf, PBuf, lineMat, pointMat, tickU } from './common';
 
 
-// ---- candle + flame (camera-facing billboard, local q: x in [-1.2,1.2], y = world height) ----
+// ---- stone fat lamp + flame (camera-facing billboard, local q: x in [-1.2,1.2], y = world height) ----
+// Ice Age light: a hollowed stone burning animal fat with a moss wick (no wax candles for tens of thousands of years)
 const CANDLE_FS = /* glsl */ `${GLSL_UTIL}
 uniform float uW,uTime,uFlick; varying vec2 vQ;
 void main(){
   vec2 q=vQ;
   float t=uTime;
   float fl = .88+.12*sin(t*9.+sin(t*4.)*2.)+.05*sin(t*17.);
-  float H = .5*(.92+.1*sin(t*5.3)+.06*sin(t*11.7));
-  vec2 base = vec2(0.,.64);
+  float H = .36*(.92+.1*sin(t*5.3)+.06*sin(t*11.7));
+  vec2 base = vec2(-.04,.25);
   vec3 col = vec3(0.);
-  // --- wax candle: slim hand-rolled tallow, lit from above by its own flame ---
-  float wy = .5;
-  float cw = .115 + .008*sin(q.y*18.+1.) + .01*(1.-smoothstep(0.,.1,q.y));   // slight melt flare at the foot
-  float inW = step(0.,q.y)*step(q.y,wy)*(1.-smoothstep(cw-.004,cw,abs(q.x)));
-  float cyl = clamp(q.x/cw,-1.,1.), nrm=sqrt(max(1.-cyl*cyl,0.));
-  float distF = length(q-base);
-  float wax = (.1+.9*nrm)*exp(-distF*1.2)*(.5+.5*smoothstep(0.,wy,q.y));
-  wax *= .85+.3*fbm(vec3(q.x*30.,q.y*8.,2.));
-  // wax runs
-  float run = smoothstep(.01,0.,abs(q.x-.07*sin(q.y*7.))-.012)*smoothstep(.3,.5,q.y)*(.5+.5*sin(q.x*40.));
-  col += inW * vec3(1.5,1.05,.6)*wax*.9*fl;
-  col += inW * vec3(1.0,.6,.3)*pow(max(cyl,0.),3.)*.0;
-  // pool of molten wax on top: a glowing ellipse
-  float pool = 1.-smoothstep(.0,.012, length((q-vec2(0.,wy))/vec2(cw*.95,.03))-1.);
-  col += pool * vec3(2.2,1.3,.5)*(.55+.2*fl);
-  // wick: charred stem with a glowing tip
-  float wick = 1.-smoothstep(.003,.006, length(vec2(q.x - .012*sin((q.y-wy)*40.)*(q.y-wy)*8., 0.))*1. ) ;
-  wick *= step(wy,q.y)*step(q.y,.66);
-  col += wick*vec3(.25,.12,.06)*.8;
-  col += exp(-pow(length(q-vec2(0.,.64))/.018,2.))*vec3(2.5,.8,.2)*.7;
+  // --- the lamp: a shallow, rounded stone bowl, lit from its own flame above ---
+  float top=.2;
+  float yy=(top-q.y)/.21;
+  float bw=.36*sqrt(max(0.,1.-yy*yy))*(1.+.04*sin(q.y*30.+2.));
+  float inB=step(0.,q.y)*step(q.y,top)*(1.-smoothstep(bw-.006,bw,abs(q.x)));
+  float rough=fbm(vec3(q*vec2(22.,26.),4.))*.6+fbm(vec3(q*70.,9.))*.4;
+  float lit=smoothstep(-.02,top,q.y)*(.55+.45*(1.-abs(q.x)/max(bw,.01)));
+  col += inB*vec3(.52,.4,.3)*(.12+.88*lit)*(.6+.55*rough)*(.45+.35*fl);
+  // pool of melted fat in the hollow, glowing under the flame
+  float pool = 1.-smoothstep(.0,.015, length((q-vec2(0.,top))/vec2(.27,.028))-1.);
+  col += pool * vec3(2.0,1.15,.42)*(.5+.25*fl);
+  // a twist of moss wick at the lip
+  float wick = (1.-smoothstep(.004,.008,abs(q.x-base.x-.01*sin(q.y*60.))))*step(top,q.y)*step(q.y,base.y+.01);
+  col += wick*vec3(.3,.14,.06);
+  col += exp(-pow(length(q-base)/.018,2.))*vec3(2.5,.8,.2)*.7;
 
   // --- the flame: teardrop, drawn from a width profile with turbulent edge ---
   float h = (q.y-base.y)/H;
@@ -68,42 +64,9 @@ void main(){
   gl_FragColor=vec4(col*uW,1.);
 }`;
 
-// ---- flowers: petal rosettes on small tilted quads ----
-const FLOWER_VS = 'attribute vec3 aS; varying vec2 vUv; varying vec3 vS; varying vec3 vW; void main(){ vUv=uv; vS=aS; vW=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}';
-const FLOWER_FS = /* glsl */ `uniform float uW,uTime; varying vec2 vUv; varying vec3 vS; varying vec3 vW;
-void main(){
-  vec2 p=(vUv-.5)*2.;
-  float r=length(p), a=atan(p.y,p.x);
-  float n=floor(5.+vS.y*4.);               // 5..8 petals
-  float an=a+vS.x*6.28+uTime*.0;
-  float ph=abs(fract(an*n/6.28318)-.5)*2.;   // 0 at petal axis? 1 at gap
-  float pet=cos(an*n)*.5+.5;
-  float R=.62+.36*pow(pet,1.6);               // petal outline radius
-  float inner=smoothstep(R,R-.05,r);
-  // second whorl, rotated, shorter and darker (depth)
-  float pet2=cos((an+3.14159/n)*n)*.5+.5;
-  float R2=.5+.3*pow(pet2,1.6);
-  float inner2=smoothstep(R2,R2-.05,r);
-  float vein=pow(abs(cos(an*n)),24.)*.35;
-  float rad=r/R;
-  float shade=.35+.65*smoothstep(.0,.9,rad)*(1.-.35*rad);
-  float rim=smoothstep(.78,1.,rad)*.35;
-  vec3 pc=mix(vec3(1.05,1.0,.95),vec3(1.2,1.12,.85),vS.z);
-  vec3 c=pc*(shade+rim-vein*.6)*inner;
-  c=mix(c, pc*(.28+.5*rad)*inner2, (1.-inner)*inner2);
-  // warm pollen centre
-  float cen=smoothstep(.2,.12,r);
-  c=mix(c, vec3(2.0,1.2,.25)*(.7+.3*sin(r*60.)), cen);
-  float a2=max(inner,inner2*.9);
-  // warm up with the candle: fades off with distance from the origin
-  float lt=exp(-dot(vW.xz,vW.xz)*.28);
-  c*=(.18+.9*lt)*mix(vec3(1.),vec3(1.5,.9,.55),lt*.75);
-  gl_FragColor=vec4(c*uW*.8,a2*uW);
-}`;
-
 export default function Burial() {
   const scene = useScene();
-  const { geo, mat, lgeo, lmat, ground, candle, fg, fmat, sgeo, smat } = useMemo(() => {
+  const { geo, mat, lgeo, lmat, ground, candle } = useMemo(() => {
     const b = new PBuf(71);
     const r = b.r;
     const q = world.quality;
@@ -120,6 +83,20 @@ export default function Burial() {
     for (let i = 0; i < 700 * q; i++) {
       const a = r() * 6.283, rad = Math.sqrt(r());
       b.add(Math.cos(a) * rad * 0.95, 0.0, Math.sin(a) * rad * 0.5, [1.6, .35, .12], 3);
+    }
+    // 2 ivory beads in rows across a reclining figure, head toward the lamp (the Sunghir burials: thousands of beads)
+    const inBody = (x: number, z: number) => {
+      if (Math.hypot((x + 0.66) / 0.13, z / 0.11) < 1) return true;                         // head
+      if (x > -0.55 && x < 0.12) return Math.abs(z) < 0.21 * (1 - 0.25 * Math.pow((x + 0.2) / 0.35, 2)); // torso
+      if (x >= 0.12 && x < 0.78) return Math.abs(Math.abs(z) - 0.085) < 0.062 * (1 - 0.35 * (x - 0.12) / 0.66); // legs
+      return false;
+    };
+    for (let x = -0.79; x < 0.8; x += 0.024) {
+      for (let z = -0.24; z <= 0.24; z += 0.019) {
+        const jx = x + (r() - 0.5) * 0.006, jz = z + (r() - 0.5) * 0.006;
+        if (!inBody(jx, jz) || r() > 0.92 * q + 0.08) continue;
+        b.add(jx, 0.012, jz, [1.25, 1.12, 0.95], 2);
+      }
     }
     // 4 distant fires
     const fires: [number, number, number][] = [];
@@ -151,7 +128,7 @@ export default function Burial() {
         float h = ph*.95;
         float rad = (1.-ph)*.15*(.3+aSeed.z);
         float an = aSeed.y*6.283 + uTime*3.;
-        p = vec3(cos(an)*rad + sin(uTime*5.+ph*7.)*.03*ph, .07+h, sin(an)*rad);
+        p = vec3(cos(an)*rad + sin(uTime*5.+ph*7.)*.03*ph, .07+h, sin(an)*rad)*.6 + vec3(-1.32,-.06,.12);
         col = mix(vec3(2.6,2.1,1.4), vec3(1.9,.9,.4), ph);
         a = pow(1.-ph,1.4)*.9*fl; size = .9*(1.-ph)+.25;
       } else if (k < 1.5) {
@@ -177,7 +154,7 @@ export default function Burial() {
         a += on*.0;
       } else {
         float s = .9+.15*sin(uTime*3.+aSeed.x*6.);
-        p = vec3(0., .25, 0.);
+        p = vec3(-1.32, .2, .12);
         col = vec3(1.7,.8,.3);
         a = (.05+.015*float(int(aSeed.x*14.)))*s*(.6+uFlick*.6); size = 4. + aSeed.x*14.;
       }
@@ -214,7 +191,8 @@ export default function Burial() {
       vertexShader: 'varying vec2 vP; void main(){ vP=position.xy; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader: `uniform float uW,uTime; varying vec2 vP;
       void main(){ float r=length(vP); float fl=.9+.1*sin(uTime*9.+sin(uTime*4.)*2.);
-        vec3 c=vec3(.7,.3,.1)*exp(-r*r*.35)*fl*.35+vec3(.012,.01,.016);
+        float rl=length(vP-vec2(-1.32,-.12));
+        vec3 c=vec3(.7,.3,.1)*(exp(-rl*rl*.6)*.45+exp(-r*r*.35)*.12)*fl*.35+vec3(.012,.01,.016);
         float edge=1.-smoothstep(10.,24.,r);
         gl_FragColor=vec4(c,uW*edge); }`,
     });
@@ -225,56 +203,9 @@ export default function Burial() {
       vertexShader: 'varying vec2 vQ; void main(){ vQ=position.xy+vec2(0.,1.2); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader: CANDLE_FS,
     });
-    // flowers: tilted rosettes on curved stems around the grave
-    const fr = new PBuf(77).r;
-    const NF = 11;
-    const fpos: number[] = [], fuv: number[] = [], fs: number[] = [], fidx: number[] = [];
-    const sb = new LBuf(78);
-    const nrm = new THREE.Vector3(0, 0.62, 0.78).normalize();
-    const rx = new THREE.Vector3(1, 0, 0), ry = new THREE.Vector3().crossVectors(nrm, rx).normalize();
-    for (let i = 0; i < NF; i++) {
-      const a = (i / NF) * 6.283 + (fr() - 0.5) * 0.4;
-      const rad = 1.05 + fr() * 0.9;
-      const gx = Math.cos(a) * rad * 1.15, gz = Math.sin(a) * rad * 0.8;
-      const hgt = 0.22 + fr() * 0.2;
-      const lean = 0.08 + fr() * 0.1;
-      const hx = gx + Math.cos(a) * lean, hz = gz + Math.sin(a) * lean;
-      const size = 0.13 + fr() * 0.07;
-      const sd = [fr(), fr(), fr()];
-      const spin = fr() * 6.283, cs = Math.cos(spin), sn = Math.sin(spin);
-      const ax = rx.clone().multiplyScalar(cs).addScaledVector(ry, sn), ay = ry.clone().multiplyScalar(cs).addScaledVector(rx, -sn);
-      const base = fpos.length / 3;
-      for (const [u, v] of [[0, 0], [1, 0], [1, 1], [0, 1]]) {
-        const vv = new THREE.Vector3(hx, hgt, hz).addScaledVector(ax, (u - 0.5) * 2 * size).addScaledVector(ay, (v - 0.5) * 2 * size);
-        fpos.push(vv.x, vv.y, vv.z); fuv.push(u, v); fs.push(...sd);
-      }
-      fidx.push(base, base + 1, base + 2, base, base + 2, base + 3);
-      // stem: a gentle curve with a leaf
-      let prev: [number, number, number] = [gx, 0, gz];
-      for (let k = 1; k <= 6; k++) {
-        const u = k / 6;
-        const cur: [number, number, number] = [gx + (hx - gx) * u * u, hgt * u, gz + (hz - gz) * u * u];
-        sb.seg(prev, cur, 0, 1, [0.7, 1.0, 0.65]); prev = cur;
-      }
-      const lx = Math.cos(a + 1.6) * 0.1, lz = Math.sin(a + 1.6) * 0.1;
-      sb.seg([gx, hgt * 0.35, gz], [gx + lx, hgt * 0.5, gz + lz], 0, 1, [0.6, 0.9, 0.55]);
-      sb.seg([gx + lx, hgt * 0.5, gz + lz], [gx + lx * 1.8, hgt * 0.42, gz + lz * 1.8], 0, 1, [0.6, 0.9, 0.55]);
-    }
-    const fg = new THREE.BufferGeometry();
-    fg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(fpos), 3));
-    fg.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(fuv), 2));
-    fg.setAttribute('aS', new THREE.BufferAttribute(new Float32Array(fs), 3));
-    fg.setIndex(fidx);
-    fg.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e5);
-    const fmat = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false, side: THREE.DoubleSide,
-      uniforms: { uW: { value: 0 }, uTime: { value: 0 } },
-      vertexShader: FLOWER_VS, fragmentShader: FLOWER_FS,
-    });
-    const smat = lineMat({ body: 'float lt=exp(-dot(p.xz,p.xz)*.3); a=.55*lt+.06; col=col*(.25+.9*lt);' });
-    return { geo: b.build(), mat, lgeo: lb.build(), lmat, ground, candle, fg, fmat, sgeo: sb.build(), smat };
+    return { geo: b.build(), mat, lgeo: lb.build(), lmat, ground, candle };
   }, []);
-  useEffect(() => () => { geo.dispose(); mat.dispose(); lgeo.dispose(); lmat.dispose(); ground.dispose(); candle.dispose(); fg.dispose(); fmat.dispose(); sgeo.dispose(); smat.dispose(); }, [geo, mat, lgeo, lmat, ground, candle, fg, fmat, sgeo, smat]);
+  useEffect(() => () => { geo.dispose(); mat.dispose(); lgeo.dispose(); lmat.dispose(); ground.dispose(); candle.dispose(); }, [geo, mat, lgeo, lmat, ground, candle]);
   const cm = useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
@@ -282,8 +213,6 @@ export default function Burial() {
     const f = world.stationF;
     const tm = world.reduced ? 0 : world.time;
     candle.uniforms.uW.value = scene.weight; candle.uniforms.uTime.value = tm; candle.uniforms.uFlick.value = near(eventPos('burial-ritual'), 0.5);
-    fmat.uniforms.uW.value = scene.weight; fmat.uniforms.uTime.value = tm;
-    tickU(smat, scene);
     if (cm.current) cm.current.rotation.y = Math.atan2(state.camera.position.x, state.camera.position.z);
     const e71 = eventPos('behavioural-modernity');
     const net = range(e71 - 0.9, e71 + 0.4, f);
@@ -298,9 +227,7 @@ export default function Burial() {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} material={ground}><planeGeometry args={[60, 60]} /></mesh>
       <points geometry={geo} material={mat} frustumCulled={false} />
-      <mesh ref={cm} position={[0, 1.2, 0]} scale={1.75} material={candle} frustumCulled={false}><planeGeometry args={[6, 4.4]} /></mesh>
-      <mesh geometry={fg} material={fmat} frustumCulled={false} />
-      <lineSegments geometry={sgeo} material={smat} frustumCulled={false} />
+      <mesh ref={cm} position={[-1.32, 1.32, 0.12]} scale={1.1} material={candle} frustumCulled={false}><planeGeometry args={[6, 4.4]} /></mesh>
     </group>
   );
 }
