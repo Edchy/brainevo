@@ -1,0 +1,674 @@
+[
+  {
+    "n": 0,
+    "id": "big-bang",
+    "file": "big-bang.mp3",
+    "title": "The Big Bang",
+    "era": "cosmic",
+    "text": "Around 13.8 billion years ago, the universe began expanding from an unimaginably hot, dense state. Within minutes it had forged hydrogen and helium. Every hydrogen atom in your brain was made in that first moment."
+  },
+  {
+    "n": 1,
+    "id": "first-stars-heavy-elements",
+    "file": "first-stars-heavy-elements.mp3",
+    "title": "First Stars and Heavy Elements",
+    "era": "cosmic",
+    "text": "Within a few hundred million years, the first stars lit up the darkness. Inside them, and in their explosive deaths, hydrogen and helium were fused into carbon, oxygen, nitrogen and more. We are, quite literally, made of star stuff."
+  },
+  {
+    "n": 2,
+    "id": "earth-forms",
+    "file": "earth-forms.mp3",
+    "title": "Formation of the Earth",
+    "era": "cosmic",
+    "text": "About 4.54 billion years ago, a cloud of gas and dust collapsed to form the Sun and its planets. Young Earth was molten and battered, yet it held the ingredients and, eventually, the oceans that life would need."
+  },
+  {
+    "n": 3,
+    "id": "oceans-prebiotic-chemistry",
+    "file": "oceans-prebiotic-chemistry.mp3",
+    "title": "Oceans and Prebiotic Chemistry",
+    "era": "cosmic",
+    "text": "As Earth cooled, oceans formed, and simple molecules began to combine into amino acids, nucleotides and fatty lipids. Lipids naturally curl into bubbles, tiny compartments that would one day wrap every living cell."
+  },
+  {
+    "n": 4,
+    "id": "first-life",
+    "file": "first-life.mp3",
+    "title": "First Single-Celled Life",
+    "era": "origin",
+    "text": "Somewhere between 3.8 and 3.5 billion years ago, the first living cells appeared. They were simple bacteria and archaea, but they could already sense chemicals and respond. That is the seed of every nervous system."
+  },
+  {
+    "n": 5,
+    "id": "chemical-signalling",
+    "file": "chemical-signalling.mp3",
+    "title": "Chemical Signalling",
+    "era": "origin",
+    "text": "Early cells learned to read their world with receptor proteins that catch specific molecules. A signal arriving outside sets off a chain reaction inside. Neurons still communicate using this ancient chemical language."
+  },
+  {
+    "n": 6,
+    "id": "ion-channels",
+    "file": "ion-channels.mp3",
+    "title": "Ion Channels and Membrane Potential",
+    "era": "origin",
+    "text": "Cells learned to pump charged ions across their membranes, building up a voltage like a tiny battery. Channel proteins that open and close that flow are the same machinery that fires every nerve impulse in your brain today."
+  },
+  {
+    "n": 7,
+    "id": "bacterial-chemotaxis",
+    "file": "bacterial-chemotaxis.mp3",
+    "title": "Bacterial Chemotaxis",
+    "era": "origin",
+    "text": "Bacteria evolved a tiny sense-and-act loop. Receptors compare chemical levels over time, and the cell adjusts its spinning flagella to swim toward food and away from poison. It is a brainless decision, and a blueprint for reflexes."
+  },
+  {
+    "n": 8,
+    "id": "eukaryotes",
+    "file": "eukaryotes.mp3",
+    "title": "Eukaryotic Cells",
+    "era": "origin",
+    "text": "Around two billion years ago, one cell swallowed another and the two became partners. The swallowed bacterium became the mitochondrion, a power plant that fueled bigger and more complex cells, including eventually neurons."
+  },
+  {
+    "n": 9,
+    "id": "multicellularity",
+    "file": "multicellularity.mp3",
+    "title": "Multicellular Life",
+    "era": "origin",
+    "text": "Over a billion years ago, cells began sticking together and sharing the work. Multicellular bodies need coordination, and that need would eventually give rise to nerves. Our closest single-celled cousins, the choanoflagellates, already carry many genes later used in synapses."
+  },
+  {
+    "n": 10,
+    "id": "sponges-no-neurons",
+    "file": "sponges-no-neurons.mp3",
+    "title": "Sponges: Animals Without Neurons",
+    "era": "origin",
+    "text": "Sponges are some of the oldest animals alive. They have no neurons at all, yet their cells still signal each other with chemicals and calcium waves. They stand at the edge of the story, just before the first nerve cells."
+  },
+  {
+    "n": 11,
+    "id": "first-neurons-nerve-net",
+    "file": "first-neurons-nerve-net.mp3",
+    "title": "First Neurons and the Nerve Net",
+    "era": "nerves",
+    "text": "Around six hundred million years ago, some animals began to use cells that carry electrical signals. In jellyfish and sea anemones this takes the form of a nerve net, a web of neurons with no central command. It was the first step toward every brain that followed."
+  },
+  {
+    "n": 12,
+    "id": "bilateral-symmetry-ganglia",
+    "file": "bilateral-symmetry-ganglia.mp3",
+    "title": "Bilateral Symmetry and Ganglia",
+    "era": "nerves",
+    "text": "Animals that crawl or swim in one direction developed a head end and a tail end, with matching left and right sides. Their neurons began to gather into clusters called ganglia, connected by nerve cords. Centralizing the nervous system made faster and smarter responses possible."
+  },
+  {
+    "n": 13,
+    "id": "cephalization",
+    "file": "cephalization.mp3",
+    "title": "Cephalization: The First Heads",
+    "era": "nerves",
+    "text": "As animals moved forward through the world, their senses and neurons piled up at the front. This process is called cephalization, and it created the first heads. The cluster of neurons in a head is what we now call a brain."
+  },
+  {
+    "n": 14,
+    "id": "cambrian-explosion-eyes",
+    "file": "cambrian-explosion-eyes.mp3",
+    "title": "The Cambrian Explosion and the Rise of Eyes",
+    "era": "nerves",
+    "text": "About five hundred and forty million years ago, animal life diversified dramatically in the Cambrian explosion. Many animals evolved eyes, and the race between hunters and hunted favored sharper senses. Processing all that visual information pushed brains to become more complex."
+  },
+  {
+    "n": 15,
+    "id": "chordates-notochord-nerve-cord",
+    "file": "chordates-notochord-nerve-cord.mp3",
+    "title": "Chordates: Notochord and Dorsal Nerve Cord",
+    "era": "vertebrate",
+    "text": "Chordates added a stiff rod called the notochord and a hollow nerve cord along the back. That nerve cord is the forerunner of our spinal cord and brain. It also helped these animals swim with coordinated, wave-like movements."
+  },
+  {
+    "n": 16,
+    "id": "first-vertebrates-neural-crest",
+    "file": "first-vertebrates-neural-crest.mp3",
+    "title": "The First Vertebrates",
+    "era": "vertebrate",
+    "text": "Around five hundred and twenty million years ago, the first true vertebrates swam in Cambrian seas. They had a head with paired eyes and a protective braincase, built by new embryonic cells called the neural crest. These innovations let the brain grow more complex."
+  },
+  {
+    "n": 17,
+    "id": "tripartite-brain",
+    "file": "tripartite-brain.mp3",
+    "title": "The Tripartite Brain",
+    "era": "vertebrate",
+    "text": "Early vertebrates organized their brains into three parts: the forebrain, the midbrain and the hindbrain. Each part took on different jobs, from smell and vision to balance and breathing. Your own brain still follows this ancient three-part plan."
+  },
+  {
+    "n": 18,
+    "id": "dopamine-reinforcement-signal",
+    "file": "dopamine-reinforcement-signal.mp3",
+    "title": "Dopamine as a Learning Signal",
+    "era": "vertebrate",
+    "text": "Early in vertebrate history, neurons that release dopamine took on a special job. They fire when things turn out better than expected and fall silent when worse. That teaching signal lets an animal learn which actions lead to good outcomes."
+  },
+  {
+    "n": 19,
+    "id": "lampreys-brain-and-cerebellum",
+    "file": "lampreys-brain-and-cerebellum.mp3",
+    "title": "Lampreys, a Cerebellum and Image-Forming Eyes",
+    "era": "vertebrate",
+    "text": "Lampreys are living jawless fishes that preserve a very old vertebrate brain design. They have a camera-style eye and a small cerebellum for coordinating movement. Studying them shows that the main vertebrate brain layout arose before jaws did."
+  },
+  {
+    "n": 20,
+    "id": "basal-ganglia-actor-critic",
+    "file": "basal-ganglia-actor-critic.mp3",
+    "title": "Basal Ganglia: Actor and Critic",
+    "era": "vertebrate",
+    "text": "Deep in the forebrain, the basal ganglia pick the next action. Dopamine adjusts how strongly each choice is favored, based on how well it turned out. Scientists often compare this to an actor choosing and a critic judging, and the circuit appears in lampreys."
+  },
+  {
+    "n": 21,
+    "id": "myelin-jawed-fish",
+    "file": "myelin-jawed-fish.mp3",
+    "title": "Jawed Fishes and Myelin",
+    "era": "vertebrate",
+    "text": "Jawed fishes appeared and spread, and with them came myelin, a fatty wrapping around nerve fibers. Myelin makes signals travel much faster and more efficiently. Fast nerves were a big advantage for large, active predators."
+  },
+  {
+    "n": 22,
+    "id": "pallium-fish-forebrain",
+    "file": "pallium-fish-forebrain.mp3",
+    "title": "The Pallium in the Fish Forebrain",
+    "era": "vertebrate",
+    "text": "The roof of the vertebrate forebrain is called the pallium. In fishes it handles smell, learning and memory. Much later, in mammals, a part of it would swell into the cerebral cortex."
+  },
+  {
+    "n": 23,
+    "id": "tetrapods-move-to-land",
+    "file": "tetrapods-move-to-land.mp3",
+    "title": "Tetrapods Move onto Land",
+    "era": "vertebrate",
+    "text": "About three hundred and seventy-five million years ago, lobe-finned fishes like Tiktaalik began to crawl onto land. Life in air demanded new ways to see, hear and move. The nervous system adapted, with new circuits for walking and for hearing sound through air."
+  },
+  {
+    "n": 24,
+    "id": "amniotes-first-eggs",
+    "file": "amniotes-first-eggs.mp3",
+    "title": "Amniotes: Life Free from Water",
+    "era": "vertebrate",
+    "text": "Amniotes evolved eggs that could survive on land, freeing animals from needing water to reproduce. They spread across dry habitats and soon divided into the reptile and mammal lineages. Their forebrains began to develop the layered structures that would later become the cortex."
+  },
+  {
+    "n": 25,
+    "id": "synapsids",
+    "file": "synapsids.mp3",
+    "title": "Synapsids Split from Reptile Ancestors",
+    "era": "vertebrate",
+    "text": "This is the start of our own branch of the tree. Around 310 million years ago, the synapsids split from the reptile line. Their brains were still small and reptilian, but they held the pallium tissue that would one day become the neocortex."
+  },
+  {
+    "n": 26,
+    "id": "reptile-brain-plan",
+    "file": "reptile-brain-plan.mp3",
+    "title": "The Reptile Brain Plan",
+    "era": "vertebrate",
+    "text": "Reptiles evolved a compact brain with strong brainstem, midbrain and basal ganglia circuits for movement, habit and survival. A thin layered cortex sat on top. These ancient structures are still present in the human brain, though modern research shows reptile brains are more capable than once believed."
+  },
+  {
+    "n": 27,
+    "id": "cynodont-endothermy",
+    "file": "cynodont-endothermy.mp3",
+    "title": "Cynodonts and the Road to Warm-bloodedness",
+    "era": "mammal",
+    "text": "Cynodonts were among the first synapsids to look and act a bit like mammals. As their bodies learned to stay warm, their nervous systems could work faster and for longer. Energy-hungry brains finally had a steady power supply."
+  },
+  {
+    "n": 28,
+    "id": "nocturnal-bottleneck",
+    "file": "nocturnal-bottleneck.mp3",
+    "title": "Early Mammals Take the Night Shift",
+    "era": "mammal",
+    "text": "Imagine a creature the size of a shrew, hiding from dinosaurs by day. At night it hunts by smell, sound, and whiskers. Those senses expanded the brain regions that would become the heart of the mammalian mind."
+  },
+  {
+    "n": 29,
+    "id": "neocortex",
+    "file": "neocortex.mp3",
+    "title": "The Six-Layered Neocortex Appears",
+    "era": "mammal",
+    "text": "Only mammals have a neocortex, a thin sheet of neurons stacked in six layers. The same circuit pattern repeats across the sheet. Make the sheet bigger and you get new abilities, which is exactly what happened later."
+  },
+  {
+    "n": 30,
+    "id": "mammalian-middle-ear",
+    "file": "mammalian-middle-ear.mp3",
+    "title": "Three Tiny Bones Sharpen Hearing",
+    "era": "mammal",
+    "text": "Three tiny bones in your middle ear began as part of the jaw. Their move into the skull made hearing sharper, especially for high-pitched sounds. The brain gained a richer acoustic world to analyze."
+  },
+  {
+    "n": 31,
+    "id": "limbic-hippocampus",
+    "file": "limbic-hippocampus.mp3",
+    "title": "Limbic System and Hippocampus Take Shape",
+    "era": "mammal",
+    "text": "Memory, emotion, and bonding came together in the limbic system. The hippocampus builds maps of places and stores events. Together with feelings, this let mammals learn quickly and care for their young."
+  },
+  {
+    "n": 32,
+    "id": "vicarious-trial-and-error-replay",
+    "file": "vicarious-trial-and-error-replay.mp3",
+    "title": "Imagining Paths: Replay in the Hippocampus",
+    "era": "mammal",
+    "text": "A rat at a fork in a maze sometimes stops and looks both ways. In its hippocampus, cells fire in sequence as if it were walking down each path. This looks like a simple form of imagining, and it lets mammals try options before acting."
+  },
+  {
+    "n": 33,
+    "id": "agranular-prefrontal-simulation",
+    "file": "agranular-prefrontal-simulation.mp3",
+    "title": "Agranular Prefrontal Cortex and Mental Simulation",
+    "era": "mammal",
+    "text": "Early mammals developed frontal cortex that connects the new neocortex to the older brain systems for emotion and action. It may have decided when to imagine, and which imagined outcomes were worth acting on. This is a hypothesis, and it is still being tested."
+  },
+  {
+    "n": 34,
+    "id": "kpg-mammal-radiation",
+    "file": "kpg-mammal-radiation.mp3",
+    "title": "Dinosaurs Fall and Mammals Radiate",
+    "era": "mammal",
+    "text": "When the dinosaurs vanished, mammals inherited the Earth. With no giant predators ruling the day, they spread into new habitats and lifestyles. Brains grew and diversified along with them."
+  },
+  {
+    "n": 35,
+    "id": "first-primates",
+    "file": "first-primates.mp3",
+    "title": "The First Primates Climb into the Trees",
+    "era": "primate",
+    "text": "Early primates lived in the trees. Grasping branches and leaping between them called for careful vision and fine touch. The brain started to devote more tissue to hands and eyes."
+  },
+  {
+    "n": 36,
+    "id": "forward-eyes-visual-cortex",
+    "file": "forward-eyes-visual-cortex.mp3",
+    "title": "Forward-Facing Eyes and a Visual Brain",
+    "era": "primate",
+    "text": "Two eyes facing forward give two slightly different views of the same scene. The brain compares them to see depth. A large visual cortex grew to process all of this, and vision became the main primate sense."
+  },
+  {
+    "n": 37,
+    "id": "trichromatic-vision",
+    "file": "trichromatic-vision.mp3",
+    "title": "Trichromatic Color Vision",
+    "era": "primate",
+    "text": "A small gene duplication gave our ancestors a third kind of color receptor. Suddenly ripe fruit stood out from leaves. The brain gained a new color channel to interpret."
+  },
+  {
+    "n": 38,
+    "id": "prefrontal-expansion",
+    "file": "prefrontal-expansion.mp3",
+    "title": "Monkeys and the Growing Prefrontal Cortex",
+    "era": "primate",
+    "text": "Monkeys and apes enlarged the front of the brain. This area holds information in mind, plans ahead, and holds back impulses. It is the beginning of the thoughtful, flexible behavior we recognize in ourselves."
+  },
+  {
+    "n": 39,
+    "id": "social-brain",
+    "file": "social-brain.mp3",
+    "title": "Group Living Drives Bigger Brains",
+    "era": "primate",
+    "text": "Primates who live in larger groups tend to have a larger neocortex. Keeping track of who is friend, rival, or relative is a demanding mental task. That social puzzle is one major reason these brains grew."
+  },
+  {
+    "n": 40,
+    "id": "imitation-learning-primates",
+    "file": "imitation-learning-primates.mp3",
+    "title": "Learning by Watching: Imitation and Mirror Neurons",
+    "era": "primate",
+    "text": "Primates learn a great deal by watching. In monkeys, some neurons fire both when the animal grasps an object and when it sees another grasp. Watching others lets one individual inherit the lessons of many."
+  },
+  {
+    "n": 41,
+    "id": "great-ape-cognition",
+    "file": "great-ape-cognition.mp3",
+    "title": "Great Apes: Reasoning, Tools, and Culture",
+    "era": "primate",
+    "text": "The great apes are our close relatives and impressive thinkers. They make and use tools, plan ahead, and teach habits to others. Many of these skills probably began in a shared ancestor millions of years ago."
+  },
+  {
+    "n": 42,
+    "id": "mental-state-inference-primates",
+    "file": "mental-state-inference-primates.mp3",
+    "title": "Inferring What Others Know and Want",
+    "era": "primate",
+    "text": "Apes keep track of what others can see and want. A subordinate chimpanzee may take food that a dominant one cannot see. Scientists debate how much this is true mind-reading, but it points to a model of other minds."
+  },
+  {
+    "n": 43,
+    "id": "mirror-self-recognition",
+    "file": "mirror-self-recognition.mp3",
+    "title": "Recognizing Oneself in the Mirror",
+    "era": "primate",
+    "text": "Put a mark on a chimpanzee’s face and show it a mirror, and it touches the mark on itself. That is the mirror test. It suggests a sense of self that we share with our closest relatives."
+  },
+  {
+    "n": 44,
+    "id": "sahelanthropus",
+    "file": "sahelanthropus.mp3",
+    "title": "Sahelanthropus: the Dawn of the Hominin Line",
+    "era": "hominin",
+    "text": "Around seven million years ago in Chad, a small-brained ape called Sahelanthropus lived close to the split between our ancestors and the chimpanzees. Its brain was about the size of a chimp's, but its skull hints at an upright stance. The long story of the human brain begins with a modest organ."
+  },
+  {
+    "n": 45,
+    "id": "bipedalism",
+    "file": "bipedalism.mp3",
+    "title": "Walking Upright",
+    "era": "hominin",
+    "text": "Some six million years ago, early hominins started walking on two legs. This freed their hands to carry things and, eventually, to make tools. It also narrowed the pelvis, setting up a long-running tension between big brains and the birth canal."
+  },
+  {
+    "n": 46,
+    "id": "ardipithecus",
+    "file": "ardipithecus.mp3",
+    "title": "Ardipithecus ramidus",
+    "era": "hominin",
+    "text": "Ardi lived in Ethiopian woodland about four and a half million years ago. She walked upright on the ground yet could still climb, thanks to a grasping big toe. Her brain was still chimp-sized, so the brain's big expansion had not begun."
+  },
+  {
+    "n": 47,
+    "id": "laetoli-footprints",
+    "file": "laetoli-footprints.mp3",
+    "title": "Footprints at Laetoli",
+    "era": "hominin",
+    "text": "Three and a half million years ago, hominins walked across wet volcanic ash in what is now Tanzania. Their footprints hardened and survived. They show a human-like stride, long before our ancestors had big brains."
+  },
+  {
+    "n": 48,
+    "id": "australopithecus-lucy",
+    "file": "australopithecus-lucy.mp3",
+    "title": "Australopithecus afarensis and \"Lucy\"",
+    "era": "hominin",
+    "text": "Lucy was an Australopithecus afarensis who lived in Ethiopia over three million years ago. She walked upright but was just over a metre tall. Her brain, about 400 to 450 cubic centimetres, was still close to a chimpanzee's."
+  },
+  {
+    "n": 49,
+    "id": "oldowan-tools",
+    "file": "oldowan-tools.mp3",
+    "title": "The First Stone Tools: Oldowan",
+    "era": "hominin",
+    "text": "About two and a half million years ago, hominins in Africa began striking flakes off stones to make sharp edges. Even this simple craft needs planning and precise hands. The meat these tools unlocked fed a hungry, growing brain."
+  },
+  {
+    "n": 50,
+    "id": "homo-habilis",
+    "file": "homo-habilis.mp3",
+    "title": "Homo habilis, the \"Handy Man\"",
+    "era": "hominin",
+    "text": "Homo habilis, the handy man, lived in Africa over two million years ago. Its brain was around 600 cubic centimetres, noticeably bigger than Lucy's. It made simple stone tools and may have been the first to show hints of language-related brain structure."
+  },
+  {
+    "n": 51,
+    "id": "homo-erectus",
+    "file": "homo-erectus.mp3",
+    "title": "Homo erectus: A Bigger Brain and Body",
+    "era": "hominin",
+    "text": "Homo erectus appeared nearly two million years ago, with a body much like ours and a brain around 900 cubic centimetres. It was the first hominin to spread far beyond Africa. A longer childhood gave its young more time to learn."
+  },
+  {
+    "n": 52,
+    "id": "cooperative-breeding",
+    "file": "cooperative-breeding.mp3",
+    "title": "Cooperative Breeding",
+    "era": "hominin",
+    "text": "Raising a big-brained baby was costly, so hominin mothers likely turned to relatives and friends for help. Babies who could win over many caregivers did better. This shared parenting may have shaped our empathy and social minds."
+  },
+  {
+    "n": 53,
+    "id": "acheulean-handaxe",
+    "file": "acheulean-handaxe.mp3",
+    "title": "Acheulean Handaxes",
+    "era": "hominin",
+    "text": "Around 1.76 million years ago, toolmakers began shaping stones into symmetrical handaxes. Making one means holding a final shape in mind and working toward it step by step. The skill was passed on across generations for more than a million years."
+  },
+  {
+    "n": 54,
+    "id": "expensive-tissue",
+    "file": "expensive-tissue.mp3",
+    "title": "The Expensive-Tissue Hypothesis",
+    "era": "hominin",
+    "text": "The brain uses about a fifth of our energy at rest. The expensive-tissue hypothesis suggests that hominins paid for this by shrinking their guts, once better food made a large digestive system unnecessary. The idea is debated, but it ties diet to brain growth."
+  },
+  {
+    "n": 55,
+    "id": "broca-vocal-tract",
+    "file": "broca-vocal-tract.mp3",
+    "title": "Broca's Area and the Early Vocal Tract",
+    "era": "hominin",
+    "text": "Casts of early Homo skulls show the frontal bulge where Broca's area sits, a region that helps with speech and with sequencing movements. Hominins also gained finer breath control and a more flexible vocal tract. When real language began is still a matter of debate."
+  },
+  {
+    "n": 56,
+    "id": "control-of-fire",
+    "file": "control-of-fire.mp3",
+    "title": "Control of Fire and Cooking",
+    "era": "hominin",
+    "text": "By about a million years ago, our ancestors were using fire under control. Cooking makes food easier to digest, so the body gets more energy for less effort, which may have helped feed larger brains. Evenings by the fire also gave people more time to be social."
+  },
+  {
+    "n": 57,
+    "id": "homo-heidelbergensis",
+    "file": "homo-heidelbergensis.mp3",
+    "title": "Homo heidelbergensis",
+    "era": "hominin",
+    "text": "Homo heidelbergensis was a large hominin with a brain of around twelve hundred cubic centimetres. It hunted big game with wooden spears, which demanded teamwork and planning. It may be close to the common ancestor of Neanderthals and modern humans."
+  },
+  {
+    "n": 58,
+    "id": "teaching-cumulative-culture",
+    "file": "teaching-cumulative-culture.mp3",
+    "title": "Teaching and Cumulative Culture",
+    "era": "hominin",
+    "text": "Humans do something rare: we teach, and learners copy carefully. Each generation starts where the last left off. Exactly when this ratchet began is debated, but it changed what a brain could know."
+  },
+  {
+    "n": 59,
+    "id": "neanderthals",
+    "file": "neanderthals.mp3",
+    "title": "Neanderthals",
+    "era": "hominin",
+    "text": "Neanderthals lived in Europe and western Asia for hundreds of thousands of years. Their brains averaged about fifteen hundred cubic centimetres, a little larger than ours, though shaped differently. They made fine tools, controlled fire, and looked after their sick."
+  },
+  {
+    "n": 60,
+    "id": "homo-naledi",
+    "file": "homo-naledi.mp3",
+    "title": "Homo naledi: A Small Brain in a Late Species",
+    "era": "hominin",
+    "text": "Homo naledi lived in South Africa as recently as a quarter of a million years ago, yet its brain was only about the size of an early Homo's. It reminds us that brain size is not the whole story. Its remains were found deep inside a cave, and why they got there remains debated."
+  },
+  {
+    "n": 61,
+    "id": "denisovans",
+    "file": "denisovans.mp3",
+    "title": "Denisovans",
+    "era": "hominin",
+    "text": "Denisovans are known from a few bones in a Siberian cave, plus their DNA. They were cousins of the Neanderthals and mixed with both Neanderthals and our own ancestors. Traces of their genes are still found in people today."
+  },
+  {
+    "n": 62,
+    "id": "jebel-irhoud-sapiens",
+    "file": "jebel-irhoud-sapiens.mp3",
+    "title": "The Earliest Homo sapiens",
+    "era": "sapiens",
+    "text": "In the hills of Morocco, researchers found skulls about three hundred thousand years old. The faces look strikingly like ours. Inside, the brain was already large, though not yet shaped like ours."
+  },
+  {
+    "n": 63,
+    "id": "globular-brain",
+    "file": "globular-brain.mp3",
+    "title": "The Globular Brain",
+    "era": "sapiens",
+    "text": "Our brains did not simply grow. They changed shape, becoming rounder and more globular. Expanded parietal areas and cerebellum may have supported new ways of thinking and planning."
+  },
+  {
+    "n": 64,
+    "id": "ochre-symbolic-thought",
+    "file": "ochre-symbolic-thought.mp3",
+    "title": "Ochre and Symbolic Thought",
+    "era": "sapiens",
+    "text": "In a cave on the South African coast, people ground red ochre and engraved patterns into it. They strung shell beads. These were signs that stood for something, an early flicker of symbolic thought."
+  },
+  {
+    "n": 65,
+    "id": "language-shares-simulations",
+    "file": "language-shares-simulations.mp3",
+    "title": "Language: Sharing Simulations",
+    "era": "sapiens",
+    "text": "Until language, imagined scenes stayed inside one head. With words, a person can place a plan, a memory or a place in another mind. Language lets many brains work as one."
+  },
+  {
+    "n": 66,
+    "id": "language-foxp2",
+    "file": "language-foxp2.mp3",
+    "title": "Language and FOXP2",
+    "era": "sapiens",
+    "text": "Language is hard to find in fossils, but it left clues. The gene FOXP2 helps control the fine movements of speech. With words and grammar, minds could share plans, stories and memories."
+  },
+  {
+    "n": 67,
+    "id": "out-of-africa",
+    "file": "out-of-africa.mp3",
+    "title": "Out of Africa",
+    "era": "sapiens",
+    "text": "Around sixty thousand years ago, groups of modern humans left Africa for good. They crossed deserts, mountains and seas. Their flexible, social brains carried them to every continent but Antarctica."
+  },
+  {
+    "n": 68,
+    "id": "cave-art",
+    "file": "cave-art.mp3",
+    "title": "Cave Art",
+    "era": "sapiens",
+    "text": "By torchlight, people painted animals on cave walls and pressed their hands against the stone. Each image began as a picture in the mind. Art made the inner world visible to others."
+  },
+  {
+    "n": 69,
+    "id": "bone-flutes-music",
+    "file": "bone-flutes-music.mp3",
+    "title": "Bone Flutes and Music",
+    "era": "sapiens",
+    "text": "In caves in Germany, people carved flutes from bird bone and ivory. Music lights up many parts of the brain at once. It may have helped early communities bond and share feelings."
+  },
+  {
+    "n": 70,
+    "id": "burial-ritual",
+    "file": "burial-ritual.mp3",
+    "title": "Burial and Ritual",
+    "era": "sapiens",
+    "text": "People started laying their dead in graves, often with gifts of beads, ochre or tools. This hints at grief, memory and a concept of death. The brain was now imagining beyond the present moment."
+  },
+  {
+    "n": 71,
+    "id": "behavioural-modernity",
+    "file": "behavioural-modernity.mp3",
+    "title": "Behavioural Modernity",
+    "era": "sapiens",
+    "text": "Tools became finer and more varied. People sewed clothing, traded over long distances and wore ornaments. Culture itself became cumulative, as each generation built on what the last had learned."
+  },
+  {
+    "n": 72,
+    "id": "agriculture",
+    "file": "agriculture.mp3",
+    "title": "Agriculture",
+    "era": "modern",
+    "text": "About eleven thousand years ago, people began to sow grain and keep animals. Villages and towns followed. Life in bigger groups called for counting, planning and trust among many people."
+  },
+  {
+    "n": 73,
+    "id": "writing",
+    "file": "writing.mp3",
+    "title": "Writing",
+    "era": "modern",
+    "text": "Around five thousand two hundred years ago, scribes in Sumer pressed marks into clay. Reading repurposes parts of the visual brain that evolved for other tasks. Writing gave humanity a memory beyond any single mind."
+  },
+  {
+    "n": 74,
+    "id": "alphabet",
+    "file": "alphabet.mp3",
+    "title": "The Alphabet",
+    "era": "modern",
+    "text": "Alphabets trimmed writing down to a few dozen letters, each standing for a sound. That made reading far easier to learn. More minds could now take part in the written world."
+  },
+  {
+    "n": 75,
+    "id": "philosophy-of-mind",
+    "file": "philosophy-of-mind.mp3",
+    "title": "Philosophy and the Seat of the Mind",
+    "era": "modern",
+    "text": "Ancient thinkers began to ask what the mind is and where it lives. Hippocrates declared that the brain is the source of joy and sorrow. The brain had started to study itself."
+  },
+  {
+    "n": 76,
+    "id": "printing-press",
+    "file": "printing-press.mp3",
+    "title": "The Printing Press",
+    "era": "modern",
+    "text": "Around 1440, Gutenberg built a press with movable type. Books became cheap and ideas spread widely. Human knowledge could now accumulate and be questioned at a much larger scale."
+  },
+  {
+    "n": 77,
+    "id": "scientific-revolution",
+    "file": "scientific-revolution.mp3",
+    "title": "The Scientific Revolution",
+    "era": "modern",
+    "text": "In the sixteenth and seventeenth centuries, anatomists drew the brain with new accuracy. Thomas Willis tied brain structures to behaviour. Observation and experiment were becoming the tools for understanding the mind."
+  },
+  {
+    "n": 78,
+    "id": "neuron-doctrine",
+    "file": "neuron-doctrine.mp3",
+    "title": "Neurons and the Localisation of Function",
+    "era": "modern",
+    "text": "Broca and Wernicke linked speech to specific regions of the cortex. Then Cajal looked through his microscope and drew the neurons themselves. The brain, he showed, is a network of separate cells."
+  },
+  {
+    "n": 79,
+    "id": "eeg",
+    "file": "eeg.mp3",
+    "title": "The EEG",
+    "era": "modern",
+    "text": "In 1929 Hans Berger recorded electrical rhythms from the human scalp. Brain waves could now be watched in a living person. They revealed the patterns of sleep, attention and seizures."
+  },
+  {
+    "n": 80,
+    "id": "fmri",
+    "file": "fmri.mp3",
+    "title": "fMRI",
+    "era": "modern",
+    "text": "Functional MRI follows blood flow to reveal which parts of the brain are busy. It lets us see thinking, remembering and feeling in healthy people. Entire networks of the brain came into view."
+  },
+  {
+    "n": 81,
+    "id": "brain-computer-interfaces",
+    "file": "brain-computer-interfaces.mp3",
+    "title": "Brain-Computer Interfaces",
+    "era": "modern",
+    "text": "Tiny electrode arrays can now read movement and speech intentions from the cortex. People with paralysis have controlled cursors, robot arms and voice synthesisers by thought alone. The brain is learning to speak directly to machines."
+  },
+  {
+    "n": 82,
+    "id": "ai-mirror",
+    "file": "ai-mirror.mp3",
+    "title": "AI as a Mirror",
+    "era": "modern",
+    "text": "Neural networks, inspired loosely by the brain, can now see, translate and converse. They are very unlike biological brains. By comparing them with our own minds, we learn what intelligence might be."
+  },
+  {
+    "n": 83,
+    "id": "now",
+    "file": "now.mp3",
+    "title": "Now",
+    "era": "modern",
+    "text": "Here we are. A brain of eighty-six billion neurons, running on twenty watts, is looking back over its own history. What it does next is up to us."
+  }
+]

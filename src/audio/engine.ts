@@ -61,9 +61,12 @@ function build(): Bus {
   return { ctx, voice, music, fx, reverb, master };
 }
 
+/** dev: window.__silent = true runs the whole audio logic at zero volume (for automated checks in a real browser) */
+export const silent = () => import.meta.env.DEV && !!(window as unknown as { __silent?: boolean }).__silent;
+
 function target() {
   const s = getSettings();
-  return s.sound ? 1 : 0;
+  return s.sound && !silent() ? 1 : 0;
 }
 function applyMaster(time = 0.6) {
   if (!bus) return;
@@ -97,4 +100,9 @@ if (typeof window !== 'undefined') {
   subscribe(() => { if (bus) applyMaster(); emit(); });
   // a backgrounded tab keeps playing the voice, but rAF-driven parts stop: let the OS handle it, just resume on return
   document.addEventListener('visibilitychange', () => { if (!document.hidden && bus && getSettings().sound) bus.ctx.resume().catch(() => {}); });
+}
+
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  // dev: window.__bus() -> the audio graph (ctx.state, gains)
+  (window as unknown as Record<string, unknown>).__bus = () => bus;
 }

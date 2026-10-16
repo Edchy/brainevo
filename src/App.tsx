@@ -17,6 +17,7 @@ import { setSetting, useSettings } from './style/store';
 import { titleState } from './style/titles/state';
 import { unlock } from './audio/engine';
 import './audio/narration';
+import './audio/score';
 
 /**
  * The reading layer's geometry, in one place: the text band (band layout), the top of the caption, and where the depth

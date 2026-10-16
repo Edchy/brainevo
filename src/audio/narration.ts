@@ -3,7 +3,7 @@ import { events } from '../data';
 import type { TimelineEvent } from '../types';
 import { world } from '../world/store';
 import { getSettings, setSetting } from '../style/store';
-import { duck, getBus, isRunning, unlock } from './engine';
+import { duck, getBus, isRunning, silent, unlock } from './engine';
 
 /**
  * Narration that plays itself as you travel. When an event's caption settles at the point of focus, its recording
@@ -123,8 +123,10 @@ function voiceClip(ev: TimelineEvent, index: number, onEnd: () => void): Clip {
   const u = new SpeechSynthesisUtterance(text);
   if (voice) u.voice = voice;
   u.rate = 0.94; u.pitch = 0.96;
-  let at = 0, done = false, paused = false;
+  if (silent()) u.volume = 0;
+  let at = 0, done = false, paused = false, pausedMs = 0, pausedAt = 0;
   const t0 = performance.now();
+  const est = Math.max(2, text.split(/\s+/).length / (2.6 * u.rate));
   u.onboundary = (e) => { at = e.charIndex; };
   u.onend = () => { if (!done) { done = true; onEnd(); } };
   speechSynthesis.cancel();
@@ -132,10 +134,11 @@ function voiceClip(ev: TimelineEvent, index: number, onEnd: () => void): Clip {
   return {
     ev, index,
     stop() { done = true; speechSynthesis.cancel(); },
-    pause() { paused = true; speechSynthesis.pause(); },
-    resume() { paused = false; speechSynthesis.resume(); },
+    pause() { paused = true; pausedAt = performance.now(); speechSynthesis.pause(); },
+    resume() { if (paused) pausedMs += performance.now() - pausedAt; paused = false; speechSynthesis.resume(); },
     position: () => (performance.now() - t0) / 1000,
-    progress: () => Math.min(1, at / Math.max(1, text.length)),
+    // not every voice reports word boundaries: fall back to elapsed time against ~2.6 words a second
+    progress: () => Math.min(0.99, Math.max(at / Math.max(1, text.length), (performance.now() - t0 - pausedMs) / 1000 / est)),
     playing: () => !done && !paused,
   };
 }
@@ -214,3 +217,8 @@ export function toggleNarration(ev: TimelineEvent) {
 }
 
 export const canNarrate = (ev: TimelineEvent) => canSpeak(ev);
+
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  // dev: window.__narration() -> current narration state
+  (window as unknown as Record<string, unknown>).__narration = () => ({ ...state, clip: clip?.ev.id ?? null });
+}
