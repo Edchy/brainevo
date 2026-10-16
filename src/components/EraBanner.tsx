@@ -7,10 +7,9 @@ function EraBanner({ era, x }: { era: Era; x: number }) {
   const m = ERA_META[era];
   const n = ERA_ORDER.indexOf(era) + 1;
   return (
-    <section className="banner" style={{ left: `calc(var(--intro-w) + ${x}px)`, '--accent': m.accent } as CSSProperties} aria-label={`Era: ${m.name}`}>
-      <p className="banner-kicker">Chapter {n} · {ERA_ORDER.length}</p>
+    <section className="banner" style={{ left: `calc(var(--intro-w) + ${x}px)` } as CSSProperties} aria-label={`Era: ${m.name}`}>
       <h2 className="banner-title">{m.name}</h2>
-      <p className="banner-tag">{m.tagline}</p>
+      <p className="banner-tag">Chapter {n} of {ERA_ORDER.length}. {m.tagline}</p>
     </section>
   );
 }

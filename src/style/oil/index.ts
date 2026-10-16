@@ -1,9 +1,10 @@
 import { createElement, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Effect } from 'postprocessing';
-import { Uniform } from 'three';
+import { Effect, EffectAttribute } from 'postprocessing';
+import { Uniform, Vector3 } from 'three';
 import { world } from '../../world/store';
-import type { StyleDef } from '../types';
+import { BRUSH_DEF, PALETTES_DEF } from '../palettes';
+import { getSettings } from '../store';
 import './theme.css';
 
 /*
@@ -13,11 +14,21 @@ import './theme.css';
  *  - anisotropic 4-sector Kuwahara (4 taps per sector, rotated to the stroke frame) picks the calmest sector => flat daubs
  *    with crisp painterly edges.
  *  - impasto relief: stroke-stretched noise + luminance gradient -> normal -> diffuse + specular glints on ridges.
- *  - canvas weave, warm palette grade, butter-soft highlights.
+ *  - canvas weave, palette grade (ground, cast, tone, saturation; see palettes.ts), butter-soft highlights.
+ * Palette and brushwork are uniforms, so switching them never recompiles the pass.
  */
 const frag = /* glsl */ `
 uniform float uTime;
 uniform float uScale;
+uniform float uBrush;   // stroke footprint multiplier (1 = fine)
+uniform float uRelief;  // impasto strength multiplier
+uniform vec3 uGround;   // what thin dark paint sinks into
+uniform vec3 uCast;
+uniform vec3 uToneLo;
+uniform vec3 uToneHi;
+uniform vec3 uSpec;
+uniform float uSat;
+uniform float uMono;
 
 float h21(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p,p+45.32); return fract(p.x*p.y); }
 float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
@@ -31,7 +42,7 @@ float lum(vec3 c){ return dot(c, vec3(.299,.587,.114)); }
 void mainImage(const in vec4 inputColor0, const in vec2 uv, out vec4 outputColor) {
   vec4 inputColor = vec4(tm(inputColor0.rgb), inputColor0.a);
   vec2 px = 1.0 / resolution.xy;
-  float s = uScale;                       // pixel scale so strokes keep size across resolutions
+  float s = uScale * uBrush;              // pixel scale so strokes keep size across resolutions
   vec2 asp = vec2(resolution.x / resolution.y, 1.0);
 
   // --- stroke orientation
@@ -85,32 +96,39 @@ void mainImage(const in vec4 inputColor0, const in vec2 uv, out vec4 outputColor
   vec2 pp = uv * resolution.xy / s;               // paint-space pixels
   vec2 rp = vec2(dot(pp, t), dot(pp, n));         // stroke frame
   float bristle = vn(vec2(rp.x * .06, rp.y * 1.15)) * .6 + vn(vec2(rp.x * .17 + 3., rp.y * 2.6)) * .4;
-  float weave = (sin(pp.x * 1.25) * .5 + .5) * (sin(pp.y * 1.25) * .5 + .5) * .6
-              + (sin((pp.x + pp.y) * .62) * .5 + .5) * .4;
+  vec2 cp = uv * resolution.xy / uScale;           // canvas weave keeps its size whatever the brush
+  float weave = (sin(cp.x * 1.25) * .5 + .5) * (sin(cp.y * 1.25) * .5 + .5) * .6
+              + (sin((cp.x + cp.y) * .62) * .5 + .5) * .4;
   float h = lum(col) * 1.6 + bristle * .8;
   vec2 hg = vec2(dFdx(h), dFdy(h));
   vec2 bump = clamp(-vec2(grad.x, grad.y) * 4.5 - hg * 1.6, vec2(-1.5), vec2(1.5));
   float rel = .2 + .8 * smoothstep(.04, .45, lum(col));
-  vec3 N = normalize(vec3(bump * 2.4 * rel, 1.0));
+  vec3 N = normalize(vec3(bump * 2.4 * rel * uRelief, 1.0));
   vec3 L = normalize(vec3(-.45, .55, .70));
   float diff = clamp(dot(N, L), 0., 1.);
   vec3 H = normalize(L + vec3(0., 0., 1.));
   float spec = min(pow(clamp(dot(N, H), 0., 1.), 60.0), 1.0);
   float paint = smoothstep(.04, .5, lum(col)); // dark thin glazes are flatter than thick highlights
 
-  // --- colour grade: rich, warm, slightly Prussian shadows
+  // --- colour grade: palette ground, cast and tone
   float l = lum(col);
-  vec3 c = mix(vec3(l), col, 1.2);                              // saturation
-  c = c * (vec3(1.06, 1.0, .88));                                  // warm cast
-  c += vec3(.012, .016, .05) * (1. - smoothstep(0., .35, l));     // blue umber in shadows
+  vec3 c = mix(vec3(l), col, uSat);                               // saturation
+  // grisaille-style palettes drain hue except where the (stroke-averaged) source is strongly saturated and lit
+  float mxc = max(max(col.r, col.g), col.b), mnc = min(min(col.r, col.g), col.b);
+  float satc = (mxc - mnc) / max(mxc, 0.04);
+  float splash = smoothstep(.42, .78, satc) * smoothstep(.05, .22, mxc);
+  c = mix(c, vec3(l), uMono * (1. - splash * .9));
+  c = c * uCast;                                                  // cast
+  c *= mix(uToneLo, uToneHi, smoothstep(.12, .8, l));             // cool/warm split tone
+  c += uGround * (1. - smoothstep(0., .35, l));                   // the ground shows through thin dark paint
   c = mix(c, c*c*(3. - 2.*c), .25) ;                               // gentle contrast
-  c.r += max(0., c.g - c.b) * .06;                                 // golden yellows lean to cadmium
+  c.r += max(0., c.g - c.b) * .06 * (1. - uMono);                  // golden yellows lean to cadmium
   c = pow(max(c, 0.), vec3(.95));
   c = c / (1. + .22 * c);                                          // soften neon peaks into buttery daubs
   c *= 1.12;
 
   c *= .7 + .68 * diff;                                           // paint ridges catch the light
-  c += vec3(1., .93, .78) * spec * (.28 + .5 * paint);
+  c += uSpec * spec * (.28 + .5 * paint) * min(uRelief, 1.25);
   c *= 1. - .07 * weave * (1.0 - paint*.6);                        // canvas tooth shows in thin paint
   c = mix(c, c * (.85 + .3 * bristle), .9);
   c = min(c, vec3(1.0));
@@ -122,31 +140,48 @@ void mainImage(const in vec4 inputColor0, const in vec2 uv, out vec4 outputColor
 class OilEffect extends Effect {
   constructor() {
     super('OilEffect', frag, {
+      // its taps must see the finished frame (bloom, shade, dip), so it starts its own pass instead of being merged
+      attributes: EffectAttribute.CONVOLUTION,
       uniforms: new Map<string, Uniform>([
         ['uTime', new Uniform(0)],
         ['uScale', new Uniform(1)],
+        ['uBrush', new Uniform(1)],
+        ['uRelief', new Uniform(1)],
+        ['uGround', new Uniform(new Vector3())],
+        ['uCast', new Uniform(new Vector3(1, 1, 1))],
+        ['uToneLo', new Uniform(new Vector3(1, 1, 1))],
+        ['uToneHi', new Uniform(new Vector3(1, 1, 1))],
+        ['uSpec', new Uniform(new Vector3(1, 1, 1))],
+        ['uSat', new Uniform(1)],
+        ['uMono', new Uniform(0)],
       ]),
     });
   }
-  setTime(t: number) { (this.uniforms.get('uTime') as Uniform).value = t; }
-  setScale(s: number) { (this.uniforms.get('uScale') as Uniform).value = s; }
+  set(name: string, v: number) { (this.uniforms.get(name) as Uniform<number>).value = v; }
+  /** eases every palette/brush uniform toward its target, so switching in the Lab cross-dissolves */
+  ease(k: number) {
+    const st = getSettings();
+    const p = PALETTES_DEF[st.palette], b = BRUSH_DEF[st.brush];
+    const u = this.uniforms;
+    const go = (n: string, t: number) => { const x = u.get(n) as Uniform<number>; x.value += (t - x.value) * k; };
+    const go3 = (n: string, t: [number, number, number]) => { (u.get(n)!.value as Vector3).lerp(tmp.set(t[0], t[1], t[2]), k); };
+    go('uBrush', b.size); go('uRelief', b.relief); go('uSat', p.sat); go('uMono', p.mono);
+    go3('uGround', p.ground); go3('uCast', p.cast); go3('uToneLo', p.toneLo); go3('uToneHi', p.toneHi); go3('uSpec', p.spec);
+  }
 }
+const tmp = new Vector3();
 
-const Effects = () => {
-  const fx = useMemo(() => new OilEffect(), []);
+export function OilEffects() {
+  const fx = useMemo(() => { const e = new OilEffect(); e.ease(1); return e; }, []);
   useEffect(() => () => fx.dispose(), [fx]);
-  useFrame((state) => {
-    fx.setTime(world.reduced ? 0 : world.time);
+  useFrame((state, dt) => {
+    fx.set('uTime', world.reduced ? 0 : world.time);
     // stroke size relative to a 900px-tall viewport, in device pixels
-    fx.setScale(Math.max(1, state.size.height * state.viewport.dpr / 900));
+    fx.set('uScale', Math.max(1, state.size.height * state.viewport.dpr / 900));
+    fx.ease(1 - Math.exp(-Math.min(dt, 0.1) * 5));
   });
   return createElement('primitive', { object: fx });
-};
+}
 
-export const oilStyle: StyleDef = {
-  id: 'oil',
-  name: 'Oil painting',
-  blurb: 'Impasto brush strokes, painterly colour, visible canvas.',
-  Effects,
-  bloomScale: 1.25,
-};
+/** multiplier on the mood-driven bloom intensity */
+export const OIL_BLOOM = 1.25;

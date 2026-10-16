@@ -11,8 +11,10 @@ export function usePrefersReducedMotion(): boolean {
   return r;
 }
 
-/** Follow rate of the eased scroll (1/s): ~0.15 of the remaining distance per 60Hz frame. */
-const FOLLOW = 10;
+/** Follow rate of the eased scroll (1/s): ~0.1 of the remaining distance per 60Hz frame, a long unhurried glide. */
+const FOLLOW = 6.5;
+/** Track pixels per wheel pixel. Below 1 so a flick of the wheel or trackpad covers less of the story. */
+const WHEEL_GAIN = 0.8;
 
 /** Maps wheel + mouse drag to horizontal scroll with easing; touch and keys stay native/explicit. */
 export function useSmoothScroll(ref: RefObject<HTMLElement | null>, reduced: boolean) {
@@ -97,7 +99,7 @@ export function useSmoothScroll(ref: RefObject<HTMLElement | null>, reduced: boo
       if (!d) return;
       e.preventDefault();
       const base = animating.current ? target.current : pos.current;
-      scrollToX(base + d * 1.25);
+      scrollToX(base + d * WHEEL_GAIN);
     };
     const onScroll = () => {
       // a scroll we didn't cause (drag, scrollbar, programmatic): adopt it as the new truth

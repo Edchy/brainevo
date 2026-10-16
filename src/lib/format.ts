@@ -25,3 +25,14 @@ export function tickLabel(y: number): string {
   if (y >= 1e3) return `${nf(y / 1e3)} kya`;
   return `${nf(y)} ya`;
 }
+
+/**
+ * A date label as the opening words of a sentence: "~430 million years ago" -> "About 430 million years ago",
+ * "~3.5 billion years ago (approx.)" -> "About 3.5 billion years ago", "Now" -> "Today".
+ */
+export function fmtWhen(label: string): string {
+  let s = label.trim().replace(/\s*\(approx\.?\)\s*$/i, '');
+  if (/^now$/i.test(s)) return 'Today';
+  s = s.replace(/^~\s*/, 'About ').replace(/^about\b/, 'About').replace(/^c\.\s*/, 'Around ');
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}

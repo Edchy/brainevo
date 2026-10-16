@@ -1,31 +1,24 @@
 /**
- * Depth-sandwiched headlines: huge type composited INTO the frame using the scene depth buffer. Geometry nearer
- * than the title plane occludes the type; the background and farther geometry sit behind it.
+ * Depth-sandwiched headlines: type composited INTO the frame using the scene depth buffer. Geometry nearer than the
+ * title plane occludes the type; the background and farther geometry sit behind it. The headline is deliberately
+ * secondary: a modest size, placed by art direction (SceneDef.titleAnchor / anchors.ts) in the part of the frame the
+ * hero is not in, so the picture leads and the type only now and then slips behind it.
  *
- * Theme knobs (CSS custom properties, read from <html>): --ui-font-display, --title-color ("accent" = era accent),
- * --title-opacity (0..1), --title-blend (normal | screen | add), --title-weight, --title-transform, --title-align
- * (center | left), --title-spacing (em, letter spacing), --title-size (multiplier), --title-parallax (frame widths per
- * station, default 0.8), --title-y (0..1 vertical centre, default 0.4), --title-softness (depth edge, 0..1),
- * --title-key (0..1: how strongly bright pixels with no depth, e.g. additive particles, occlude the type).
- * --title-placement (fixed | art; "art" places each headline using SceneDef.titleAnchor / the table in anchors.ts so the
- * type sits clear of the scene's hero, default fixed = always --title-y / --title-align),
- * --title-kicker-opacity / --title-year-opacity (0..1, 0 hides the line, default 0.85),
- * --title-kicker-mode (all | era: only on the first event of an era, default all).
+ * Theme knobs (CSS custom properties, read from <html>): --title-font, --title-color, --title-opacity (0..1),
+ * --title-blend (normal | screen | add), --title-weight, --title-spacing (em), --title-size (fraction of the frame
+ * height for a regular event; a chapter's first event is 1.18x), --title-parallax (frame widths per station),
+ * --title-softness (depth edge, 0..1), --title-key (0..1: how strongly bright pixels with no depth, e.g. additive
+ * particles, occlude the type), --title-shadow (0..1 soft dark halo under the letters, for legibility).
  */
 import { useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { BlendFunction, Effect, EffectAttribute } from 'postprocessing';
 import * as THREE from 'three';
 import { events } from '../../data';
-import { ERA_META } from '../../lib/eras';
 import { world } from '../../world/store';
 import { titleState } from './state';
-import { resolveAnchor, type TitleAnchor } from './anchors';
-
-const BREAKTHROUGH: Record<string, string> = {
-  steering: 'Breakthrough 1 · Steering', reinforcing: 'Breakthrough 2 · Reinforcing',
-  simulating: 'Breakthrough 3 · Simulating', mentalizing: 'Breakthrough 4 · Mentalizing', speaking: 'Breakthrough 5 · Speaking',
-};
+import { resolveAnchor } from './anchors';
+import { getSettings } from '../store';
 
 const FRAG = /* glsl */ `
 uniform sampler2D uTex;
@@ -54,6 +47,10 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth,
   float dist = depth > 0.99995 ? 1e5 : -getViewZ(depth);
   float e = uSoft * uDepth + 0.02;
   float vis = smoothstep(uDepth - e, uDepth + e, dist);
+  // only lit things step in front of the words: dark ground or haze nearer than the title plane (common at the bottom
+  // of the frame, where the headline sits with the text) must not swallow it; a lit creature or brain still does
+  float occLum = dot(inputColor.rgb, vec3(0.299, 0.587, 0.114));
+  vis = mix(1.0, vis, smoothstep(0.03, 0.12, occLum));
   // many scenes are additive particles that write no depth: for those pixels fall back to a luminance key, so bright
   // glowing things still cut in front of the type and only the dark background sits behind it
   float lum = dot(inputColor.rgb, vec3(0.299, 0.587, 0.114));
@@ -87,98 +84,105 @@ class TitleEffect extends Effect {
 }
 
 interface Theme {
-  family: string; color: string; weight: string; upper: boolean; align: string; spacing: number; size: number;
-  opacity: number; key: number; mode: number; parallax: number; y: number; soft: number;
-  art: boolean; kickerOpacity: number; yearOpacity: number; kickerEra: boolean;
+  family: string; color: string; weight: string; spacing: number; size: number;
+  opacity: number; key: number; mode: number; parallax: number; soft: number; shadow: number;
+  /** headline set with the text: left edge and measure as fractions of the frame width */
+  withText: { x: number; measure: number } | null;
+  version: number;
 }
 
 function readTheme(): Theme {
   const cs = getComputedStyle(document.documentElement);
   const v = (n: string, d: string) => cs.getPropertyValue(n).trim() || d;
-  const blend = v('--title-blend', 'screen');
+  const blend = v('--title-blend', 'normal');
   return {
-    family: v('--ui-font-display', 'Georgia, serif'),
+    family: v('--title-font', v('--ui-font-display', 'Georgia, serif')),
     color: v('--title-color', '#ffffff'),
-    weight: v('--title-weight', '700'),
-    upper: v('--title-transform', 'none') === 'uppercase',
-    align: v('--title-align', 'center'),
-    spacing: parseFloat(v('--title-spacing', '-0.02')),
-    size: parseFloat(v('--title-size', '1')),
+    weight: v('--title-weight', '500'),
+    spacing: parseFloat(v('--title-spacing', '0')),
+    size: parseFloat(v('--title-size', '0.07')),
     opacity: parseFloat(v('--title-opacity', '0.92')),
     key: parseFloat(v('--title-key', '0.85')),
     mode: blend === 'normal' ? 0 : blend === 'add' ? 2 : blend === 'debug' ? 3 : 1,
-    parallax: parseFloat(v('--title-parallax', '0.8')),
-    y: parseFloat(v('--title-y', '0.4')),
-    soft: parseFloat(v('--title-softness', '0.04')),
-    art: v('--title-placement', 'fixed') === 'art',
-    kickerOpacity: parseFloat(v('--title-kicker-opacity', '0.85')),
-    yearOpacity: parseFloat(v('--title-year-opacity', '0.85')),
-    kickerEra: v('--title-kicker-mode', 'all') === 'era',
+    parallax: parseFloat(v('--title-parallax', '0.3')),
+    soft: parseFloat(v('--title-softness', '0.4')),
+    shadow: parseFloat(v('--title-shadow', '0.5')),
+    withText: getSettings().headline === 'text' && titleState.measure > 0
+      ? { x: titleState.left / titleState.canvasW, measure: titleState.measure / titleState.canvasW }
+      : null,
+    version: titleState.version,
   };
 }
 
+/** greedy wrap, then rebalance so the last line is not a stub (balanced headings) */
 function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
   const words = text.split(/\s+/);
-  const lines: string[] = [];
-  let cur = '';
-  for (const w of words) {
-    const t = cur ? cur + ' ' + w : w;
-    if (cur && ctx.measureText(t).width > maxW) { lines.push(cur); cur = w; } else cur = t;
-  }
-  if (cur) lines.push(cur);
-  return lines;
+  const greedy = (w: number) => {
+    const lines: string[] = [];
+    let cur = '';
+    for (const word of words) {
+      const t = cur ? cur + ' ' + word : word;
+      if (cur && ctx.measureText(t).width > w) { lines.push(cur); cur = word; } else cur = t;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  };
+  const lines = greedy(maxW);
+  if (lines.length < 2) return lines;
+  // shrink the measure while the line count holds: evens out line lengths
+  let lo = maxW * 0.5, hi = maxW;
+  for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (greedy(m).length > lines.length) lo = m; else hi = m; }
+  return greedy(hi);
 }
 
-function drawSlot(ctx: CanvasRenderingContext2D, W: number, H: number, idx: number, th: Theme, accent: string) {
+function drawSlot(ctx: CanvasRenderingContext2D, W: number, H: number, idx: number, th: Theme) {
   const ev = events[idx];
   if (!ev) return;
   const eraStart = !events[idx - 1] || events[idx - 1].era !== ev.era;
-  const font = (px: number, w = th.weight) => `${w} ${px}px ${th.family}`;
-  const text = th.upper ? ev.title.toUpperCase() : ev.title;
-  const color = th.color === 'accent' ? accent : th.color;
-  const an: TitleAnchor = th.art
-    ? resolveAnchor(idx)
-    : { x: th.align === 'left' ? 0.05 : 0.5, y: th.y, align: th.align === 'left' ? 'left' : 'center', size: 1 };
+  const font = (px: number) => `${th.weight} ${px}px ${th.family}`;
+  const wt = th.withText;
+  const an = wt ? { x: wt.x, y: 0, align: 'left' as const, size: 1 } : resolveAnchor(idx);
   const side = an.align !== 'center';
-  const maxW = W * (side ? Math.min(0.4, an.align === 'left' ? 0.94 - an.x : an.x - 0.06) : 0.9);
-  const cap = H * (eraStart ? 0.34 : 0.27) * th.size * (an.size ?? 1);
-  // largest size (<= cap) such that the text fits in <= 3 lines and the block is at most ~0.62 H tall
+  const maxW = wt ? W * wt.measure : W * (side ? Math.min(0.42, an.align === 'left' ? 0.94 - an.x : an.x - 0.06) : 0.6);
+  const cap = H * th.size * (eraStart ? 1.12 : 1) * (an.size ?? 1);
+  // largest size (<= cap) that fits in two lines, else three, within the measure
   let px = cap, lines: string[] = [];
-  for (; px > H * 0.05; px *= 0.94) {
+  for (; px > H * 0.03; px *= 0.95) {
     ctx.font = font(px);
     ctx.letterSpacing = `${th.spacing * px}px`;
-    lines = wrap(ctx, text, maxW);
+    lines = wrap(ctx, ev.title, maxW);
     const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
-    if (lines.length <= 3 && widest <= maxW && lines.length * px * 0.96 <= H * 0.62) break;
+    if (widest <= maxW && (lines.length <= 2 || (lines.length === 3 && px < cap * 0.8))) break;
   }
-  const lh = px * 0.96;
+  const lh = px * 1.04;
   const total = lines.length * lh;
-  const cy = H * an.y;
   const x = W * an.x;
+  // with the text: the block grows upward from just above this event's caption (or from the band's edge)
+  let top = Math.max(H * 0.07, H * an.y - total / 2);
+  if (wt) {
+    const capH = titleState.capHeights[idx] ?? 0;
+    const base = titleState.baseline > 0 ? titleState.baseline : titleState.capBottom - capH - Math.max(10, px * 0.22);
+    top = (base / titleState.canvasH) * H - (lines.length - 1) * lh - 0.8 * lh;
+  }
   ctx.textAlign = an.align;
   ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = color;
   ctx.font = font(px);
   ctx.letterSpacing = `${th.spacing * px}px`;
-  const top = Math.max(H * 0.07, cy - total / 2); // never ride up into the top edge
-  lines.forEach((l, i) => ctx.fillText(l, x, top + (i + 0.82) * lh));
-  // kicker (era / breakthrough) above, year label below; both optional (theme opacity 0 hides them)
-  const small = Math.max(14, H * 0.026);
-  const era = ERA_META[ev.era].name.toUpperCase();
-  const kicker = eraStart ? era : ev.breakthrough ? BREAKTHROUGH[ev.breakthrough].toUpperCase() : era;
-  if (th.kickerOpacity > 0.01 && (!th.kickerEra || eraStart)) {
-    ctx.font = font(small, '600');
-    ctx.letterSpacing = `${small * 0.32}px`;
-    ctx.globalAlpha = th.kickerOpacity;
-    ctx.fillText(kicker, x, top - small * 0.9);
+  // a soft dark halo keeps the letters legible over busy paint without a visible box
+  // (the glyphs are drawn far off-canvas and only their shadow is thrown back into place: a canvas shadow is as opaque
+  // as the shape casting it, so a transparent fill would cast nothing)
+  if (th.shadow > 0) {
+    const OFF = 30000;
+    ctx.save();
+    ctx.shadowColor = `rgba(0,0,0,${Math.min(1, 0.85 * th.shadow)})`;
+    ctx.shadowBlur = px * 0.45;
+    ctx.shadowOffsetX = OFF;
+    ctx.fillStyle = '#000';
+    lines.forEach((l, i) => ctx.fillText(l, x - OFF, top + (i + 0.8) * lh));
+    ctx.restore();
   }
-  if (th.yearOpacity > 0.01) {
-    ctx.font = font(small * 1.25, '500');
-    ctx.letterSpacing = `${small * 0.18}px`;
-    ctx.globalAlpha = th.yearOpacity;
-    ctx.fillText(ev.yearLabel.toUpperCase(), x, top + total + small * 2.1);
-  }
-  ctx.globalAlpha = 1;
+  ctx.fillStyle = th.color;
+  lines.forEach((l, i) => ctx.fillText(l, x, top + (i + 0.8) * lh));
 }
 
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -227,7 +231,6 @@ export default function TitleLayer() {
     const th = st.theme!;
     const last = events.length - 1;
     const c = Math.round(Math.min(last, Math.max(0, f)));
-    const accent = ERA_META[events[c].era].accent;
     if (c !== st.center || st.dirty) {
       st.center = c; st.dirty = false;
       const ctx = canvas.getContext('2d')!;
@@ -237,7 +240,7 @@ export default function TitleLayer() {
         ctx.save();
         ctx.beginPath(); ctx.rect(0, k * H, W, H); ctx.clip();
         ctx.translate(0, k * H);
-        drawSlot(ctx, W, H, c + k - 1, th, accent);
+        drawSlot(ctx, W, H, c + k - 1, th);
         ctx.restore();
       }
       st.tex!.needsUpdate = true;

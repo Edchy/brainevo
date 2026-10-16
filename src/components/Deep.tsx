@@ -19,23 +19,30 @@ export function BrainVolume({ cc }: { cc: number }) {
   );
 }
 
-/** The deeper content of an event: shared by the tidy card's expander and the overlay sheet. */
+/** The deeper content of an event, shown in the Read more sheet. */
 export default function DeepContent({ event }: { event: TimelineEvent }) {
   return (
     <div className="deep-body">
+      <h3>For the brain</h3>
       <p className="significance">{event.brainSignificance}</p>
       {event.details && <p className="detail">{event.details}</p>}
       {event.brainVolumeCc != null && <BrainVolume cc={event.brainVolumeCc} />}
       {event.audio?.transcript && (
         <details className="transcript">
-          <summary>Narration transcript</summary>
+          <summary>Narration script</summary>
           <p>{event.audio.transcript}</p>
         </details>
       )}
-      {event.tags && event.tags.length > 0 && (
-        <ul className="tags" aria-label="Key terms">
-          {event.tags.map((t) => <li key={t}>{t}</li>)}
-        </ul>
+      {event.tags && event.tags.length > 0 && <p className="tags">{event.tags.join(' · ')}</p>}
+      {event.sources && event.sources.length > 0 && (
+        <>
+          <h3>Sources</h3>
+          <ul className="sources">
+            {event.sources.map((s) => (
+              <li key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.label}</a></li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

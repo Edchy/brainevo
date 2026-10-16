@@ -6,11 +6,12 @@ import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
 import type { BloomEffect } from 'postprocessing';
 import * as THREE from 'three';
 import { SCENES } from '../scenes';
-import { STYLE_DEFS } from '../style/registry';
-import { getSettings, useSettings } from '../style/store';
+import { useSettings } from '../style/store';
+import { OIL_BLOOM, OilEffects } from '../style/oil';
 import TitleLayer from '../style/titles';
 import PerfHud from './PerfHud';
 import Dip from './Dip';
+import Scrim from './Scrim';
 import { titleState } from '../style/titles/state';
 import Ambient from '../scenes/Ambient';
 import { SceneCtx } from './context';
@@ -100,22 +101,20 @@ function sanitizeBloom(b: BloomEffect | null) {
 }
 
 const PostFX = memo(function PostFX({ bloom }: { bloom: RefObject<BloomEffect | null> }) {
-  if (import.meta.env.DEV) (window as unknown as Record<string, number>).__postRenders = ((window as unknown as Record<string, number>).__postRenders ?? 0) + 1;
-  const { style, titles } = useSettings();
-  const StyleEffects = STYLE_DEFS[style].Effects;
+  const { titles } = useSettings();
   return (
     <EffectComposer multisampling={0}>
       <Bloom ref={(b) => { bloom.current = b; sanitizeBloom(b); }} intensity={0.5} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
       <Vignette eskil={false} offset={0.2} darkness={0.7} />
       <Dip />
+      <Scrim />
+      <OilEffects />
       {titles ? <TitleLayer /> : <></>}
-      <StyleEffects />
     </EffectComposer>
   );
 });
 
 function World() {
-  if (import.meta.env.DEV) (window as unknown as Record<string, number>).__worldRenders = ((window as unknown as Record<string, number>).__worldRenders ?? 0) + 1;
   const resolved = useMemo(resolve, []);
   const advance = useThree((s) => s.advance);
   const getState = useThree((s) => s.get);
@@ -202,7 +201,7 @@ function World() {
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov += (fov - cam.fov) * k; cam.updateProjectionMatrix(); }
 
     (state.scene.background as THREE.Color).lerp(bg.multiplyScalar(1 / moodW), k);
-    if (bloom.current) bloom.current.intensity += (bl / moodW * (STYLE_DEFS[getSettings().style].bloomScale ?? 1) - bloom.current.intensity) * k;
+    if (bloom.current) bloom.current.intensity += (bl / moodW * OIL_BLOOM - bloom.current.intensity) * k;
 
     // Hand-off depth: the weaker of the two leading scenes relative to an even split (1 at the crossfade midpoint).
     // Scenes flagged `layer` continue the previous shot and never dip.

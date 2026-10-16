@@ -41,4 +41,12 @@ export interface TimelineEvent {
   audio?: { src: string; transcript?: string };
   /** Key-term chips */
   tags?: string[];
+  /** Where the claims come from: checked references, shown under "Sources" in the expanded view */
+  sources?: Source[];
+}
+
+export interface Source {
+  /** short human label, e.g. "Planck Collaboration (2020), Astronomy & Astrophysics" */
+  label: string;
+  url: string;
 }

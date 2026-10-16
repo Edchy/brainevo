@@ -1,29 +1,28 @@
-import type { ComponentType } from 'react';
-
-export type StyleId = 'mono' | 'original' | 'ink' | 'specimen' | 'signal' | 'cartoon' | 'oil';
-export type UiVariant = 'minimal' | 'hud' | 'tidy';
-
-export interface StyleDef {
-  id: StyleId;
-  name: string;
-  blurb: string;
-  /**
-   * Post-processing for this look, rendered inside the EffectComposer AFTER bloom (and after the title layer).
-   * Return react-postprocessing effects (e.g. `<primitive object={effect} />` or wrapEffect components). Must be
-   * switchable at runtime. May read `world` (scroll velocity etc.) in useFrame to animate uniforms.
-   */
-  Effects: ComponentType;
-  /** multiplier on the mood-driven bloom intensity (default 1) */
-  bloomScale?: number;
-  /** clear colour tint multiplier / extra: optional, 0..1 mix of scene background toward `bg` */
-  bg?: string;
-}
+/** Colour worlds of the oil painting (ground, cast and grade). See palettes.ts. */
+export type PaletteId = 'prussian' | 'grisaille' | 'umber' | 'verdigris' | 'oxblood';
+/** Brushwork: 'fine' keeps detail, 'full' paints with broad, heavily loaded strokes. */
+export type BrushId = 'fine' | 'full';
+/**
+ * Where the reading text sits: 'scrim' darkens the painting's lower ground under the caption, 'band' gives the text its
+ * own dark strip under the picture, 'overlay' sets it straight on the picture.
+ */
+export type TextLayout = 'scrim' | 'band' | 'overlay';
+/** Where the depth headline sits: just above the reading text (one block, lower left), or art-directed per scene (top). */
+export type HeadlinePlace = 'text' | 'top';
 
 export interface Settings {
-  style: StyleId;
-  ui: UiVariant;
+  palette: PaletteId;
+  brush: BrushId;
+  text: TextLayout;
   /** depth-sandwiched headlines on/off */
   titles: boolean;
-  /** show the Lab panel (always on while experimenting) */
+  headline: HeadlinePlace;
+  /** show the Lab panel (palette / brush / text experiments) */
   lab: boolean;
+  /** master sound switch (narration + music). Off until the visitor turns it on: browsers block audio before a gesture. */
+  sound: boolean;
+  narration: boolean;
+  music: boolean;
+  /** read the transcript with the system voice when an event has no recorded narration yet */
+  previewVoice: boolean;
 }
