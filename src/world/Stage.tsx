@@ -1,4 +1,4 @@
-import { Suspense, memo, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, memo, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
@@ -14,7 +14,9 @@ import Dip from './Dip';
 import Scrim from './Scrim';
 import { titleState } from '../style/titles/state';
 import Ambient from '../scenes/Ambient';
-import BrainLab from '../scenes/shared/brain/BrainLab';
+// dev-only tools, loaded on demand; in production builds the dead branch drops them from the bundle entirely
+const BrainLab = import.meta.env.DEV ? lazy(() => import('../scenes/shared/brain/BrainLab')) : null;
+const CreatureDemo = import.meta.env.DEV ? lazy(() => import('../scenes/shared/creatures/CreatureDemo')) : null;
 import { SceneCtx } from './context';
 import { world } from './store';
 import { clamp01, smoothstep } from './util';
@@ -195,6 +197,10 @@ function World() {
     td += 6 * TITLE_PLANE * rest;
     const norm = sumW + rest || 1;
     p.divideScalar(norm); l.divideScalar(norm); fov /= norm;
+    // portrait screens: scenes are composed for landscape and three's fov is vertical, so a tall narrow canvas would crop
+    // the hero at the sides. Keep at least the horizontal view of a square frame.
+    const aspect = state.size.width / Math.max(1, state.size.height);
+    if (aspect < 1) fov = Math.min(100, (2 * Math.atan(Math.tan((fov * Math.PI) / 360) / aspect) * 180) / Math.PI);
     titleState.depth += (td / norm - titleState.depth) * (1 - Math.exp(-dt * 14));
     bl += 0.5 * (1 - Math.min(1, moodW)); moodW = Math.max(moodW, 1);
 
@@ -220,8 +226,9 @@ function World() {
     <>
       <color attach="background" args={['#000000']} />
       <Ambient weight={ambientW} />
-      {BRAINLAB && <BrainLab stage={BRAINLAB} />}
-      {!BRAINLAB && resolved.filter((r) => mounted.includes(r.def.id)).map((r) => (
+      {BRAINLAB && BrainLab && <Suspense fallback={null}><BrainLab stage={BRAINLAB} /></Suspense>}
+      {CREATURES && CreatureDemo && <Suspense fallback={null}><CreatureDemo kind={CREATURES === 'biped' || ['sapiens', 'erectus', 'lucy', 'sahelanthropus'].includes(CREATURES) ? 'biped' : 'quadruped'} solo={['quadruped', 'biped'].includes(CREATURES) ? undefined : CREATURES} /></Suspense>}
+      {!BRAINLAB && !CREATURES && resolved.filter((r) => mounted.includes(r.def.id)).map((r) => (
         <group key={r.def.id} visible={false} ref={(g) => { groups.current[r.def.id] = g; }}>
           <SceneCtx.Provider value={r.state}>
             <Suspense fallback={null}><r.def.Component /></Suspense>
@@ -246,6 +253,8 @@ const PERF = QS.get('perf') === '1';
 const DPR_OVERRIDE = Number(QS.get('dpr')) || 0;
 // dev: ?brainlab=fish renders the brain turntable instead of the timeline (src/scenes/shared/brain/BrainLab.tsx)
 const BRAINLAB = import.meta.env.DEV ? QS.get('brainlab') : null;
+// dev: ?creatures=quadruped | biped | <preset> renders the creature-toolkit lineup instead of the timeline
+const CREATURES = import.meta.env.DEV ? QS.get('creatures') : null;
 
 export default function Stage() {
   const [level, setLevel] = useState(0);

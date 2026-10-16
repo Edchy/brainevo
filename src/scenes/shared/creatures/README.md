@@ -84,8 +84,8 @@ to change species continuously (Sahelanthropus -> Ardipithecus, Neanderthal -> D
 
 ## Demo (dev only)
 
-`?creatures=quadruped` (or `biped`, or a single preset name such as `?creatures=lucy`) swaps the Cynodont scene (event 27) for
-a lineup. In the console: `window.__creatureDemo = { walk: 1, phase: 0.3, free: false }` (`free: true` = phase runs with time).
+`?creatures=quadruped` (or `biped`, or a single preset name such as `?creatures=lucy`) renders a lineup instead of the
+timeline (wired in `src/world/Stage.tsx`, dev builds only). Scroll a little way in so the intro does not cover it. In the console: `window.__creatureDemo = { walk: 1, phase: 0.3, free: false }` (`free: true` = phase runs with time).
 
 ## Performance notes
 

@@ -30,7 +30,6 @@ const DEPTH = 0.88;
 
 export default function Dip() {
   const effect = useMemo(() => new DipEffect(), []);
-  if (import.meta.env.DEV) (window as unknown as { __dip?: DipEffect }).__dip = effect;
   useFrame(() => {
     // already deep by the time a second scene is a third of the frame, so the double exposure is never seen in full.
     // A pure function of the (already eased) scroll position, so it scrubs exactly and holds still when paused.

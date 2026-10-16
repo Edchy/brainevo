@@ -38,7 +38,7 @@ export const cosmicScenes: SceneDef[] = [
       const f = world.stationF;
       const a = smoothstep(1.1, 2.0, f), b = smoothstep(2.0, 2.2, f), c = smoothstep(2.25, 2.7, f);
       const p = [lerp(0, 0, a), lerp(3, 0.4, a), lerp(14, 6, a)];
-      const x = lerp(p[0], 1.8, b) * (1 - c) + 0 * c;
+      const x = lerp(p[0], 1.8, b) * (1 - c);
       const y = lerp(p[1], 1.0, b) * (1 - c) + 0.2 * c;
       const z = lerp(p[2], 8.5, b) * (1 - c) + 5.2 * c;
       return { pos: [x, y, z], look: [0, 0, 0], fov: 55 };

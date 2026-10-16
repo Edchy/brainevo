@@ -429,7 +429,7 @@ export const hominEvents: TimelineEvent[] = [
   {
     breakthrough: 'speaking',
     id: 'denisovans',
-    yearsAgo: 310_000,
+    yearsAgo: 325_000,
     yearLabel: '~400,000 to 50,000 years ago',
     era: 'hominin',
     title: 'Denisovans',

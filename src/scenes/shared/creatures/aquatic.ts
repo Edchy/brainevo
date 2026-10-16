@@ -1378,7 +1378,7 @@ function solveBacterium(S: AquaSet, K: AquaParams, st: AquaState) {
       const s = j / 8, seg = Lf / 8;
       const bR = 0.09 * r * 2.2 * Math.min(1, s * 2.2);
       const wob = TAU * (2.4 * s - phase) + a;
-      const bx = ax - s * Lf * (1 - 0.15 * Math.sin(a)), by = Math.cos(wob) * bR * 0.6 + (1 - Math.min(1, s * 3)) * ay * 0.0, bz = Math.sin(wob) * bR * 0.6;
+      const bx = ax - s * Lf * (1 - 0.15 * Math.sin(a)), by = Math.cos(wob) * bR * 0.6, bz = Math.sin(wob) * bR * 0.6;
       const fx = ax + fdir[0] / fl * s * Lf * 0.75 + Math.sin(t * 5 + a * 3 + s * 6) * 0.03 * Lf * s, fy = ay + fdir[1] / fl * s * Lf * 0.7 + Math.cos(wob) * 0.05 * Lf * s, fz = az + fdir[2] / fl * s * Lf * 0.7 + Math.sin(wob) * 0.05 * Lf * s;
       const nx = lerp(bx, fx, tum * Math.min(1, 0.4 + s)), ny = lerp(by, fy, tum * Math.min(1, 0.4 + s)), nz = lerp(bz, fz, tum * Math.min(1, 0.4 + s));
       const fx0 = j === 1 ? ax : px;

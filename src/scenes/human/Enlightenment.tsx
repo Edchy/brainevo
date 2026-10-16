@@ -266,7 +266,7 @@ export default function Enlightenment() {
     // the screw turns with the scroll; a stroke every ~0.5 station, eased
     const stroke = (range(e76 - 0.35, e76 + 0.95, f)) * 3.0;
     const cyc = stroke - Math.floor(stroke);
-    const pressDown = Math.sin(Math.min(1, cyc * 1.6) * Math.PI) * 0.5 + 0.5 * 0;
+    const pressDown = Math.sin(Math.min(1, cyc * 1.6) * Math.PI) * 0.5;
     press.uniforms.uDown.value = pressDown * range(e76 - 0.5, e76 - 0.2, f);
     press.uniforms.uTurn.value = (range(e76 - 0.5, e76 + 0.95, f)) * 14 + pressDown * 3;
     press.uniforms.uPage.value = stroke > 0.6 ? 1 : 0;

@@ -136,7 +136,7 @@ export default function Agriculture() {
       const rz = (row / (rows - 1) - 0.5) * 2 * FD;
       const x = (rr() - 0.5) * 2 * FW;
       const z = rz + (rr() - 0.5) * 0.08;
-      ai[i * 4] = x; ai[i * 4 + 1] = z; ai[i * 4 + 2] = 0.95 + rr() * 0.4 + (1 - Math.abs(z) / FD) * 0.0; ai[i * 4 + 3] = rr();
+      ai[i * 4] = x; ai[i * 4 + 1] = z; ai[i * 4 + 2] = 0.95 + rr() * 0.4; ai[i * 4 + 3] = rr();
       ar[i * 2] = ((x + FW) / (2 * FW)) * 0.35 + rr() * 0.04 + ((z + FD) / (2 * FD)) * 0.1;
       ar[i * 2 + 1] = rr() * 6.283;
     }

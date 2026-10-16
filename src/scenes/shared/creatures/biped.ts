@@ -337,7 +337,7 @@ export function solveBiped(ps: PrimSet, Q: BipedParams, st: RigState) {
 
   // ---- trunk --------------------------------------------------------------------------------------------------------------
   const px = -0.1 * crouch, py = pelvisY + 0.03, pz = sway * 0.6;
-  const yawC = -1.1 * rotY + st.twist + 0.75 * sw - (st.strike - 0.5) * 0.0;
+  const yawC = -1.1 * rotY + st.twist + 0.75 * sw;
   setSpine(PV, px, py, pz, lean * 0.8, rotY);
   const hh = Q.hipHalf, pr = (Q.chestD * 0.78 + 0.01);
   fp(PV, -0.005, 0.0, -(hh * 0.75 + Q.pelvisW), A); fp(PV, -0.005, 0.0, hh * 0.75 + Q.pelvisW, Bv);

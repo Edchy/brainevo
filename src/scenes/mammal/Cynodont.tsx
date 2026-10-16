@@ -5,7 +5,6 @@ import { useScene } from '../../world/context';
 import { world } from '../../world/store';
 import { near, eventPos, rng, smoothstep } from '../../world/util';
 import Critter, { SHAPES } from './Critter';
-import CreatureDemo from '../shared/creatures/CreatureDemo';
 import { GLSL_NOISE, pointMaterial, pointScale, silhouetteMaterial } from './kit';
 
 // One cynodont, rim-lit against black. Its edge warms from cold steel to ember-white as the animal turns endothermic;
@@ -22,7 +21,6 @@ void main(){
 }`;
 const FLOOR_VERT = /* glsl */ `varying vec3 vWp; void main(){ vec4 w = modelMatrix*vec4(position,1.); vWp=w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`;
 
-const DEMO = import.meta.env.DEV && typeof location !== 'undefined' ? new URLSearchParams(location.search).get('creatures') : null;
 
 export default function Cynodont() {
   const scene = useScene();
@@ -80,8 +78,7 @@ export default function Cynodont() {
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.92, -6]} material={floor}><planeGeometry args={[60, 30]} /></mesh>
-      {DEMO && <CreatureDemo kind={DEMO === 'biped' || ['sapiens', 'erectus', 'lucy', 'sahelanthropus'].includes(DEMO) ? 'biped' : 'quadruped'} solo={['quadruped', 'biped'].includes(DEMO) ? undefined : DEMO} />}
-      <group ref={cyno} visible={!DEMO}><Critter mat={body} shape={SHAPES.cyno} walk={1} /></group>
+      <group ref={cyno}><Critter mat={body} shape={SHAPES.cyno} walk={1} /></group>
       <points geometry={motes.g} material={motes.m} frustumCulled={false} />
     </group>
   );

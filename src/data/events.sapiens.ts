@@ -4,7 +4,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
   {
     breakthrough: 'speaking',
     id: 'jebel-irhoud-sapiens',
-    yearsAgo: 300000,
+    yearsAgo: 315_000,
     yearLabel: "~315,000 years ago",
     era: 'sapiens',
     title: 'The Earliest Homo sapiens',
