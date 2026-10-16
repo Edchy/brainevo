@@ -71,8 +71,9 @@ export default function Menu({ layout, onGo }: Props) {
             <summary>About</summary>
             <p>
               Organised around the five &ldquo;breakthroughs&rdquo; framework from Max Bennett&rsquo;s <em>A Brief History of Intelligence</em> (2023).
-              Any mistakes in the retelling are ours, not his. Each event lists its sources under Read more; dates for deep time are estimates
-              with real uncertainty, and some are still debated.
+              Any mistakes in the retelling are ours, not his. Each breakthrough is dated by the fossil record of the animal group he ties it
+              to. Every event lists its sources under Read more; dates for deep time are estimates with real uncertainty, and some are
+              still debated.
             </p>
             <p>Every picture is painted live in your browser from code. The music is generated live too.</p>
             <p>{ABOUT_KEYS}</p>

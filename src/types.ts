@@ -11,11 +11,11 @@ export type Era =
 
 /** Narrative spine, after Max Bennett, "A Brief History of Intelligence" (2023). */
 export type Breakthrough =
-  | 'steering'     // 1: bilaterians, valence-based navigation (~550 Mya)
-  | 'reinforcing'  // 2: vertebrates, reinforcement learning (~500 Mya)
-  | 'simulating'   // 3: mammals, neocortex, world model (~100 Mya)
-  | 'mentalizing'  // 4: primates, theory of mind (~30 Mya)
-  | 'speaking';    // 5: humans, language (~100 kya)
+  | 'steering'     // 1: the first bilaterians, valence-based navigation (>550 Mya)
+  | 'reinforcing'  // 2: the first vertebrates, reinforcement learning (~520 Mya)
+  | 'simulating'   // 3: the first mammals, neocortex, world model (>200 Mya)
+  | 'mentalizing'  // 4: the first primates, modelling minds (~60 Mya)
+  | 'speaking';    // 5: the first humans (genus Homo), language
 
 export interface TimelineEvent {
   /** Which of the five breakthroughs this event belongs to; absent for pre-brain events */

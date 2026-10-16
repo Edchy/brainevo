@@ -1,6 +1,6 @@
 # Narration script: Evolution of the Brain
 
-84 lines, 3,112 words, about 21 minutes at 150 words a minute.
+84 lines, 3,121 words, about 21 minutes at 150 words a minute.
 Generated from the event data by `npx tsx scripts/narration.ts export`; edit the text in `src/data/`, not here.
 
 ## How to record
@@ -32,7 +32,7 @@ Pace about 150 words a minute. The listener is scrolling through deep time; each
 
 **00 · `big-bang.mp3`** · The Big Bang
 
-Around 13.8 billion years ago, the universe began expanding from an unimaginably hot, dense state. Within minutes it had forged hydrogen and helium. Every hydrogen atom in your brain was made in that first moment.
+Around 13.8 billion years ago, the universe began expanding from an unimaginably hot, dense state. Within minutes it had forged the nuclei of hydrogen and helium. Nearly all the hydrogen in your brain is that old.
 
 **01 · `first-stars-heavy-elements.mp3`** · First Stars and Heavy Elements
 
@@ -44,13 +44,13 @@ About 4.54 billion years ago, a cloud of gas and dust collapsed to form the Sun 
 
 **03 · `oceans-prebiotic-chemistry.mp3`** · Oceans and Prebiotic Chemistry
 
-As Earth cooled, oceans formed, and simple molecules began to combine into amino acids, nucleotides and fatty lipids. Lipids naturally curl into bubbles, tiny compartments that would one day wrap every living cell.
+As Earth cooled, oceans formed, and simple molecules may have begun to combine into amino acids, nucleotides and fatty lipids. Lipids naturally curl into bubbles, tiny compartments that would one day wrap every living cell.
 
 ### Spark of Life
 
 **04 · `first-life.mp3`** · First Single-Celled Life
 
-Somewhere between 3.8 and 3.5 billion years ago, the first living cells appeared. They were simple bacteria and archaea, but they could already sense chemicals and respond. That is the seed of every nervous system.
+By three and a half billion years ago, and probably much earlier, the first living cells had appeared. They were single cells, but they could already sense chemicals and respond. That is the seed of every nervous system.
 
 **05 · `chemical-signalling.mp3`** · Chemical Signalling
 
@@ -112,9 +112,9 @@ Early vertebrates organized their brains into three parts: the forebrain, the mi
 
 Early in vertebrate history, neurons that release dopamine took on a special job. They fire when things turn out better than expected and fall silent when worse. That teaching signal lets an animal learn which actions lead to good outcomes.
 
-**19 · `lampreys-brain-and-cerebellum.mp3`** · Lampreys, a Cerebellum and Image-Forming Eyes
+**19 · `lampreys-brain-and-cerebellum.mp3`** · Lampreys: Camera Eyes and an Old Brain Plan
 
-Lampreys are living jawless fishes that preserve a very old vertebrate brain design. They have a camera-style eye and a small cerebellum for coordinating movement. Studying them shows that the main vertebrate brain layout arose before jaws did.
+Lampreys are living jawless fishes that preserve a very old vertebrate brain design. They have a camera-style eye and the same basic brain layout we have. Studying them shows that this plan arose before jaws did.
 
 **20 · `basal-ganglia-actor-critic.mp3`** · Basal Ganglia: Actor and Critic
 
@@ -130,15 +130,15 @@ The roof of the vertebrate forebrain is called the pallium. In fishes it handles
 
 **23 · `tetrapods-move-to-land.mp3`** · Tetrapods Move onto Land
 
-About three hundred and seventy-five million years ago, lobe-finned fishes like Tiktaalik began to crawl onto land. Life in air demanded new ways to see, hear and move. The nervous system adapted, with new circuits for walking and for hearing sound through air.
+About three hundred and seventy-five million years ago, fishes like Tiktaalik, with sturdy fins and lungs, were exploring the shallows, and their relatives became the first animals with four limbs. Life in air demanded new ways to see, hear and move.
 
 **24 · `amniotes-first-eggs.mp3`** · Amniotes: Life Free from Water
 
 Amniotes evolved eggs that could survive on land, freeing animals from needing water to reproduce. They spread across dry habitats and soon divided into the reptile and mammal lineages. Their forebrains began to develop the layered structures that would later become the cortex.
 
-**25 · `synapsids.mp3`** · Synapsids Split from Reptile Ancestors
+**25 · `synapsids.mp3`** · Synapsids: Our Branch Splits Off
 
-This is the start of our own branch of the tree. Around 310 million years ago, the synapsids split from the reptile line. Their brains were still small and reptilian, but they held the pallium tissue that would one day become the neocortex.
+This is the start of our own branch of the tree. Around 315 million years ago, the synapsids split from the line that would lead to reptiles and birds. Their brains were still small, but they held the pallium tissue that would one day become the neocortex.
 
 **26 · `reptile-brain-plan.mp3`** · The Reptile Brain Plan
 
@@ -176,7 +176,7 @@ Early mammals developed frontal cortex that connects the new neocortex to the ol
 
 **34 · `kpg-mammal-radiation.mp3`** · Dinosaurs Fall and Mammals Radiate
 
-When the dinosaurs vanished, mammals inherited the Earth. With no giant predators ruling the day, they spread into new habitats and lifestyles. Brains grew and diversified along with them.
+When the dinosaurs vanished, mammals inherited the Earth. They spread into new habitats and lifestyles, and at first their bodies grew faster than their brains. Bigger brains followed millions of years later.
 
 ### Seeing and Social
 
@@ -236,19 +236,19 @@ Three and a half million years ago, hominins walked across wet volcanic ash in w
 
 **48 · `australopithecus-lucy.mp3`** · Australopithecus afarensis and "Lucy"
 
-Lucy was an Australopithecus afarensis who lived in Ethiopia over three million years ago. She walked upright but was just over a metre tall. Her brain, about 400 to 450 cubic centimetres, was still close to a chimpanzee's.
+Lucy was an Australopithecus afarensis who lived in Ethiopia over three million years ago. She walked upright but was just over a metre tall. Her kind had brains of about four to five hundred cubic centimetres, still close to a chimpanzee’s.
 
 **49 · `oldowan-tools.mp3`** · The First Stone Tools: Oldowan
 
-About two and a half million years ago, hominins in Africa began striking flakes off stones to make sharp edges. Even this simple craft needs planning and precise hands. The meat these tools unlocked fed a hungry, growing brain.
+Nearly three million years ago, hominins in Africa began striking flakes off stones to make sharp edges. Even this simple craft needs planning and precise hands. The meat these tools unlocked fed a hungry, growing brain.
 
 **50 · `homo-habilis.mp3`** · Homo habilis, the "Handy Man"
 
-Homo habilis, the handy man, lived in Africa over two million years ago. Its brain was around 600 cubic centimetres, noticeably bigger than Lucy's. It made simple stone tools and may have been the first to show hints of language-related brain structure.
+Homo habilis, the handy man, lived in Africa over two million years ago. Its brain was around six hundred cubic centimetres, noticeably bigger than Lucy’s. It made simple stone tools and may show early hints of language-related brain structure, though that is debated.
 
 **51 · `homo-erectus.mp3`** · Homo erectus: A Bigger Brain and Body
 
-Homo erectus appeared nearly two million years ago, with a body much like ours and a brain around 900 cubic centimetres. It was the first hominin to spread far beyond Africa. A longer childhood gave its young more time to learn.
+Homo erectus appeared about two million years ago, with a body much like ours and a brain around nine hundred cubic centimetres. It was the first hominin known to spread far beyond Africa. Yet its children still grew up faster than ours do.
 
 **52 · `cooperative-breeding.mp3`** · Cooperative Breeding
 
@@ -272,7 +272,7 @@ By about a million years ago, our ancestors were using fire under control. Cooki
 
 **57 · `homo-heidelbergensis.mp3`** · Homo heidelbergensis
 
-Homo heidelbergensis was a large hominin with a brain of around twelve hundred cubic centimetres. It hunted big game with wooden spears, which demanded teamwork and planning. It may be close to the common ancestor of Neanderthals and modern humans.
+Homo heidelbergensis was a large hominin with a brain of around twelve hundred cubic centimetres. It hunted big game, which demanded teamwork and planning. It may be close to the common ancestor of Neanderthals and modern humans.
 
 **58 · `teaching-cumulative-culture.mp3`** · Teaching and Cumulative Culture
 
