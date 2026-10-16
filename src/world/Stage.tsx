@@ -14,12 +14,15 @@ import Dip from './Dip';
 import Scrim from './Scrim';
 import { titleState } from '../style/titles/state';
 import Ambient from '../scenes/Ambient';
+import BrainLab from '../scenes/shared/brain/BrainLab';
 import { SceneCtx } from './context';
 import { world } from './store';
 import { clamp01, smoothstep } from './util';
 import type { CameraPose, SceneDef, SceneState } from './types';
 
 const DEFAULT_POSE: CameraPose = { pos: [0, 0, 6], look: [0, 0, 0], fov: 55 };
+/** default title plane as a fraction of the focal distance (SceneDef.titleDepth overrides) */
+const TITLE_PLANE = 0.7;
 const MOUNT_MARGIN = 3; // stations beyond the fade at which a scene is mounted (hidden) and its shaders pre-compiled
 const KEEP_DIST = 9; // once mounted, a scene stays mounted until the viewer is this many stations away.
 // Unmounting disposes materials, and three then has to RECOMPILE the shaders on the next mount (a visible stall).
@@ -178,7 +181,9 @@ function World() {
       l.x += pose.look[0] * w; l.y += pose.look[1] * w; l.z += pose.look[2] * w;
       fov += (pose.fov ?? 55) * w;
       const tdef = r.def.titleDepth;
-      td += (tdef === undefined ? Math.hypot(pose.pos[0] - pose.look[0], pose.pos[1] - pose.look[1], pose.pos[2] - pose.look[2]) : typeof tdef === 'function' ? tdef(t) : tdef) * w;
+      // default headline plane: a little in front of the focal point, so the hero stays behind the words and only
+      // things clearly in the foreground (a passing creature, near particles) slip in front of them
+      td += (tdef === undefined ? TITLE_PLANE * Math.hypot(pose.pos[0] - pose.look[0], pose.pos[1] - pose.look[1], pose.pos[2] - pose.look[2]) : typeof tdef === 'function' ? tdef(t) : tdef) * w;
       const mood = r.def.mood?.(t);
       if (mood) { bg.add(tmp.c.set(mood.bg ?? '#000').multiplyScalar(w)); bl += (mood.bloom ?? 0.6) * w; moodW += w; }
     }
@@ -187,7 +192,7 @@ function World() {
     p.x += DEFAULT_POSE.pos[0] * rest; p.y += DEFAULT_POSE.pos[1] * rest; p.z += DEFAULT_POSE.pos[2] * rest;
     l.x += DEFAULT_POSE.look[0] * rest; l.y += DEFAULT_POSE.look[1] * rest; l.z += DEFAULT_POSE.look[2] * rest;
     fov += 55 * rest;
-    td += 6 * rest;
+    td += 6 * TITLE_PLANE * rest;
     const norm = sumW + rest || 1;
     p.divideScalar(norm); l.divideScalar(norm); fov /= norm;
     titleState.depth += (td / norm - titleState.depth) * (1 - Math.exp(-dt * 14));
@@ -215,7 +220,8 @@ function World() {
     <>
       <color attach="background" args={['#000000']} />
       <Ambient weight={ambientW} />
-      {resolved.filter((r) => mounted.includes(r.def.id)).map((r) => (
+      {BRAINLAB && <BrainLab stage={BRAINLAB} />}
+      {!BRAINLAB && resolved.filter((r) => mounted.includes(r.def.id)).map((r) => (
         <group key={r.def.id} visible={false} ref={(g) => { groups.current[r.def.id] = g; }}>
           <SceneCtx.Provider value={r.state}>
             <Suspense fallback={null}><r.def.Component /></Suspense>
@@ -238,6 +244,8 @@ const QS = typeof location === 'undefined' ? new URLSearchParams() : new URLSear
 const SAFE = QS.get('safe') === '1'; // no post-processing at all: isolates GPU load / pass problems
 const PERF = QS.get('perf') === '1';
 const DPR_OVERRIDE = Number(QS.get('dpr')) || 0;
+// dev: ?brainlab=fish renders the brain turntable instead of the timeline (src/scenes/shared/brain/BrainLab.tsx)
+const BRAINLAB = import.meta.env.DEV ? QS.get('brainlab') : null;
 
 export default function Stage() {
   const [level, setLevel] = useState(0);

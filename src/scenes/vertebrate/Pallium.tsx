@@ -29,7 +29,7 @@ function odorMat() {
 export default function Pallium() {
   const scene = useScene();
   const grp = useRef<THREE.Group>(null);
-  const brain = useBrainCtl({ grow: stageGrow('fish'), tissue: '#d6cdc9' });
+  const brain = useBrainCtl({ grow: stageGrow('fish'), tissue: '#b1a1a1' });
   const regs = useMemo(() => [
     { at: 'pallium' as const, color: '#ffb23c', i: 0 },
     { at: 'olfactory' as const, color: '#3cffb0', i: 0 },
@@ -57,7 +57,7 @@ export default function Pallium() {
     regs[0].i = ex * (0.35 + 0.5 * pulse) + n * 0.5;
     regs[1].i = (0.3 + 0.5 * Math.sin(scene.t * 28)) * (1 - ex * 0.4) * 0.8 + n * 0.3;
     S.om.uniforms.uOp.value = w; S.om.uniforms.uFlow.value = scene.t * 5 + tm * 0.05; S.om.uniforms.uTime.value = tm;
-    S.headM.uniforms.uOpacity.value = w * 0.8;
+    S.headM.uniforms.uOpacity.value = w * 0.05; // barely there: under bloom and oil any more reads as a plate under the brain
     if (grp.current) grp.current.rotation.y = -0.55 + scene.t * 0.7;
   });
   return (

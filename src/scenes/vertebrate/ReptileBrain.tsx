@@ -24,7 +24,7 @@ const LAYERS = [
 export default function ReptileBrain() {
   const scene = useScene();
   const grp = useRef<THREE.Group>(null);
-  const brain = useBrainCtl({ grow: stageGrow('reptile'), tissue: '#d9d2cd' });
+  const brain = useBrainCtl({ grow: stageGrow('reptile'), tissue: '#b3a49f' });
   const regs = useMemo(() => [
     { at: 'brainstem' as const, color: CORE, i: 0 },
     { at: 'pallium' as const, color: NEUTRAL, i: 0 },
@@ -44,7 +44,7 @@ export default function ReptileBrain() {
     if (!scene.active) return;
     const w = scene.weight, t = scene.t, tm = TM(), n = near(p26, 0.8);
     const ex = smoothstep(0.08, 0.6, t);
-    brain.alpha = w; brain.explode = ex * 0.72; brain.tint = 0;
+    brain.alpha = w; brain.explode = ex * 0.3; // a gentle separation: the organ still reads as one brain brain.tint = 0;
     brain.glass = 0.0;
     const core = 0.45 + 0.25 * Math.sin(tm * 2.2) + n * 0.9;
     regs[0].i = smoothstep(0.15, 0.45, t) * core;

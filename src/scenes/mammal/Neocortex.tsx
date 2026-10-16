@@ -11,7 +11,7 @@ import { Brain, stageGrow, useBrainCtl } from '../shared/brain';
 export default function Neocortex() {
   const scene = useScene();
   const grp = useRef<THREE.Group>(null);
-  const brain = useBrainCtl({ grow: stageGrow('mammal') * 0.85, tissue: '#d6d2d8' });
+  const brain = useBrainCtl({ grow: stageGrow('mammal') * 0.85, tissue: '#bcb0b3' });
   const wave = useMemo(() => ({ at: [1, 0, 0] as [number, number, number], r: 0.5, sym: true, color: '#8fd0ff', i: 0 }), []);
   const wave2 = useMemo(() => ({ at: [1, 0, 0] as [number, number, number], r: 0.3, sym: true, color: '#ffd27a', i: 0 }), []);
   brain.regions = [wave, wave2];
@@ -33,7 +33,7 @@ export default function Neocortex() {
     wave2.at[0] = Math.cos(a2); wave2.at[1] = Math.sin(a2) * 0.9 + 0.2; wave2.at[2] = 0.1;
     wave2.i = 0.8 * Math.sin(ph * Math.PI) * (0.5 + 0.8 * beat);
     const cut = smoothstep(0.45, 0.62, t);
-    brain.cut = cut > 0.01 ? 1 : 0; brain.cutAxis = 'sagittal'; brain.cutPos = 0.55 - 0.4 * cut;
+    brain.cut = cut > 0.01 ? 1 : 0; brain.cutAxis = 'sagittal'; brain.cutPos = 0.55 - 0.2 * cut; // a parasagittal slice: cortex ribbon over white matter, not the midline ventricles
     if (grp.current) { grp.current.rotation.y = -0.15 - 0.35 * cut + 0.05 * Math.sin(time * 0.2); grp.current.rotation.x = 0.06; }
   });
 

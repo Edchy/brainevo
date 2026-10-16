@@ -13,7 +13,7 @@ const BOX: [number, number, number] = [20, 11, 8];
 export default function Cerebellum() {
   const scene = useScene();
   const grp = useRef<THREE.Group>(null);
-  const brain = useBrainCtl({ grow: stageGrow('fish') * 1.12, tissue: '#d7d0d8' });
+  const brain = useBrainCtl({ grow: stageGrow('fish') * 1.12, tissue: '#b2a5ab' });
   const regs = useMemo(() => [
     { at: 'cerebellum' as const, color: '#b36bff', i: 0 },
     { at: 'tectum' as const, color: '#5fe8ff', i: 0 },

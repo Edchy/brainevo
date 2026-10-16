@@ -29,9 +29,11 @@ export const mammalScenes: SceneDef[] = [
     Component: Neocortex,
     camera: (t) => {
       const k = smoothstep(0.0, 0.9, t);
-      return { pos: [2.6 - 3.8 * k, 1.3 + 1.4 * k, 7.0 - 0.4 * k], look: [0.6, 0, -0.6 * k], fov: 52 };
+      // once the slice is open, move in on the cortical ribbon so its six layers are larger than a brush stroke
+      const z = smoothstep(0.52, 0.85, t);
+      return { pos: [2.6 - 3.8 * k + 0.9 * z, 1.3 + 1.4 * k - 1.2 * z, 7.0 - 0.4 * k - 3.1 * z], look: [0.6 + 0.3 * z, 0.45 * z, -0.6 * k], fov: 52 - 8 * z };
     },
-    mood: () => ({ bg: '#020203', bloom: 1.2 }),
+    mood: (t) => ({ bg: '#020203', bloom: 1.2 - 0.4 * smoothstep(0.5, 0.8, t) }),
   },
   {
     id: 'mammalian-middle-ear', from: 'mammalian-middle-ear', to: 'mammalian-middle-ear', lead: 0.45, tail: 0.1, fade: 0.25,

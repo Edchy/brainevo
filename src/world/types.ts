@@ -47,8 +47,8 @@ export interface SceneDef {
   mood?: (t: number) => Mood;
   /**
    * Distance from the camera (world units) of the plane the depth-sandwiched headline sits on: nearer geometry
-   * hides the type, farther geometry sits behind it. Number or function of t. Default: the camera's focal distance
-   * |pos - look|, so things at the focal point are half in front of / half behind the title.
+   * hides the type, farther geometry sits behind it. Number or function of t. Default: 0.7 x the camera's focal
+   * distance |pos - look|, so the hero stays behind the words and only clear foreground passes in front.
    */
   titleDepth?: number | ((t: number) => number);
   /**

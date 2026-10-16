@@ -43,17 +43,19 @@ export const STAGES: Record<StageName, BrainShape> = {
   tube: mk({ tube: 1, tilt: 0, stemX: 2.9, stemY: 0.15, stemLen: 6.0, stemR: 1, pons: 0, cerS: 0, cbS: 0, tecS: 0, olfS: 0, fold: 0, fiss: 0 }),
   /** fish: small paired smooth forebrain lobes, big optic tectum, olfactory bulbs on tracts */
   fish: mk({
-    tube: 0, tilt: 0.1, stemX: 1.35, stemY: 0.0, stemLen: 2.9, stemR: 0.36, pons: 0,
-    cx: 0.72, cy: 0.52, cz: 0.58, cox: 1.95, coy: 0.12, fold: 0.0, ff: 3, fiss: 0.7, hemi: 1,
+    // lobes pressed together as one organ: small bulbs, the telencephalon against the large paired tectum,
+    // cerebellum riding behind it, a thick medulla tapering into the cord
+    tube: 0, tilt: 0.1, stemX: 1.35, stemY: 0.0, stemLen: 2.9, stemR: 0.44, pons: 0,
+    cx: 0.66, cy: 0.5, cz: 0.58, cox: 1.72, coy: 0.12, fold: 0.0, ff: 3, fiss: 0.7, hemi: 1,
     prim: 0, temporal: 0, frontal: 0.5, glob: 0, occ: 0, flat: 0,
-    olfS: 1, olfX: 0.7, cbS: 0.62, cbFolia: 0, cbK: 20, cbAt: 0.52, cbx: 0, cby: 0, tecS: 1,
+    olfS: 0.62, olfX: 0.35, cbS: 0.66, cbFolia: 0, cbK: 20, cbAt: 0.46, cbx: 0, cby: 0, tecS: 1.12,
   }),
   /** reptile: small smooth pallium, large tectum, modest cerebellum, long horizontal stem */
   reptile: mk({
-    tube: 0, tilt: 0.3, stemX: 1.1, stemY: -0.05, stemLen: 3.0, stemR: 0.38, pons: 0.3,
-    cx: 0.95, cy: 0.62, cz: 0.82, cox: 1.35, coy: 0.2, fold: 0.0, ff: 3, fiss: 0.5, hemi: 0.5,
+    tube: 0, tilt: 0.3, stemX: 1.1, stemY: -0.05, stemLen: 3.0, stemR: 0.44, pons: 0.3,
+    cx: 1.0, cy: 0.64, cz: 0.84, cox: 1.2, coy: 0.2, fold: 0.0, ff: 3, fiss: 0.5, hemi: 0.5,
     prim: 0, temporal: 0.15, frontal: 0.45, glob: 0, occ: 0.1, flat: 0.5,
-    olfS: 1, olfX: 0.4, cbS: 0.68, cbFolia: 0.2, cbK: 28, cbAt: 0.42, cbx: 0, cby: 0, tecS: 0.8,
+    olfS: 0.7, olfX: 0.3, cbS: 0.68, cbFolia: 0.2, cbK: 28, cbAt: 0.42, cbx: 0, cby: 0, tecS: 0.75,
   }),
   /** early mammal: smooth neocortex, big olfactory bulbs, folia appear */
   mammal: mk({

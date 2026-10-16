@@ -37,6 +37,8 @@
   --title-parallax: 0.3;
   --title-shadow: 0.55;
   --title-blend: normal;
+  /* glowing particles (no depth) dim the letters they cross only a little, so a star never deletes a word */
+  --title-key: 0.35;
 }
 
 :root[data-palette='grisaille'] {

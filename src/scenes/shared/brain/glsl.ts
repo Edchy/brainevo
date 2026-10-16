@@ -179,7 +179,7 @@ vec3 tectumShape(vec3 d,float side,out vec4 aux){
   vec3 ctr=c+vec3(nr*r*.75,side*.4*uTecS);
   vec3 A=vec3(.56,.42,.4)*uTecS;
   vec3 p=ctr+d*A;
-  p+=normalize(d/max(A,vec3(.02)))*.01*snoise(d*3.+side);
+  p+=normalize(d/max(A,vec3(.02)))*.004*snoise(d*2.+side);
   aux=vec4(0.);
   return p;
 }
@@ -188,7 +188,7 @@ vec3 bulbShape(vec3 d,float side,out vec4 aux){
   vec3 A=vec3(.28+.5*uOlfX,.2,.22)*uOlfS;
   vec3 ctr=vec3(uCerOff.x+uCer.x*.84+A.x*.75,uCerOff.y-uCer.y*.22,side*uCer.z*.34);
   vec3 p=ctr+d*A;
-  p+=normalize(d/max(A,vec3(.02)))*.012*snoise(d*3.+side*2.);
+  p+=normalize(d/max(A,vec3(.02)))*.005*snoise(d*2.+side*2.);
   aux=vec4(0.);
   return p;
 }
@@ -326,19 +326,21 @@ void main(){
       float Hc=profile(c1,c2,uFold);
       // grey/white boundary follows the folds, as on an MRI slice: white matter reaches up into each gyrus and dips
       // deep under each sulcus, so the cortical ribbon convolutes instead of being a uniform rim
-      float rc=mix(.9,.76+.16*Hc,uFold)+wob*.6;
+      float rc=mix(.8,.76+.16*Hc,uFold)+wob*.6;
       // white matter: bright, with faint fibre tracts radiating toward the cortex; grey matter: a distinct darker ribbon
       float fib=snoise(vec3(dr*vec3(26.,26.,26.))+rr*1.5)*.5+snoise(u*9.)*.5;
       vec3 wm=vec3(.8,.77,.73)*(.9+.1*fib), gm=vec3(.3,.27,.29);
       col=mix(wm,gm,smoothstep(rc-.02,rc+.01,rr));
-      col*=1.-.1*step(.5,fract((rr-rc)/(1.-rc+.001)*6.))*smoothstep(rc-.01,rc+.02,rr);
+      // six cortical layers as alternating bands across the ribbon (clearest on smooth early cortex)
+      float lay=fract((rr-rc)/(1.-rc+.001)*6.);
+      col*=1.-mix(.24,.1,uFold)*smoothstep(.35,.5,lay)*(1.-smoothstep(.85,1.,lay))*smoothstep(rc-.01,rc+.02,rr);
       // CSF-dark sulcus: a thin line along the fold's zero, running from the surface down to just under the ribbon
-      float sulc=(1.-smoothstep(.02,.07,abs(c1)))*smoothstep(rc-.07,rc-.01,rr)*uFold;
+      float sulc=(1.-smoothstep(.02,.07,abs(c1)))*smoothstep(rc-.07,rc-.01,rr)*uFold*smoothstep(.4,.75,uFold); // smooth cortex has no sulci
       col=mix(col,vec3(.03),sulc);
       float ca=abs(u.z);
-      float vent=length(vec3((u.x-.02)/.5,(u.y-.14)/.13,(ca-.2)/.1))*1.0;
-      vent=min(vent,length(vec3((u.x-.42)/.17,(u.y-.12)/.15,(ca-.16)/.07)));
-      col=mix(col,vec3(.02),1.-smoothstep(.85,1.,vent));
+      float vent=length(vec3((u.x-.02)/.36,(u.y-.14)/.08,(ca-.2)/.08))*1.0;
+      vent=min(vent,length(vec3((u.x-.42)/.12,(u.y-.12)/.09,(ca-.16)/.06)));
+      col=mix(col,vec3(.16,.14,.15),(1.-smoothstep(.85,1.,vent))*.6); // ventricles: dark CSF, not a void
       float th=length(vec3((u.x+.1)/.17,(u.y+.02)/.15,(ca-.14)/.13));
       col=mix(col,gm*.95,1.-smoothstep(.9,1.05,th));
       float pu=length(vec3((u.x-.2)/.2,(u.y+.04)/.2,(ca-.42)/.11));
@@ -397,8 +399,20 @@ void main(){
   float cav=uPart<.5?vAux.w:0.;
   ao*=1.-.75*cav;
 
-  vec3 base=uTissue*(.94+.06*snoise(vObj*17.))*(uPart>1.5&&uPart<2.5?.8:1.);
+  // smooth (unfolded) tissue gets almost no albedo noise: the oil pass reads any mottling as lumps, so the fish and
+  // reptile brains looked like cauliflower. Their surface cue is a fine net of pial blood vessels instead.
+  float smoothT=1.-foldAmp(uFold)*(uPart<.5?1.:0.);
+  vec3 base=uTissue*(1.+mix(.06,.015,smoothT)*snoise(vObj*17.))*(uPart>1.5&&uPart<2.5?.8:1.);
   base=mix(base,vec3(.5,.24,.22),(1.-H)*.5*(uPart<1.5?1.:0.));
+  {
+    vec3 vp=vObj*2.3+vec3(uPart*7.1);
+    float v1=snoise(vp+.6*vec3(snoise(vp*.7+3.),snoise(vp*.7+9.),0.));
+    float v2=snoise(vp*2.6+11.);
+    float w1=fwidth(v1)*1.4+.018, w2=fwidth(v2)*1.2+.012;
+    float ves=max(1.-smoothstep(0.,w1,abs(v1)),.6*(1.-smoothstep(0.,w2,abs(v2)))*smoothstep(-.2,.4,v1));
+    ves*=(uPart>1.5&&uPart<2.5?.5:1.)*(.35+.65*smoothT)*(1.-uGlass)*(1.-uHolo);
+    base=mix(base,vec3(.46,.16,.17)*dot(base,vec3(.4)),ves*.42);
+  }
   vec3 tintc=uTint;
   base=mix(base,tintc*(.45+.55*dot(base,vec3(.33))),uTintAmt);
 
@@ -411,7 +425,8 @@ void main(){
   col+=vec3(.95,.3,.2)*base*term*.2*ao;
   col+=base*vec3(.6,.72,1.)*.2*max(dot(N,L2),0.)*ao;
   vec3 Hh=normalize(L1+V);
-  float spec=pow(max(dot(N,Hh),0.),90.)*.55+pow(max(dot(N,Hh),0.),14.)*.07;
+  // wet, glossy tissue: smooth stages carry a stronger, broader sheen
+  float spec=(pow(max(dot(N,Hh),0.),90.)*.55+pow(max(dot(N,Hh),0.),14.)*.07)*(1.+.9*smoothT)+pow(max(dot(N,Hh),0.),36.)*.12*smoothT;
   col+=vec3(1.,.97,.95)*spec*pow(H,2.)*ao*(uPart<2.5?1.:.5);
   float fre=pow(1.-max(dot(N,V),0.),3.);
   vec3 rimC=mix(vec3(.68,.8,1.),tintc,uTintAmt*.8);

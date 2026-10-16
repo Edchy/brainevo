@@ -32,12 +32,13 @@ export default function BrainGrow() {
   const grp = useRef<THREE.Group>(null);
   const eyeL = useRef<THREE.Mesh>(null);
   const eyeR = useRef<THREE.Mesh>(null);
-  const brain = useBrainCtl({ grow: 0, tissue: '#cfd9e2' });
+  const brain = useBrainCtl({ grow: 0, tissue: '#ab9fa6' });
   const stemGlow = useMemo(() => [{ at: 'brainstem' as const, color: '#42e8ff', i: 0 }, { at: 'pallium' as const, color: '#42e8ff', i: 0 }], []);
   brain.regions = stemGlow;
   const stage = useMemo(() => {
-    const head = latheX((x) => 1.05 * Math.sqrt(Math.max(0, 1 - Math.pow((x - 0.2) / 3.3, 2))) * (x > 1.5 ? 0.9 : 1), -3.1, 3.5, 80, 44, 0.95);
-    const headM = makeBodyMat('#58b8ff', { rim: 0.5, base: 0.01, stripe: 0 });
+    // a small jawless fish: rounded head, body tapering back toward the tail (it runs off frame to the left)
+    const head = latheX((x) => (x >= 0 ? 1.05 * Math.sqrt(Math.max(0, 1 - Math.pow(x / 3.5, 2))) : Math.max(0.06, 1.05 * (1 - Math.pow(-x / 7.5, 1.3)))), -7.5, 3.5, 110, 44, 0.95);
+    const headM = makeBodyMat('#58b8ff', { rim: 0.42, base: 0.012, stripe: 0 });
     const eyeM = makeBodyMat('#9be7ff', { rim: 2.5, base: 0.7 });
     const eyeG = new THREE.SphereGeometry(0.2, 24, 16);
     const n = Math.floor(900 * world.quality);
@@ -67,7 +68,8 @@ export default function BrainGrow() {
     brain.alpha = scene.weight;
     stemGlow[0].i = (0.25 + 0.2 * Math.sin(TM() * 2 + f * 3)) * (1 - smoothstep(0.5, 0.9, s)) + near(p17, 0.7) * 0.5;
     stemGlow[1].i = smoothstep(0.55, 0.95, s) * (0.35 + 0.5 * near(p17, 0.7));
-    stage.headM.uniforms.uOpacity.value = scene.weight * (1 - 0.35 * smoothstep(0.5, 1, s));
+    // the head ghost frames the first fish, then steps back so the formed brain is not read against a pale 'plate'
+    stage.headM.uniforms.uOpacity.value = scene.weight * 0.7 * (1 - smoothstep(0.42, 0.78, s));
     stage.eyeM.uniforms.uOpacity.value = scene.weight * smoothstep(0.25, 0.6, s);
     stage.crestM.uniforms.uProg.value = range(p16 - 0.6, p16 + 0.5, f);
     stage.crestM.uniforms.uOp.value = scene.weight * (1 - smoothstep(0.1, 0.6, f - p16 - 0.4));
