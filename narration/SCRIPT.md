@@ -21,8 +21,8 @@ so the delivery flows from one event to the next. Lines that already have a file
 **By hand.** In ElevenLabs Text to Speech, paste one line at a time, generate, download, and save it under exactly
 the file name shown (for example `big-bang.mp3`) in `src/assets/narration/`.
 
-Suggested settings: model Multilingual v2 (or v3 for more expressive reads), stability 0.5, similarity 0.75,
-style 0.15, speaker boost on, speed 0.95.
+Settings: model Eleven v4 (the same voice sounds far better on it than on Multilingual v2), with the voice's own
+settings.
 
 ### Voice direction
 

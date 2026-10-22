@@ -182,9 +182,10 @@ URL params (all optional, they override the saved settings): `?palette=prussian|
    want, hide the Lab (`?lab=0` default) for the public site.
 2. **"follo-style" oil painting**: the word was unclear. Interpreted as a fuller, more painterly oil ("Full" brushwork). Ask which
    painter or style they meant (a specific artist? fauvist?) and add it as a brush or palette.
-3. **Narration**: being recorded through the API (`npm run narration -- voice --limit=N`), Multilingual v2, the voice in
-   `ELEVENLABS_VOICE_ID`. On 2026-10-22 the first six lines (Big Bang re-recorded so every line matches, through
-   chemical-signalling) cost 521 credits for 1,303 characters: about 0.4 credits per character, and the
+3. **Narration**: being recorded through the API (`npm run narration -- voice --limit=N`) with **Eleven v4** (`eleven_v4`, the
+   script's default) and the voice in `ELEVENLABS_VOICE_ID`. The user compared: the same voice and sentence sound "waaay better"
+   on v4 than on Multilingual v2, so v4 uses the voice's own settings (no overrides). A second voice was tried and rejected.
+   On 2026-10-22 lines 0-5 (Big Bang through chemical-signalling) were recorded on v4; 96 lines to go. Cost: about 0.4 credits per character (85 for Big Bang on both models), and the
    `previous_text`/`next_text` context is not billed (checked against the account balance). The remaining 96 lines are about
    8.2k credits. The user's Starter plan resets on the 11th of each month. Then listen through the whole piece, and Watch mode:
    clip lengths vs. pace, the dwell and fade timings in `src/audio/narration.ts`, the rests in `src/lib/watch.ts`.

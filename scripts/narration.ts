@@ -5,7 +5,7 @@
  *                                         narration/lines.json, from the event data (src/data). Re-run after editing text.
  *   npx tsx scripts/narration.ts voice    records every missing line through the ElevenLabs API into
  *                                         src/assets/narration/<event-id>.mp3 (needs ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID;
- *                                         optional ELEVENLABS_MODEL, default eleven_multilingual_v2). Existing files are kept,
+ *                                         optional ELEVENLABS_MODEL, default eleven_v4). Existing files are kept,
  *                                         so delete one to re-record it. --force re-records everything.
  *                                         --limit=N records only the next N missing lines; event ids (`voice fire speech`)
  *                                         record just those; --dry lists what would be recorded and its characters.
@@ -86,8 +86,8 @@ so the delivery flows from one event to the next. Lines that already have a file
 **By hand.** In ElevenLabs Text to Speech, paste one line at a time, generate, download, and save it under exactly
 the file name shown (for example \`big-bang.mp3\`) in \`src/assets/narration/\`.
 
-Suggested settings: model Multilingual v2 (or v3 for more expressive reads), stability 0.5, similarity 0.75,
-style 0.15, speaker boost on, speed 0.95.
+Settings: model Eleven v4 (the same voice sounds far better on it than on Multilingual v2), with the voice's own
+settings.
 
 ### Voice direction
 
@@ -140,7 +140,11 @@ async function voice(force: boolean, ids: string[], limit: number, dry: boolean)
   console.log(`${todo.length} line${todo.length === 1 ? '' : 's'} to record, ${chars.toLocaleString('en-US')} characters`);
   if (dry) { for (const l of todo) console.log(`${String(l.n).padStart(3)} ${l.id} (${l.text.length})`); return; }
   const voiceId = env('ELEVENLABS_VOICE_ID');
-  const model = env('ELEVENLABS_MODEL', 'eleven_multilingual_v2');
+  const model = env('ELEVENLABS_MODEL', 'eleven_v4');
+  // v4 reads best with the voice's own settings, as on the ElevenLabs website; the older models get these narration ones
+  const settings = model === 'eleven_v4' ? undefined
+    : { stability: 0.5, similarity_boost: 0.75, style: 0.15, use_speaker_boost: true, speed: 0.95 };
+  console.log(`model ${model}`);
   mkdirSync(OUT_VOICE, { recursive: true });
   let made = 0, spent = 0;
   for (const l of todo) {
@@ -152,7 +156,7 @@ async function voice(force: boolean, ids: string[], limit: number, dry: boolean)
       model_id: model,
       previous_text: lines[i - 1]?.text,
       next_text: lines[i + 1]?.text,
-      voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.15, use_speaker_boost: true, speed: 0.95 },
+      voice_settings: settings,
     });
     writeFileSync(out, audio);
     made++;
