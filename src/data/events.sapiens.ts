@@ -9,7 +9,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'The Earliest Homo sapiens',
     summary:
-      'Fossils from Jebel Irhoud in Morocco show a face and teeth much like ours, making them the oldest known Homo sapiens.',
+      "In the hills of Morocco, researchers found skulls about 300,000 years old. The faces look strikingly like ours. Inside, the brain was already large, though not yet shaped like ours.",
     brainSignificance:
       'Brain size was already within the modern range, but the braincase was still long and low. The hardware was nearly in place, and its internal wiring was still being reshaped.',
     details:
@@ -18,11 +18,6 @@ export const sapiensModernEvents: TimelineEvent[] = [
     image: {
       src: '/media/jebel-irhoud-sapiens.svg',
       alt: 'Elongated skull from Jebel Irhoud with a modern-looking face',
-    },
-    audio: {
-      src: '/media/jebel-irhoud-sapiens.mp3',
-      transcript:
-        'In the hills of Morocco, researchers found skulls about three hundred thousand years old. The faces look strikingly like ours. Inside, the brain was already large, though not yet shaped like ours.',
     },
     tags: ['Homo sapiens', 'Jebel Irhoud', 'Morocco'],
     sources: [
@@ -38,18 +33,13 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'The Globular Brain',
     summary:
-      "Over some two hundred thousand years, the sapiens braincase changed from long and low to rounded and tall, reaching today’s shape between about 100,000 and 35,000 years ago.",
+      "Our brains did not simply grow. They changed shape, becoming rounder and more globular. Expanded parietal areas and cerebellum may have supported new ways of thinking and planning.",
     brainSignificance:
       'Brain size stayed about the same, but the proportions shifted. The parietal lobes and cerebellum expanded, regions tied to spatial reasoning, imagination and the integration of senses. This reorganization may be what set us apart.',
     brainVolumeCc: 1350,
     image: {
       src: '/media/globular-brain.svg',
       alt: 'Side-by-side outlines of an elongated and a globular skull',
-    },
-    audio: {
-      src: '/media/globular-brain.mp3',
-      transcript:
-        'Our brains did not simply grow. They changed shape, becoming rounder and more globular. Expanded parietal areas and cerebellum may have supported new ways of thinking and planning.',
     },
     tags: ['endocast', 'parietal lobe', 'cerebellum'],
     sources: [
@@ -64,7 +54,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'Ochre and Symbolic Thought',
     summary:
-      "At Blombos Cave in South Africa, people processed red ochre, engraved patterns into it and made shell beads.",
+      "In a cave on the South African coast, people ground red ochre and engraved patterns into it. They strung shell beads. These were signs that stood for something, an early flicker of symbolic thought.",
     brainSignificance:
       'Using colour and pattern to stand for identity or ideas needs a mind that links an object to a meaning beyond itself. Symbolism is the foundation of art, ritual and eventually writing.',
     details:
@@ -72,11 +62,6 @@ export const sapiensModernEvents: TimelineEvent[] = [
     image: {
       src: '/media/ochre-symbolic-thought.svg',
       alt: 'Piece of red ochre engraved with a crosshatch pattern',
-    },
-    audio: {
-      src: '/media/ochre-symbolic-thought.mp3',
-      transcript:
-        'In a cave on the South African coast, people ground red ochre and engraved patterns into it. They strung shell beads. These were signs that stood for something, an early flicker of symbolic thought.',
     },
     tags: ['ochre', 'Blombos Cave', 'symbolism', 'beads'],
     sources: [
@@ -92,7 +77,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'Language and FOXP2',
     summary:
-      'Fully grammatical language probably existed by the time humans spread out of Africa. The gene FOXP2, tied to speech and orofacial control, carries two changes unique to the human lineage.',
+      "Language is hard to find in fossils, but it left clues. The gene FOXP2 helps control the fine movements of speech. With words and grammar, minds could share plans, stories and memories.",
     brainSignificance:
       'Language lets one mind pass its thoughts to another, so knowledge could accumulate across generations. It rests on networks that link the left frontal and temporal cortex with the basal ganglia and cerebellum. FOXP2 is one contributor, not a single language gene.',
     details:
@@ -100,11 +85,6 @@ export const sapiensModernEvents: TimelineEvent[] = [
     image: {
       src: '/media/language-foxp2.svg',
       alt: 'Brain outline with language areas and a DNA strand highlighted',
-    },
-    audio: {
-      src: '/media/language-foxp2.mp3',
-      transcript:
-        'Language is hard to find in fossils, but it left clues. The gene FOXP2 helps control the fine movements of speech. With words and grammar, minds could share plans, stories and memories.',
     },
     tags: ['language', 'FOXP2', 'grammar', 'speech'],
     sources: [
@@ -121,7 +101,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'Out of Africa',
     summary:
-      "Descendants of a population in Africa spread across Eurasia, reaching Australia by about 50,000 years ago and the Americas by about 23,000 years ago, judging by footprints at White Sands in New Mexico.",
+      "Around 60,000 years ago, groups of modern humans left Africa for good. They crossed deserts, mountains and seas. Their flexible, social brains carried them to every continent but Antarctica.",
     brainSignificance:
       'Settling deserts, ice-age tundra and open sea demanded flexible planning, cooperation and cultural learning. Our large, adaptable brains, not new anatomy, let one species occupy nearly every habitat on Earth.',
     details:
@@ -129,11 +109,6 @@ export const sapiensModernEvents: TimelineEvent[] = [
     image: {
       src: '/media/out-of-africa.svg',
       alt: 'World map with arrows spreading outward from Africa',
-    },
-    audio: {
-      src: '/media/out-of-africa.mp3',
-      transcript:
-        'Around sixty thousand years ago, groups of modern humans left Africa for good. They crossed deserts, mountains and seas. Their flexible, social brains carried them to every continent but Antarctica.',
     },
     tags: ['migration', 'Neanderthals', 'Denisovans'],
     sources: [
@@ -149,7 +124,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'Cave Art',
     summary:
-      'People painted animals and hand stencils on cave walls, from Sulawesi in Indonesia to Chauvet and Lascaux in France.',
+      "By torchlight, people painted animals on cave walls and pressed their hands against the stone. Each image began as a picture in the mind. Art made the inner world visible to others.",
     brainSignificance:
       'A painted pig or bison on a wall means the artist could hold a mental image, plan it, and expect others to understand it. It shows imagination, visual memory and shared meaning at work.',
     details:
@@ -157,11 +132,6 @@ export const sapiensModernEvents: TimelineEvent[] = [
     image: {
       src: '/media/cave-art.svg',
       alt: 'Painted bison and hand stencils on a cave wall',
-    },
-    audio: {
-      src: '/media/cave-art.mp3',
-      transcript:
-        'By torchlight, people painted animals on cave walls and pressed their hands against the stone. Each image began as a picture in the mind. Art made the inner world visible to others.',
     },
     tags: ['art', 'Sulawesi', 'Chauvet', 'imagination'],
     sources: [
@@ -176,17 +146,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'Bone Flutes and Music',
     summary:
-      "Flutes carved from bird bone and mammoth ivory, found in caves of the Swabian Jura in Germany, are about 40,000 years old or more, among the oldest known instruments.",
+      "In caves in Germany, people carved flutes from bird bone and ivory. Music lights up many parts of the brain at once. It may have helped early communities bond and share feelings.",
     brainSignificance:
       'Music engages auditory, motor, memory and reward circuits together. It binds groups through shared rhythm and emotion, and it probably strengthened social bonds long before written words.',
     image: {
       src: '/media/bone-flutes-music.svg',
       alt: 'Bone flute with finger holes carved from a vulture wing bone',
-    },
-    audio: {
-      src: '/media/bone-flutes-music.mp3',
-      transcript:
-        'In caves in Germany, people carved flutes from bird bone and ivory. Music lights up many parts of the brain at once. It may have helped early communities bond and share feelings.',
     },
     tags: ['music', 'Hohle Fels', 'rhythm', 'social bonding'],
     sources: [
@@ -198,26 +163,23 @@ export const sapiensModernEvents: TimelineEvent[] = [
     breakthrough: 'speaking',
     id: 'burial-ritual',
     yearsAgo: 34_000,
-    yearLabel: "~34,000 years ago (simpler graves far earlier)",
+    yearLabel: "~34,000 years ago",
     era: 'sapiens',
     title: 'Burial and Ritual',
     summary:
-      "At Sunghir in Russia, about 34,000 years ago, people were buried with thousands of hand-made ivory beads. Simpler graves are much older: a child laid to rest at Panga ya Saidi in Kenya about 78,000 years ago, and burials at Qafzeh in Israel around 100,000 years ago.",
+      "People had been burying their dead for at least 100,000 years. At Sunghir they dressed them in thousands of ivory beads. Somewhere along the way, a brain looked at someone it loved, now still, and asked: where did they go?",
     brainSignificance:
       'Burying the dead suggests an understanding of death, grief and perhaps an afterlife. It reflects the capacity to imagine what cannot be seen and to share that belief with a community.',
     image: {
       src: '/media/burial-ritual.svg',
       alt: 'Grave with a skeleton surrounded by beads and ochre',
     },
-    audio: {
-      src: '/media/burial-ritual.mp3',
-      transcript:
-        'People started laying their dead in graves, often with gifts of beads, ochre or tools. This hints at grief, memory and a concept of death. The brain was now imagining beyond the present moment.',
-    },
     tags: ['burial', 'ritual', 'death', 'Qafzeh'],
     sources: [
       { label: "Sikora et al. (2017). Ancient genomes show social and reproductive behavior of early Upper Paleolithic foragers. Science", url: "https://doi.org/10.1126/science.aao1807" },
       { label: "Martinón-Torres et al. (2021). Earliest known human burial in Africa. Nature", url: "https://doi.org/10.1038/s41586-021-03457-8" },
+      { label: "Grün et al. (2005). U-series and ESR analyses of bones and teeth relating to the human burials from Skhul. Journal of Human Evolution", url: "https://doi.org/10.1016/j.jhevol.2005.04.006" },
+      { label: "Smithsonian Human Origins Program. Qafzeh: oldest intentional burial", url: "https://humanorigins.si.edu/evidence/behavior/qafzeh-oldest-intentional-burial" },
     ],
   },
   {
@@ -228,7 +190,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'Behavioural Modernity',
     summary:
-      'Toolkits grew richer and more varied, with blades, needles, projectile points, ornaments and long-distance trade networks.',
+      "Tools became finer and more varied. People sewed clothing, traded over long distances and wore ornaments. Culture itself became cumulative, as each generation built on what the last had learned.",
     brainSignificance:
       'Innovations began to pile up and be passed on rather than lost. This ratchet of cumulative culture, powered by teaching, language and large social groups, made culture a force as important as genes.',
     details:
@@ -237,14 +199,30 @@ export const sapiensModernEvents: TimelineEvent[] = [
       src: '/media/behavioural-modernity.svg',
       alt: 'Display of stone blades, a bone needle and shell ornaments',
     },
-    audio: {
-      src: '/media/behavioural-modernity.mp3',
-      transcript:
-        'Tools became finer and more varied. People sewed clothing, traded over long distances and wore ornaments. Culture itself became cumulative, as each generation built on what the last had learned.',
-    },
     tags: ['cumulative culture', 'toolkits', 'trade'],
     sources: [
       { label: "McBrearty & Brooks (2000). The revolution that wasn’t: a new interpretation of the origin of modern human behavior. Journal of Human Evolution", url: "https://doi.org/10.1006/jhev.2000.0435" },
+    ],
+  },
+  {
+    breakthrough: 'speaking',
+    id: 'gobekli-tepe',
+    yearsAgo: 11_500,
+    yearLabel: '~11,500 years ago',
+    era: 'sapiens',
+    title: 'Minds in Everything',
+    summary:
+      "About 11,500 years ago, hunter-gatherers raised giant carved pillars at G\u00f6bekli Tepe. Was it a temple? Archaeologists still debate it. A brain built to read minds senses them everywhere: in animals, storms and stars. Many scientists see that as one root of religion.",
+    brainSignificance:
+      "The machinery that lets us guess what others intend also leaps to see intent where there may be none: a rustle becomes a predator, thunder becomes anger. Researchers call this agency detection, and many see it, together with our ability to model minds, as one source of belief in gods and spirits. That explains why belief comes naturally; it does not settle what is true.",
+    details:
+      "The enclosures of G\u00f6bekli Tepe, in south-eastern Turkey, were built before farming, by people who still hunted and gathered. Their T-shaped pillars, some over five metres tall, are carved with foxes, boars, snakes and vultures. The excavators saw ritual gathering places; others argue they were richly decorated houses.",
+    tags: ['Göbekli Tepe', 'religion', 'agency detection', 'theory of mind'],
+    sources: [
+      { label: "Dietrich et al. (2012). The role of cult and feasting in the emergence of Neolithic communities: new evidence from Göbekli Tepe. Antiquity", url: "https://doi.org/10.1017/s0003598x00047840" },
+      { label: "Banning (2011). So fair a house: Göbekli Tepe and the identification of temples in the Pre-Pottery Neolithic of the Near East. Current Anthropology", url: "https://doi.org/10.1086/661207" },
+      { label: "Barrett (2000). Exploring the natural foundations of religion. Trends in Cognitive Sciences", url: "https://doi.org/10.1016/s1364-6613(99)01419-9" },
+      { label: "Guthrie (1993). Faces in the Clouds: A New Theory of Religion. Oxford University Press", url: "https://doi.org/10.1093/oso/9780195069013.001.0001" },
     ],
   },
   {
@@ -255,17 +233,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'Agriculture',
     summary:
-      'In the Fertile Crescent and elsewhere, people began to plant crops and herd animals, settling in villages that grew into towns.',
+      "About 11,000 years ago, people began to sow grain and keep animals. Villages and towns followed. Life in bigger groups called for counting, planning and trust among many people.",
     brainSignificance:
       "Settled life created larger societies, surplus food and specialised roles. It put new demands on memory, planning, numeracy and cooperation among strangers. Human brains are slightly smaller now than in the late Ice Age; when that happened, and why, is debated.",
     image: {
       src: '/media/agriculture.svg',
       alt: 'Hands sowing wheat seeds beside a mud-brick village',
-    },
-    audio: {
-      src: '/media/agriculture.mp3',
-      transcript:
-        'About eleven thousand years ago, people began to sow grain and keep animals. Villages and towns followed. Life in bigger groups called for counting, planning and trust among many people.',
     },
     tags: ['Neolithic', 'farming', 'settlement'],
     sources: [
@@ -282,7 +255,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'Writing',
     summary:
-      'In Sumer, wedge-shaped marks pressed into clay recorded grain, livestock and taxes, and later, stories and laws.',
+      "Around 5,200 years ago, scribes in Sumer pressed marks into clay. Reading repurposes parts of the visual brain that evolved for other tasks. Writing gave humanity a memory beyond any single mind.",
     brainSignificance:
       'Reading is far too recent to have shaped a dedicated brain region through evolution. Instead, learning to read recycles visual areas of the left occipitotemporal cortex. Writing extended memory outside the skull.',
     details:
@@ -290,11 +263,6 @@ export const sapiensModernEvents: TimelineEvent[] = [
     image: {
       src: '/media/writing.svg',
       alt: 'Clay tablet with cuneiform wedge marks',
-    },
-    audio: {
-      src: '/media/writing.mp3',
-      transcript:
-        'Around five thousand two hundred years ago, scribes in Sumer pressed marks into clay. Reading repurposes parts of the visual brain that evolved for other tasks. Writing gave humanity a memory beyond any single mind.',
     },
     tags: ['cuneiform', 'literacy', 'Sumer', 'external memory'],
     sources: [
@@ -309,17 +277,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'The Alphabet',
     summary:
-      'Workers in Egypt and the Levant devised a small set of letters that stood for sounds. The Phoenician and then the Greek alphabet spread across the Mediterranean.',
+      "Alphabets trimmed writing down to a few dozen letters, each standing for a sound. That made reading far easier to learn. More minds could now take part in the written world.",
     brainSignificance:
       'A few dozen symbols replaced hundreds, so reading became far easier to learn. Mapping letters to speech sounds links visual and language networks, and it opened literacy to far more people.',
     image: {
       src: '/media/alphabet.svg',
       alt: 'Early alphabetic letters inscribed on a stone fragment',
-    },
-    audio: {
-      src: '/media/alphabet.mp3',
-      transcript:
-        'Alphabets trimmed writing down to a few dozen letters, each standing for a sound. That made reading far easier to learn. More minds could now take part in the written world.',
     },
     tags: ['alphabet', 'Phoenician', 'Greek', 'literacy'],
     sources: [
@@ -334,17 +297,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'Philosophy and the Seat of the Mind',
     summary:
-      'Thinkers in Greece, India and China began to ask what the mind is. Alcmaeon and Hippocrates located thought in the brain, while Aristotle argued for the heart.',
+      "Ancient thinkers began to ask what the mind is and where it lives. Hippocrates declared that the brain is the source of joy and sorrow. The brain had started to study itself.",
     brainSignificance:
       'For the first time the brain turned to study itself. Hippocrates wrote that from the brain come our pleasures, joys, laughter and sorrows. Later, Galen showed through dissection that nerves lead to the brain.',
     image: {
       src: '/media/philosophy-of-mind.svg',
       alt: 'Bust of a Greek philosopher beside a sketch of the brain',
-    },
-    audio: {
-      src: '/media/philosophy-of-mind.mp3',
-      transcript:
-        'Ancient thinkers began to ask what the mind is and where it lives. Hippocrates declared that the brain is the source of joy and sorrow. The brain had started to study itself.',
     },
     tags: ['Hippocrates', 'Aristotle', 'Galen', 'mind'],
     sources: [
@@ -359,17 +317,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'The Printing Press',
     summary:
-      'Johannes Gutenberg introduced movable-type printing in Europe, making books cheap and plentiful.',
+      "Around 1440, Gutenberg built a press with movable type. Books became cheap and ideas spread widely. Human knowledge could now accumulate and be questioned at a much larger scale.",
     brainSignificance:
       'Ideas could now travel faster than any single person and be checked by many. Mass literacy and the spread of knowledge became an engine of collective intelligence.',
     image: {
       src: '/media/printing-press.svg',
       alt: 'Wooden printing press with trays of metal type',
-    },
-    audio: {
-      src: '/media/printing-press.mp3',
-      transcript:
-        'Around 1440, Gutenberg built a press with movable type. Books became cheap and ideas spread widely. Human knowledge could now accumulate and be questioned at a much larger scale.',
     },
     tags: ['Gutenberg', 'literacy', 'knowledge'],
     sources: [
@@ -384,7 +337,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'The Scientific Revolution',
     summary:
-      'Vesalius published his anatomy of the human body in 1543, and Descartes, Willis and others began to treat the brain as an object of scientific study.',
+      "In the sixteenth and seventeenth centuries, anatomists drew the brain with new accuracy. Thomas Willis tied brain structures to behaviour. Observation and experiment were becoming the tools for understanding the mind.",
     brainSignificance:
       'Thomas Willis mapped the brain and its blood supply in 1664 and linked brain regions to behaviour. The mind began to be explained through observation and experiment rather than doctrine alone.',
     details:
@@ -392,11 +345,6 @@ export const sapiensModernEvents: TimelineEvent[] = [
     image: {
       src: '/media/scientific-revolution.svg',
       alt: 'Anatomical engraving of the brain from the 1500s',
-    },
-    audio: {
-      src: '/media/scientific-revolution.mp3',
-      transcript:
-        'In the sixteenth and seventeenth centuries, anatomists drew the brain with new accuracy. Thomas Willis tied brain structures to behaviour. Observation and experiment were becoming the tools for understanding the mind.',
     },
     tags: ['Vesalius', 'Descartes', 'Willis', 'anatomy'],
     sources: [
@@ -412,17 +360,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'Neurons and the Localisation of Function',
     summary:
-      "Paul Broca (1861) and Carl Wernicke (1874) linked damage in specific areas to loss of speech production and comprehension. In 1888 Santiago Ramón y Cajal showed that the nervous system is made of separate cells.",
+      "Broca and Wernicke linked speech to specific regions of the cortex. Then Cajal looked through his microscope and drew the neurons themselves. The brain, he showed, is a network of separate cells.",
     brainSignificance:
       'Broca and Wernicke proved that functions occupy particular places in the cortex. Cajal, using Golgi stains, showed that neurons are individual cells that communicate across gaps, the foundation of modern neuroscience. He shared the 1906 Nobel Prize with Camillo Golgi.',
     image: {
       src: '/media/neuron-doctrine.svg',
       alt: 'Cajal-style ink drawing of branching neurons',
-    },
-    audio: {
-      src: '/media/neuron-doctrine.mp3',
-      transcript:
-        'Broca and Wernicke linked speech to specific regions of the cortex. Then Cajal looked through his microscope and drew the neurons themselves. The brain, he showed, is a network of separate cells.',
     },
     tags: ['Cajal', 'Broca', 'Wernicke', 'neuron doctrine'],
     sources: [
@@ -437,17 +380,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'The EEG',
     summary:
-      'Hans Berger published the first human electroencephalogram, recording the brain\'s electrical rhythms through the scalp.',
+      "In 1929, Hans Berger recorded electrical rhythms from the human scalp. Brain waves could now be watched in a living person. They revealed the patterns of sleep, attention and seizures.",
     brainSignificance:
       'For the first time scientists could watch a living brain at work without opening the skull. Brain waves became a window into sleep, attention, epilepsy and consciousness.',
     image: {
       src: '/media/eeg.svg',
       alt: 'Scalp electrodes and a trace of brain waves',
-    },
-    audio: {
-      src: '/media/eeg.mp3',
-      transcript:
-        'In 1929 Hans Berger recorded electrical rhythms from the human scalp. Brain waves could now be watched in a living person. They revealed the patterns of sleep, attention and seizures.',
     },
     tags: ['EEG', 'Hans Berger', 'brain waves'],
     sources: [
@@ -462,17 +400,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'fMRI',
     summary:
-      'Functional magnetic resonance imaging tracks changes in blood oxygen to show which brain regions are active, first demonstrated in humans in 1991-1992.',
+      "Functional MRI follows blood flow to reveal which parts of the brain are busy. It lets us see thinking, remembering and feeling in healthy people. Entire networks of the brain came into view.",
     brainSignificance:
       'fMRI let researchers map networks for vision, memory, emotion and language in healthy people. Its measure is indirect and slow compared with neural firing, but it transformed cognitive neuroscience.',
     image: {
       src: '/media/fmri.svg',
       alt: 'Brain scan with coloured patches of activity',
-    },
-    audio: {
-      src: '/media/fmri.mp3',
-      transcript:
-        'Functional MRI follows blood flow to reveal which parts of the brain are busy. It lets us see thinking, remembering and feeling in healthy people. Entire networks of the brain came into view.',
     },
     tags: ['fMRI', 'neuroimaging', 'BOLD signal'],
     sources: [
@@ -488,17 +421,12 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'Brain-Computer Interfaces',
     summary:
-      'Implanted electrodes now let people with paralysis move cursors, robotic arms and even synthesised speech by thought alone, starting with clinical trials in 2004.',
+      "Tiny electrode arrays can now read movement and speech intentions from the cortex. People with paralysis have controlled cursors, robot arms and voice synthesisers by thought alone. The brain is learning to speak directly to machines.",
     brainSignificance:
       'Decoding intentions from neural activity shows that the brain\'s signals can be read and used, and that it can learn to control new devices. This opens paths to restoring movement and communication.',
     image: {
       src: '/media/brain-computer-interfaces.svg',
       alt: 'Electrode array on the cortex connected to a robotic arm',
-    },
-    audio: {
-      src: '/media/brain-computer-interfaces.mp3',
-      transcript:
-        'Tiny electrode arrays can now read movement and speech intentions from the cortex. People with paralysis have controlled cursors, robot arms and voice synthesisers by thought alone. The brain is learning to speak directly to machines.',
     },
     tags: ['BCI', 'neural implant', 'neuroprosthetics'],
     sources: [
@@ -514,21 +442,33 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'AI as a Mirror',
     summary:
-      'Artificial neural networks, loosely inspired by neurons, now recognise images, translate languages and hold conversations.',
+      "In 2012, a neural network loosely inspired by the brain learned to recognise objects in photos far better than any program before it. Machines began to learn from examples, a little like brains do, and became a mirror for studying our own minds.",
     brainSignificance:
       'These systems differ greatly from real brains in design, energy use and learning, yet comparing them sharpens questions about what intelligence, understanding and consciousness really are. Machines now serve as models, and as a mirror, for the mind.',
     image: {
       src: '/media/ai-mirror.svg',
       alt: 'Network of connected nodes overlaid on a human head profile',
     },
-    audio: {
-      src: '/media/ai-mirror.mp3',
-      transcript:
-        'Neural networks, inspired loosely by the brain, can now see, translate and converse. They are very unlike biological brains. By comparing them with our own minds, we learn what intelligence might be.',
-    },
     tags: ['artificial intelligence', 'neural networks', 'deep learning'],
     sources: [
       { label: "Krizhevsky, Sutskever & Hinton (2017). ImageNet classification with deep convolutional neural networks. Communications of the ACM", url: "https://doi.org/10.1145/3065386" },
+    ],
+  },
+  {
+    breakthrough: 'speaking',
+    id: 'machines-learn-language',
+    yearsAgo: 6,
+    yearLabel: '2017 to 2022 CE',
+    era: 'modern',
+    title: 'Machines Learn Our Language',
+    summary:
+      "In 2017, a new kind of neural network appeared: the transformer. Trained on vast amounts of human writing, its descendants learned to use language with startling fluency. For the first time, something other than a person could talk back. Is anyone home inside? Nobody knows.",
+    brainSignificance:
+      "Language was the fifth breakthrough, the one that let human brains pool what they knew. Language models learn it very differently, from far more text than a person could read in thousands of lifetimes, and how much they understand is still debated.",
+    tags: ['language models', 'transformer', 'artificial intelligence'],
+    sources: [
+      { label: "Vaswani et al. (2017). Attention is all you need. NeurIPS (arXiv:1706.03762)", url: "https://arxiv.org/abs/1706.03762" },
+      { label: "Brown et al. (2020). Language models are few-shot learners. NeurIPS (arXiv:2005.14165)", url: "https://arxiv.org/abs/2005.14165" },
     ],
   },
   {
@@ -539,18 +479,13 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'modern',
     title: 'Now',
     summary:
-      'Roughly four billion years of evolution have led to a brain that can study its own origins.',
+      "Here we are: a brain of 86 billion neurons, running on 20 watts, looking back over its own history. Now it shares the world with machines that learn. What happens next is up to us. Look into the mirror: there it is.",
     brainSignificance:
       'The human brain holds about 86 billion neurons and uses about 20 watts. It is the product of a long, unplanned history, and the story is still being written, now in part by us.',
     brainVolumeCc: 1350,
     image: {
       src: '/media/now.svg',
       alt: 'Human silhouette looking toward a star-filled horizon',
-    },
-    audio: {
-      src: '/media/now.mp3',
-      transcript:
-        'Here we are. A brain of eighty-six billion neurons, running on twenty watts, is looking back over its own history. What it does next is up to us.',
     },
     tags: ['present', 'consciousness', 'future'],
     sources: [
@@ -566,7 +501,7 @@ export const sapiensModernEvents: TimelineEvent[] = [
     era: 'sapiens',
     title: 'Language: Sharing Simulations',
     summary:
-      'Language lets a speaker transfer an imagined scene, plan or past event into another mind with a few sounds. Its origin is hotly debated, and this date is a rough placeholder within a wide range.',
+      "Until language, imagined scenes stayed inside one head. With words, a person can place a plan, a memory or a place in another mind. Language lets many brains work as one.",
     brainSignificance:
       'Simulation was once private; speech made it shareable. Combined with mentalizing, language lets groups plan together, pass on knowledge and agree on shared fictions, and it allows learned symbols to outlast any individual.',
     details:
@@ -574,11 +509,6 @@ export const sapiensModernEvents: TimelineEvent[] = [
     image: {
       src: '/media/language-shares-simulations.svg',
       alt: 'Two humans at a fire, one speaking, with a glowing scene appearing in the listener thought bubble',
-    },
-    audio: {
-      src: '/media/language-shares-simulations.mp3',
-      transcript:
-        'Until language, imagined scenes stayed inside one head. With words, a person can place a plan, a memory or a place in another mind. Language lets many brains work as one.',
     },
     tags: ['language','symbols','shared simulation','communication'],
     sources: [

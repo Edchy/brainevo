@@ -19,10 +19,10 @@ export interface Settings {
   headline: HeadlinePlace;
   /** show the Lab panel (palette / brush / text experiments) */
   lab: boolean;
-  /** master sound switch (narration + music). Off until the visitor turns it on: browsers block audio before a gesture. */
+  /** master sound switch (narration, music, scene sounds). Off until the visitor turns it on: browsers block audio before a gesture. */
   sound: boolean;
   narration: boolean;
   music: boolean;
-  /** read the transcript with the system voice when an event has no recorded narration yet */
-  previewVoice: boolean;
+  /** the sounds of each scene (sea, wind, fire, neurons...) under the music */
+  ambience: boolean;
 }

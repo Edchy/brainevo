@@ -7,13 +7,13 @@ import { unlock } from '../audio/engine';
 
 const ABOUT_KEYS = 'Keys: left and right arrows move between events, Shift plus arrow scrolls further, Home and End jump to the ends.';
 
-interface Props { layout: Layout; onGo: (trackX: number) => void }
+interface Props { layout: Layout; onGo: (trackX: number) => void; onWatch: () => void }
 
 /** The one small menu button of the minimal interface: chapters, breakthroughs, every event, and About. */
-export default function Menu({ layout, onGo }: Props) {
+export default function Menu({ layout, onGo, onWatch }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const st = useSettings();
-  const sw = (k: 'sound' | 'narration' | 'music', v: boolean) => { setSetting(k, v); if (v) { if (k !== 'sound') setSetting('sound', true); unlock(); } };
+  const sw = (k: 'sound' | 'narration' | 'music' | 'ambience', v: boolean) => { setSetting(k, v); if (v) { if (k !== 'sound') setSetting('sound', true); unlock(); } };
   const go = (x: number) => { ref.current?.close(); onGo(x); };
   return (
     <>
@@ -61,11 +61,13 @@ export default function Menu({ layout, onGo }: Props) {
               ))}
             </ul>
           </details>
+          <button type="button" className="btn-begin menu-watch" onClick={() => { ref.current?.close(); onWatch(); }}>Watch from here, like a film</button>
           <h3>Sound</h3>
           <div className="menu-sound">
             <label><input type="checkbox" checked={st.sound} onChange={(e) => sw('sound', e.target.checked)} /> Sound</label>
             <label><input type="checkbox" checked={st.narration} onChange={(e) => sw('narration', e.target.checked)} /> Narration plays as you arrive at each event</label>
             <label><input type="checkbox" checked={st.music} onChange={(e) => sw('music', e.target.checked)} /> Music</label>
+            <label><input type="checkbox" checked={st.ambience} onChange={(e) => sw('ambience', e.target.checked)} /> Sounds of each scene</label>
           </div>
           <details className="menu-fold">
             <summary>About</summary>
@@ -75,7 +77,15 @@ export default function Menu({ layout, onGo }: Props) {
               to. Every event lists its sources under Read more; dates for deep time are estimates with real uncertainty, and some are
               still debated.
             </p>
-            <p>Every picture is painted live in your browser from code. The music is generated live too.</p>
+            <p>
+              Every picture is painted live in your browser from code, and shows each era the way its brains could see it: no
+              colour before eyes, two colours in the mammals&rsquo; night. The music and the sounds of each scene are generated live
+              too, and follow where you are and how fast you travel.
+            </p>
+            <p>
+              The mirror uses your camera only if you ask for it. Your face and hands are tracked on your device (the tracking models
+              are downloaded when you open it) and the image never leaves it. Your age, if you give it, stays in this browser.
+            </p>
             <p>{ABOUT_KEYS}</p>
           </details>
         </div>

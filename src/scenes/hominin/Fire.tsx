@@ -56,7 +56,7 @@ export default function Fire() {
     ctl.F = F; ctl.flick = flick; ctl.alpha = w;
     R.ground.uniforms.uF.value = F * flick * w; R.ground.uniforms.uAlpha.value = w;
     R.halo.uniforms.uAlpha.value = w * F * (0.16 + 0.05 * flick); R.floor.uniforms.uAlpha.value = w * F * flick * 0.22;
-    if (halo.current) { halo.current.position.set(0, 0.9, -0.2); halo.current.quaternion.copy(st.camera.quaternion); halo.current.scale.setScalar(4. + F * 1.2); }
+    if (halo.current) { halo.current.position.set(0, 1.0, -1.9); halo.current.quaternion.copy(st.camera.quaternion); halo.current.scale.setScalar(5.2 + F * 1.2); }
     FIGS.forEach((f, i) => {
       const h = hs.current[i], g = gs.current[i];
       if (!h || !g) return;
@@ -78,9 +78,10 @@ export default function Fire() {
       g.getWorldPosition(v); tgt.copy(FIRE).sub(v); const d = tgt.length();
       tgt.transformDirection(st.camera.matrixWorldInverse).normalize();
       const k = F * flick * Math.min(1.5, 1.3 / (0.45 + d * d * 0.22));
-      h.look.keyDir = [tgt.x, tgt.y - 0.25, tgt.z]; h.look.keyK = k; h.look.amb = 0.035 + 0.04 * F;
+      // a painter's cheat: the fire lights them from the side, not from the camera, so their forms turn into shadow
+      h.look.keyDir = [tgt.x, tgt.y - 0.1, tgt.z * 0.3]; h.look.keyK = k * 1.15; h.look.amb = 0.07 + 0.05 * F;
       h.look.rimDir = [tgt.x, Math.max(0.1, tgt.y + 0.4)]; h.look.rimK = 0.5 + 1.8 * F * flick * (tgt.z < 0 ? 1 : 0.35);
-      h.look.sss = 0.9; h.look.w = w * appear;
+      h.look.sss = 0.25; h.look.w = w * appear;
     });
   });
 

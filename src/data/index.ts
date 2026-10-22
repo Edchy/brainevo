@@ -4,6 +4,7 @@ import { nervesVertebrateEvents } from './events.vertebrate';
 import { mammalPrimateEvents } from './events.mammal';
 import { hominEvents } from './events.hominin';
 import { sapiensModernEvents } from './events.sapiens';
+import { futureEvents, codaEvents } from './events.future';
 
 export const events: TimelineEvent[] = [
   ...cosmicOriginEvents,
@@ -11,4 +12,5 @@ export const events: TimelineEvent[] = [
   ...mammalPrimateEvents,
   ...hominEvents,
   ...sapiensModernEvents,
-].sort((a, b) => b.yearsAgo - a.yearsAgo);
+  ...futureEvents,
+].sort((a, b) => b.yearsAgo - a.yearsAgo).concat(codaEvents); // the closing reflection comes last, in its own order

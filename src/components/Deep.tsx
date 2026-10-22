@@ -27,12 +27,6 @@ export default function DeepContent({ event }: { event: TimelineEvent }) {
       <p className="significance">{event.brainSignificance}</p>
       {event.details && <p className="detail">{event.details}</p>}
       {event.brainVolumeCc != null && <BrainVolume cc={event.brainVolumeCc} />}
-      {event.audio?.transcript && (
-        <details className="transcript">
-          <summary>Narration script</summary>
-          <p>{event.audio.transcript}</p>
-        </details>
-      )}
       {event.tags && event.tags.length > 0 && <p className="tags">{event.tags.join(' · ')}</p>}
       {event.sources && event.sources.length > 0 && (
         <>

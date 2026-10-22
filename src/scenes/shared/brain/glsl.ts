@@ -207,6 +207,7 @@ ${NOISE}
 ${SHAPE}
 attribute float aSide;
 uniform float uPart; uniform vec3 uOff;
+invariant gl_Position;
 varying vec3 vN; varying vec3 vVp; varying vec3 vObj; varying vec3 vDir; varying vec4 vAux; varying float vFade;
 void main(){
   vec4 aux; vec3 P=brainShape(uPart,position,aSide,aux);
@@ -230,6 +231,20 @@ void main(){
   vVp=mv.xyz; vN=normalize(normalMatrix*n); vDir=position; vAux=aux;
   vFade=(uPart>1.5&&uPart<2.5)?1.-smoothstep(.8,.99,position.x):1.;
   gl_Position=projectionMatrix*mv;
+}`;
+
+/**
+ * Depth-only pass drawn just before an opaque brain: the colour pass then shades only the front-most fold at each pixel
+ * instead of every fold behind it (the cortex is deeply folded, so that was several times over). Same dither as FRAG.
+ */
+export const DEPTH_FRAG = /* glsl */ `
+uniform float uOpacity;
+varying float vFade;
+float ign(vec2 p){ return fract(52.9829189*fract(dot(p,vec2(.06711056,.00583715)))); }
+void main(){
+  float op=uOpacity*vFade;
+  if(op<.995&&ign(gl_FragCoord.xy)>op) discard;
+  gl_FragColor=vec4(0.);
 }`;
 
 export const FRAG = /* glsl */ `
@@ -301,6 +316,9 @@ void main(){
   if(op<.995&&ign(gl_FragCoord.xy)>op) discard;
   bool front=gl_FrontFacing;
   vec3 Pb=vObj;
+#ifdef BRAIN_CUT
+  // The cutaway writes its own depth (the cap lies on the slice plane). A shader that can write depth loses early
+  // depth testing for every fragment, so every fold of the cortex got shaded; only a brain being cut uses this variant.
   float depthOut=gl_FragCoord.z;
   bool cap=false; vec3 q=vec3(0.);
   if(uSliceOn>.5){
@@ -365,6 +383,9 @@ void main(){
     gl_FragColor=vec4(col*uCap*(1.+0.0),1.);
     return;
   }
+#else
+  if(!front&&uGlass<.01&&uHolo<.01) discard;
+#endif
 
   vec3 N=normalize(vN); if(!front) N=-N;
   vec3 V=normalize(-vVp);
@@ -393,55 +414,61 @@ void main(){
     crown=.6+.4*smoothstep(0.,.3,vDir.x);
   }
   N=perturb(N,vVp,h);
-
-  float ao=mix(1.,mix(.18,1.,smoothstep(0.,.85,H)),clamp(uFold*1.5,0.,1.)*(uPart<.5?fm:1.));
-  if(uPart>.5&&uPart<1.5) ao=mix(1.,mix(.15,1.,H),clamp(vAux.z*1.5,0.,1.));
-  float cav=uPart<.5?vAux.w:0.;
-  ao*=1.-.75*cav;
-
-  // smooth (unfolded) tissue gets almost no albedo noise: the oil pass reads any mottling as lumps, so the fish and
-  // reptile brains looked like cauliflower. Their surface cue is a fine net of pial blood vessels instead.
-  float smoothT=1.-foldAmp(uFold)*(uPart<.5?1.:0.);
-  vec3 base=uTissue*(1.+mix(.06,.015,smoothT)*snoise(vObj*17.))*(uPart>1.5&&uPart<2.5?.8:1.);
-  base=mix(base,vec3(.5,.24,.22),(1.-H)*.5*(uPart<1.5?1.:0.));
-  {
-    vec3 vp=vObj*2.3+vec3(uPart*7.1);
-    float v1=snoise(vp+.6*vec3(snoise(vp*.7+3.),snoise(vp*.7+9.),0.));
-    float v2=snoise(vp*2.6+11.);
-    float w1=fwidth(v1)*1.4+.018, w2=fwidth(v2)*1.2+.012;
-    float ves=max(1.-smoothstep(0.,w1,abs(v1)),.6*(1.-smoothstep(0.,w2,abs(v2)))*smoothstep(-.2,.4,v1));
-    ves*=(uPart>1.5&&uPart<2.5?.5:1.)*(.35+.65*smoothT)*(1.-uGlass)*(1.-uHolo);
-    base=mix(base,vec3(.46,.16,.17)*dot(base,vec3(.4)),ves*.42);
-  }
-  vec3 tintc=uTint;
-  base=mix(base,tintc*(.45+.55*dot(base,vec3(.33))),uTintAmt);
-
-  vec3 L1=normalize(vec3(-.5,.72,.55)), L2=normalize(vec3(.75,-.25,.45)), L3=normalize(vec3(.35,.35,-.85));
-  float ndl=dot(N,L1);
-  float wrap=clamp((ndl+.4)/1.4,0.,1.);
-  float diff=pow(wrap,1.35);
-  float term=smoothstep(.0,.3,wrap)*(1.-smoothstep(.3,.75,wrap));
-  vec3 col=base*(.06+1.0*diff*ao);
-  col+=vec3(.95,.3,.2)*base*term*.2*ao;
-  col+=base*vec3(.6,.72,1.)*.2*max(dot(N,L2),0.)*ao;
-  vec3 Hh=normalize(L1+V);
-  // wet, glossy tissue: smooth stages carry a stronger, broader sheen
-  float spec=(pow(max(dot(N,Hh),0.),90.)*.55+pow(max(dot(N,Hh),0.),14.)*.07)*(1.+.9*smoothT)+pow(max(dot(N,Hh),0.),36.)*.12*smoothT;
-  col+=vec3(1.,.97,.95)*spec*pow(H,2.)*ao*(uPart<2.5?1.:.5);
   float fre=pow(1.-max(dot(N,V),0.),3.);
-  vec3 rimC=mix(vec3(.68,.8,1.),tintc,uTintAmt*.8);
-  col+=rimC*fre*(.2+.8*max(dot(N,L3)*.5+.5,0.))*.7*ao;
 
   // activity
   vec3 em=vec3(0.);
   if(uPart<.5) em=regions(vDir,crown);
   em+=uPartGlow*(.3+.9*crown)*(.85+.15*sin(uTime*2.+vObj.x*3.));
-  col+=em*(1.+.3*fre);
 
-  // glass: clear body, strong rims
-  float aG=1.-uGlass*(1.-(.06+.8*fre));
-  if(!front) col*=.6;
-  col*=aG;
+  // tissue: lit, veined, glossy. A full hologram (uHolo 1) never shows it, so it is skipped there: the ghost brains
+  // are drawn through every fold, front and back, and this is most of their cost
+  vec3 col=vec3(0.); float aG=1.;
+  if(uHolo<.999){
+    float ao=mix(1.,mix(.18,1.,smoothstep(0.,.85,H)),clamp(uFold*1.5,0.,1.)*(uPart<.5?fm:1.));
+    if(uPart>.5&&uPart<1.5) ao=mix(1.,mix(.15,1.,H),clamp(vAux.z*1.5,0.,1.));
+    float cav=uPart<.5?vAux.w:0.;
+    ao*=1.-.75*cav;
+
+    // smooth (unfolded) tissue gets almost no albedo noise: the oil pass reads any mottling as lumps, so the fish and
+    // reptile brains looked like cauliflower. Their surface cue is a fine net of pial blood vessels instead.
+    float smoothT=1.-foldAmp(uFold)*(uPart<.5?1.:0.);
+    vec3 base=uTissue*(1.+mix(.06,.015,smoothT)*snoise(vObj*17.))*(uPart>1.5&&uPart<2.5?.8:1.);
+    base=mix(base,vec3(.5,.24,.22),(1.-H)*.5*(uPart<1.5?1.:0.));
+    {
+      vec3 vp=vObj*2.3+vec3(uPart*7.1);
+      float v1=snoise(vp+.6*vec3(snoise(vp*.7+3.),snoise(vp*.7+9.),0.));
+      float v2=snoise(vp*2.6+11.);
+      float w1=fwidth(v1)*1.4+.018, w2=fwidth(v2)*1.2+.012;
+      float ves=max(1.-smoothstep(0.,w1,abs(v1)),.6*(1.-smoothstep(0.,w2,abs(v2)))*smoothstep(-.2,.4,v1));
+      ves*=(uPart>1.5&&uPart<2.5?.5:1.)*(.35+.65*smoothT)*(1.-uGlass)*(1.-uHolo);
+      base=mix(base,vec3(.46,.16,.17)*dot(base,vec3(.4)),ves*.42);
+    }
+    vec3 tintc=uTint;
+    base=mix(base,tintc*(.45+.55*dot(base,vec3(.33))),uTintAmt);
+
+    vec3 L1=normalize(vec3(-.5,.72,.55)), L2=normalize(vec3(.75,-.25,.45)), L3=normalize(vec3(.35,.35,-.85));
+    float ndl=dot(N,L1);
+    float wrap=clamp((ndl+.4)/1.4,0.,1.);
+    float diff=pow(wrap,1.35);
+    float term=smoothstep(.0,.3,wrap)*(1.-smoothstep(.3,.75,wrap));
+    col=base*(.06+1.0*diff*ao);
+    col+=vec3(.95,.3,.2)*base*term*.2*ao;
+    col+=base*vec3(.6,.72,1.)*.2*max(dot(N,L2),0.)*ao;
+    vec3 Hh=normalize(L1+V);
+    // wet, glossy tissue: smooth stages carry a stronger, broader sheen
+    float spec=(pow(max(dot(N,Hh),0.),90.)*.55+pow(max(dot(N,Hh),0.),14.)*.07)*(1.+.9*smoothT)+pow(max(dot(N,Hh),0.),36.)*.12*smoothT;
+    col+=vec3(1.,.97,.95)*spec*pow(H,2.)*ao*(uPart<2.5?1.:.5);
+    vec3 rimC=mix(vec3(.68,.8,1.),tintc,uTintAmt*.8);
+    col+=rimC*fre*(.2+.8*max(dot(N,L3)*.5+.5,0.))*.7*ao;
+
+    col+=em*(1.+.3*fre);
+
+    // glass: clear body, strong rims
+    aG=1.-uGlass*(1.-(.06+.8*fre));
+    if(!front) col*=.6;
+    col*=aG;
+  }
 
   // hologram line art
   float cy=vObj.y*6.;
@@ -453,7 +480,9 @@ void main(){
   vec3 outc=mix(col,hc,uHolo);
   float outa=aG*(1.-uHolo);
   gl_FragColor=vec4(outc,outa);
+#ifdef BRAIN_CUT
   gl_FragDepth=depthOut;
+#endif
 }`;
 
 /* ----------------------------------------------------------- constellation (stars + links) */

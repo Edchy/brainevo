@@ -81,7 +81,7 @@ export default function Oldowan() {
       s.propL = 6; s.gripL = 0.85; s.rollL = 0.2 * raise;
       s.mouth = 0;
       h.look.w = w;
-      h.look.keyK = 0.7 + hit * 1.1; h.look.rimK = 1.0 + hit * 1.2; h.look.amb = 0.1; h.look.sss = 0.55;
+      h.look.keyK = 0.7 + hit * 1.1; h.look.rimK = 1.0 + hit * 1.2; h.look.amb = 0.16; h.look.sss = 0.3;
       // contact point on the core, in world space
       H.set(wx(s.pRx + 0.0), wy(s.pRy + 0.05), wz(s.pRz));
     }

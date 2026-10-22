@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { SCENES } from '../scenes';
 import { useSettings } from '../style/store';
 import { OIL_BLOOM, OilEffects } from '../style/oil';
+import { MirrorOverlay } from '../scenes/shared/Mirror';
 import TitleLayer from '../style/titles';
 import PerfHud from './PerfHud';
 import Dip from './Dip';
@@ -103,13 +104,17 @@ function sanitizeBloom(b: BloomEffect | null) {
     'vec4 texel=texture2D(inputBuffer,vUv);texel=(any(isnan(texel))||any(isinf(texel)))?vec4(0.0):clamp(texel,vec4(0.0),vec4(64.0));',
   );
   m.needsUpdate = true;
+  // dev: window.__bloomT = 0.4 sets the bloom threshold live (A/B)
+  if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__bloom = b;
 }
 
 const PostFX = memo(function PostFX({ bloom }: { bloom: RefObject<BloomEffect | null> }) {
   const { titles } = useSettings();
   return (
     <EffectComposer multisampling={0}>
-      <Bloom ref={(b) => { bloom.current = b; sanitizeBloom(b); }} intensity={0.5} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
+      {/* threshold high enough that lit bodies (people, animals) stay crisp while light itself (flames, stars, neurons) glows;
+          a tighter radius keeps a bright fire from hazing the whole frame */}
+      <Bloom ref={(b) => { bloom.current = b; sanitizeBloom(b); }} intensity={0.5} luminanceThreshold={0.3} luminanceSmoothing={0.3} mipmapBlur radius={0.62} />
       <Vignette eskil={false} offset={0.2} darkness={0.7} />
       <Dip />
       <Scrim />
@@ -134,6 +139,8 @@ function World() {
       for (let i = 0; i < n; i++) { clock.oldTime = performance.now() - 16.7; advance(performance.now(), true); }
     };
     (window as unknown as Record<string, unknown>).__gl = gl;
+    // window.__three() -> the R3F state (scene graph, camera) for inspection
+    (window as unknown as Record<string, unknown>).__three = getState;
   }
   const groups = useRef<Record<string, THREE.Group | null>>({});
   const ambientW = useRef(0);
@@ -235,6 +242,7 @@ function World() {
           </SceneCtx.Provider>
         </group>
       ))}
+      {!BRAINLAB && !CREATURES && <MirrorOverlay />}
       {!SAFE && <PostFX bloom={bloom} />}
       {PERF && <PerfHud />}
     </>

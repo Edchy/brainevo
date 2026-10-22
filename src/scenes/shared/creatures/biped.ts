@@ -440,7 +440,8 @@ export function solveBiped(ps: PrimSet, Q: BipedParams, st: RigState) {
   if (Q.hair > 0.05) {
     const h = Q.hair, hl = Q.hairLen;
     hp(-0.3 - 0.3 * el, uC + 0.1 - hl * 0.9, 0, A); hp(-0.02, uC + 0.36 - (1 - vt) * 0.1, 0, Bv);
-    ps.add(A[0], A[1], A[2], cr * (1.06 + 0.1 * h), Bv[0], Bv[1], Bv[2], cr * (0.9 + 0.1 * h), 0.03, MAT.fur, 0.76, 0.32);
+    // a cap that stands clear of the skull (a thinner one blended half into skin and vanished)
+    ps.add(A[0], A[1], A[2], cr * (1.12 + 0.1 * h), Bv[0], Bv[1], Bv[2], cr * (0.95 + 0.1 * h), 0.02, MAT.fur, 0.62, 0.32);
   }
   if (Q.beard > 0.05) {
     const b = Q.beard;
@@ -460,7 +461,7 @@ export function solveBiped(ps: PrimSet, Q: BipedParams, st: RigState) {
     const th0 = G.armSwing * walk * Math.cos(2 * Math.PI * swingPh) - 0.05 - lean * 0.4;
     const th = mix(th0, isR ? st.armR : st.armL, st.armsFree);
     const flex = mix(0.18 + 0.5 * Math.max(0, Math.sin(th * 2.2)) * walk + 0.1 * Math.sin(T * 1.4 + i), 0.3, st.armsFree * 0.5);
-    const out = 0.045 + 0.02 * crouch;
+    const out = 0.07 + 0.02 * crouch; // arms hang clear of the torso so the blend does not melt them into it
     let tx = shx + Math.sin(th) * L1 + Math.sin(th + flex) * L2, ty = shy - Math.cos(th) * L1 - Math.cos(th + flex) * L2, tz = shz + side * out;
     // pose targets in the chest frame (fwd = CH.f, up = CH.u)
     let w = 0, gx = 0, gy = 0, gz = 0;

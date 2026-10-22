@@ -66,10 +66,6 @@ float H(vec2 P){
 }
 void main(){
   vec2 P=vP;
-  float e=.012;
-  float h=H(P);
-  float hx=H(P+vec2(e,0.)), hy=H(P+vec2(0.,e));
-  vec3 n=normalize(vec3((h-hx)/e*.55,(h-hy)/e*.55,1.));
   float fl=.9+.1*sin(uTime*7.+sin(uTime*2.7)*3.)+.04*sin(uTime*13.);
 
   vec2 hc=vec2(${HAND_X.toFixed(2)}, ${(HAND_Y + 0.3).toFixed(2)});
@@ -79,9 +75,20 @@ void main(){
   vec3 TL=vec3(tc-P, 1.1);
   float td=length(TL); TL/=td;
   float torch=(1./(.45+td*td*.28))*fl;
-  float tdif=max(dot(n,TL),0.);
   float pool = (exp(-dot(P-hc,P-hc)*.2)*uHand + exp(-dot(P-fc,P-fc)*.3)*uRip);
   float torchK = uHand*smoothstep(5.5,0.,td);
+
+  // Cost: this wall covers the whole frame, so every saving here is per pixel. The relief is computed once (the normal
+  // comes from its screen-space slope, not two more samples), only where light reaches it (unlit rock is black anyway),
+  // and the hand and the flute are only drawn at their own moment. Was ~100-150 ms a frame on an M2, see Brain.tsx.
+  float h = pool+torchK > .004 ? H(P) : .3;
+  vec2 dPx=dFdx(P), dPy=dFdy(P);
+  float dhx=dFdx(h), dhy=dFdy(h);
+  float det=dPx.x*dPy.y-dPx.y*dPy.x; det=abs(det)<1e-12?1e-12:det;
+  vec2 g=vec2(dhx*dPy.y-dhy*dPx.y, dPx.x*dhy-dPy.x*dhx)/det;
+  vec3 n=normalize(vec3(-g*.55,1.));
+
+  float tdif=max(dot(n,TL),0.);
   vec3 L=normalize(vec3(.4,.5,.8));
   float dif=max(dot(n,L),0.);
   // stone: cool grey ambient + warm raking torch; pits and cracks go dark
@@ -91,67 +98,79 @@ void main(){
   rock += vec3(1.,.5,.15)*pow(tdif,6.)*torch*.07*torchK; // glints on the wet ridges
 
   // --- hand stencil: pigment blown around the hand, the hand itself left bare ---
+  vec3 ochre=vec3(0.); float paint=0., ghost=0.;
   vec2 hp=(P-hc)/1.0 + vec2(0.,0.15);
-  float wob=(fbm(vec3(P*9.,3.))-.5)*.035;
-  float d=sdHand(hp) + wob;
+  float dh=uHand>.002 ? sdHand(hp) : 1e3;
   float reach=uHand*1.35;
-  float spray = exp(-max(d,0.)*5.2);
-  // two grain scales: fine mist + coarser blown flecks, both pooling in the low rock
-  float g1 = h21(floor(P*420.)), g2 = h21(floor(P*190.)+7.);
-  float body = fbm(vec3(P*3.2, 7.))*.55;
-  float mist = step(1.-spray*.85, g1*.78+body*.5) * step(0.,d);
-  float fleck = step(1.-spray*spray*.5, g2*.8+body*.4) * step(0.,d);
-  float falloff = smoothstep(reach, reach-.35, d);
-  float edge = exp(-d*d*8000.) * step(-.015, d) * falloff * .45;     // dense line where the paint meets the hand
-  float haze = exp(-max(d,0.)*8.)*.16*step(0.,d)*falloff;
-  float tooth = .45+.9*(1.-smoothstep(.1,.6,h));                       // paint sits in the hollows
-  float paint = (mist*.7 + fleck*.55 + haze + edge)*tooth*uHand*falloff;
-  vec3 ochre = mix(vec3(1.6,.22,.06), vec3(1.9,.45,.12), fbm(vec3(P*6.,5.)));
-  // light also scatters in the wet pigment near the torch
-  paint *= .75 + .5*torchK*tdif;
+  // paint only reaches as far as reach from the hand (plus the edge wobble): beyond it, skip the five noise fields
+  if(dh<reach+.05){
+    float wob=(fbm(vec3(P*9.,3.))-.5)*.035;
+    float d=dh + wob;
+    float spray = exp(-max(d,0.)*5.2);
+    // two grain scales: fine mist + coarser blown flecks, both pooling in the low rock
+    float g1 = h21(floor(P*420.)), g2 = h21(floor(P*190.)+7.);
+    float body = fbm(vec3(P*3.2, 7.))*.55;
+    float mist = step(1.-spray*.85, g1*.78+body*.5) * step(0.,d);
+    float fleck = step(1.-spray*spray*.5, g2*.8+body*.4) * step(0.,d);
+    float falloff = smoothstep(reach, reach-.35, d);
+    float edge = exp(-d*d*8000.) * step(-.015, d) * falloff * .45;     // dense line where the paint meets the hand
+    float haze = exp(-max(d,0.)*8.)*.16*step(0.,d)*falloff;
+    float tooth = .45+.9*(1.-smoothstep(.1,.6,h));                       // paint sits in the hollows
+    paint = (mist*.7 + fleck*.55 + haze + edge)*tooth*uHand*falloff;
+    ochre = mix(vec3(1.6,.22,.06), vec3(1.9,.45,.12), fbm(vec3(P*6.,5.)));
+    // light also scatters in the wet pigment near the torch
+    paint *= .75 + .5*torchK*tdif;
+  }
 
   // --- ghost animals, barely there: a bison and a horse in the same pigment ---
-  float bis = sdBison((P-hc-vec2(-3.4,.55))/1.15)*1.15;
-  float hor = sdHorse((P-hc-vec2(3.3,-.25))/1.0);
-  float gd = min(bis, hor) + (fbm(vec3(P*12.,8.))-.5)*.05;
-  float ghost = (smoothstep(.02,-.02,gd)*.018 + exp(-gd*gd*2600.)*.05)*uHand;
-  ghost *= step(.45, h21(floor(P*260.))*.6 + fbm(vec3(P*6.,2.))*.7 + .3);
-  ghost *= smoothstep(1.2,.2,td*.5)*0.0+1.;
+  if(uHand>.002){
+    float bis = sdBison((P-hc-vec2(-3.4,.55))/1.15)*1.15;
+    float hor = sdHorse((P-hc-vec2(3.3,-.25))/1.0);
+    float g0 = min(bis, hor);
+    if(g0<.1){ // the pigment (and its glow) ends within a hair of the outline
+      float gd = g0 + (fbm(vec3(P*12.,8.))-.5)*.05;
+      ghost = (smoothstep(.02,-.02,gd)*.018 + exp(-gd*gd*2600.)*.05)*uHand;
+      ghost *= step(.45, h21(floor(P*260.))*.6 + fbm(vec3(P*6.,2.))*.7 + .3);
+      if(paint<=0.) ochre = mix(vec3(1.6,.22,.06), vec3(1.9,.45,.12), fbm(vec3(P*6.,5.)));
+    }
+  }
 
   // --- bone flute: a vulture-bone tube with finger holes, lit cool, singing rings ---
-  vec2 q=(P-fc);
-  float ca=cos(.95), sa=sin(.95);
-  vec2 fp = vec2(ca*q.x+sa*q.y, -sa*q.x+ca*q.y);  // flute axis along y
-  fp = vec2(fp.y, -fp.x)*1.;                       // axis along x
-  float tb = clamp((fp.x+1.15)/2.3,0.,1.);
-  float fr = .075 - .016*tb;
-  float fd = sdSeg(vec2(fp.x, fp.y+.004*sin(fp.x*6.)), vec2(-1.15,0.), vec2(1.15,0.), fr);
-  float cyl = clamp(fp.y/fr,-1.,1.);
-  float nrm = sqrt(max(1.-cyl*cyl,0.));
-  float fib = fbm(vec3(fp.x*26.,fp.y*90.,3.));
-  float bone = (.35+.65*nrm*nrm) * (.8+.4*fib) * (.72+.28*smoothstep(-1.,1.,cyl)); // lit from upper side
-  float holes=0.;
-  for(int i=0;i<5;i++){ float hx2=-.45+float(i)*.28+(i>2?.07:0.); vec2 hh=(fp-vec2(hx2,0.))/vec2(.03,.034); holes=max(holes, 1.-smoothstep(.85,1.05,length(hh))); }
-  float rim=0.; for(int i=0;i<5;i++){ float hx2=-.45+float(i)*.28+(i>2?.07:0.); vec2 hh=(fp-vec2(hx2,0.))/vec2(.03,.034); rim=max(rim, exp(-pow((length(hh)-1.05)*8.,2.))); }
-  float fm = (1.-smoothstep(-.004,.004,fd)) * uRip;
-  vec3 fluteC = vec3(1.15,1.1,1.0)*bone*(1.-holes*.95) + vec3(.6,.7,.9)*rim*.6;
-  fluteC *= .6+.5*torchK*0.;
-  float fglow = exp(-max(fd,0.)*18.)*uRip*.25;
+  float fm=0., fglow=0., ring=0.; vec3 fluteC=vec3(0.);
+  if(uRip>.002){
+    vec2 q=(P-fc);
+    float ca=cos(.95), sa=sin(.95);
+    vec2 fp = vec2(ca*q.x+sa*q.y, -sa*q.x+ca*q.y);  // flute axis along y
+    fp = vec2(fp.y, -fp.x)*1.;                       // axis along x
+    float tb = clamp((fp.x+1.15)/2.3,0.,1.);
+    float fr = .075 - .016*tb;
+    float fd = sdSeg(vec2(fp.x, fp.y+.004*sin(fp.x*6.)), vec2(-1.15,0.), vec2(1.15,0.), fr);
+    float cyl = clamp(fp.y/fr,-1.,1.);
+    float nrm = sqrt(max(1.-cyl*cyl,0.));
+    float fib = fbm(vec3(fp.x*26.,fp.y*90.,3.));
+    float bone = (.35+.65*nrm*nrm) * (.8+.4*fib) * (.72+.28*smoothstep(-1.,1.,cyl)); // lit from upper side
+    float holes=0.;
+    for(int i=0;i<5;i++){ float hx2=-.45+float(i)*.28+(i>2?.07:0.); vec2 hh=(fp-vec2(hx2,0.))/vec2(.03,.034); holes=max(holes, 1.-smoothstep(.85,1.05,length(hh))); }
+    float rim=0.; for(int i=0;i<5;i++){ float hx2=-.45+float(i)*.28+(i>2?.07:0.); vec2 hh=(fp-vec2(hx2,0.))/vec2(.03,.034); rim=max(rim, exp(-pow((length(hh)-1.05)*8.,2.))); }
+    fm = (1.-smoothstep(-.004,.004,fd)) * uRip;
+    fluteC = vec3(1.15,1.1,1.0)*bone*(1.-holes*.95) + vec3(.6,.7,.9)*rim*.6;
+    fluteC *= .6;
+    fglow = exp(-max(fd,0.)*18.)*uRip*.25;
 
-  // --- flute: thin rings of sound, ageing outward, clean and few ---
-  vec2 qq=(P-fc)*vec2(1.,1.12);
-  float rr=length(qq);
-  float ring=0.;
-  float ph=uRipPh*.07;
-  for(int i=0;i<5;i++){
-    float a=fract(ph+float(i)*.2);
-    float R=.25+a*3.6;
-    float w=.012+.03*a;
-    ring += exp(-pow((rr-R)/w,2.))*pow(1.-a,1.6)*smoothstep(0.,.08,a);
+    // --- flute: thin rings of sound, ageing outward, clean and few ---
+    vec2 qq=(P-fc)*vec2(1.,1.12);
+    float rr=length(qq);
+    float ph=uRipPh*.07;
+    for(int i=0;i<5;i++){
+      float a=fract(ph+float(i)*.2);
+      float R=.25+a*3.6;
+      float w=.012+.03*a;
+      ring += exp(-pow((rr-R)/w,2.))*pow(1.-a,1.6)*smoothstep(0.,.08,a);
+    }
+    ring *= uRip;
+    // faint grain in the rings so they read as air, not a vector circle
+    ring *= .7+.5*fbm(vec3(P*30.+uTime*.2,1.));
   }
-  ring *= uRip;
-  // faint grain in the rings so they read as air, not a vector circle
-  ring *= .7+.5*fbm(vec3(P*30.+uTime*.2,1.));
 
   vec3 c = rock + ochre*paint*.8 + ochre*ghost*.9
          + fluteC*fm*.42 + vec3(.55,.7,1.)*fglow*.5 + vec3(ring)*vec3(1.05,1.1,1.25)*.3;

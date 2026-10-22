@@ -3,7 +3,6 @@ import type { CSSProperties } from 'react';
 import { BRUSH_DEF, PALETTES_DEF } from '../style/palettes';
 import { BRUSHES, HEADLINES, PALETTES, TEXTS, setSetting, useSettings } from '../style/store';
 import type { HeadlinePlace, TextLayout } from '../style/types';
-import { recordingCount } from '../audio/narration';
 
 const TEXT_LABEL: Record<TextLayout, [string, string]> = {
   scrim: ['Painted shade', 'The painting darkens under the text'],
@@ -60,9 +59,6 @@ export default function LabPanel() {
               <input type="checkbox" checked={s.titles} onChange={(e) => setSetting('titles', e.target.checked)} /> Painted into the scene (depth)
             </label>
           </fieldset>
-          <label className="lab-check" title={`${recordingCount} recorded narration files found`}>
-            <input type="checkbox" checked={s.previewVoice} onChange={(e) => setSetting('previewVoice', e.target.checked)} /> System voice until recordings exist
-          </label>
         </div>
       )}
     </div>

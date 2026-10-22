@@ -6,6 +6,7 @@ import { mammalScenes } from './mammal';
 import { primateScenes } from './primate';
 import { hominScenes } from './hominin';
 import { humanScenes } from './human';
+import { futureScenes } from './future';
 
 export const SCENES: SceneDef[] = [
   ...cosmicScenes,
@@ -15,4 +16,5 @@ export const SCENES: SceneDef[] = [
   ...primateScenes,
   ...hominScenes,
   ...humanScenes,
+  ...futureScenes,
 ];

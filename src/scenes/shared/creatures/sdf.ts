@@ -135,6 +135,7 @@ uniform vec3 uBMin, uBMax;
 uniform vec3 uBase, uBelly, uRim, uSkin, uSplash, uKeyCol, uBone;
 uniform float uW, uRimK, uRimPow, uKeyK, uAmb, uFur, uFurScale, uSss, uSplashK, uGroundAO, uGloss, uPixAng, uTime;
 uniform vec2 uL; uniform vec3 uKeyDir; uniform int uSteps; uniform int uDbg;
+uniform float uAlb, uKeySat;
 varying vec3 vOP; varying vec3 vRO;
 
 float hash3(vec3 p){ p = fract(p*0.3183099 + .1); p *= 17.; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
@@ -284,7 +285,7 @@ void main(){
 
   // fur: stretched strand noise perturbs the normal; clumps modulate albedo; both fade out with pixel footprint
   float furAmt = uFur * (mat < 0.5 ? 1. : (mat < 1.5 ? 0.5 : 0.));
-  furAmt = uFur * clamp(wm.x + 0.5*wm.y, 0., 1.);
+  furAmt = uFur * clamp(wm.x + 0.12*wm.y, 0., 1.);   // skin is smooth: strand noise there read as speckle under the paint
   vec3 q = p*vec3(24., 120., 120.)*uFurScale;
   float lod1 = 1. - smoothstep(0.22, 0.6, pix*120.*uFurScale);
   float lod2 = 1. - smoothstep(0.3, 0.9, pix*26.*uFurScale);
@@ -292,7 +293,7 @@ void main(){
   float sa = vn(q + vec3(0., 0.41, 0.)), sb = vn(q + vec3(0., 0., 0.41));
   float strand = mix(0.5, s0, lod1);
   float clump = mix(0.5, vn(p*vec3(9., 40., 40.)*uFurScale), lod2);
-  vec3 Nf = normalize(N + vec3(0., sa - s0, sb - s0)*0.75*furAmt*lod1);
+  vec3 Nf = normalize(N + vec3(0., sa - s0, sb - s0)*0.45*furAmt*lod1);
 
   vec3 Nw = normalize(mat3(modelMatrix)*Nf);
   vec3 Nv = normalize(mat3(viewMatrix)*Nw);
@@ -301,32 +302,43 @@ void main(){
   float nv = clamp(dot(Nv, V), 0., 1.);
 
   float belly = smoothstep(0.15, -0.75, N.y);
-  vec3 furA = mix(uBase, uBelly, belly) * (1. + (clump - 0.5)*0.22*furAmt);
-  vec3 alb = (furA*wm.x + mix(uSkin, uBase, 0.25)*wm.y + vec3(0.012, 0.011, 0.014)*wm.z + uSkin*0.32*wm.w + uBone*wBone) * tone;
+  vec3 furA = mix(uBase, uBelly, belly) * (1. + (clump - 0.5)*0.16*furAmt);
+  // fur is lifted so coats carry painted mid-tones (the fur palettes were written for near-black, rim-lit silhouettes);
+  // skin colours are already mid-tones and stay as they are
+  vec3 alb = (furA*uAlb*wm.x + mix(uSkin, uBase, 0.25)*wm.y + vec3(0.012, 0.011, 0.014)*wm.z + uSkin*0.32*wm.w + uBone*wBone) * tone;
 
+  // Painted light and shadow (chiaroscuro): one key light with a clear terminator (softened by sss), cool sky in the
+  // shadows, a little warm bounce from the ground, warm scatter along the terminator, and a thin rim on the lit side only,
+  // capped so the bloom never turns it into a glowing halo.
   vec3 Lk = normalize(uKeyDir);
   float ndl = dot(Nv, Lk);
+  // a strongly coloured key (firelight) would paint skin pure red: keep its warmth, lose some of its saturation
+  vec3 kc = mix(vec3(dot(uKeyCol, vec3(0.3, 0.59, 0.11))), uKeyCol, uKeySat);
+  kc *= 1. / max(0.25, dot(kc, vec3(0.3, 0.59, 0.11))) * min(1., dot(uKeyCol, vec3(0.3, 0.59, 0.11)) * 1.6);
   float wrap = clamp((ndl + uSss)/(1. + uSss), 0., 1.);
-  float term = exp(-pow((ndl - 0.05)*2.8, 2.));
-  vec3 col = alb*(uKeyK*wrap*uKeyCol + uAmb*(0.5 + 0.5*Nw.y)*uKeyCol*0.8)*ao;
-  col += alb*uRim*term*uSss*0.22*ao;
-  col += alb*uKeyCol*0.4*clamp(-Nw.y, 0., 1.)*(0.5 + 0.5*ao);                         // floor bounce                      // warm scatter at the terminator
+  float form = smoothstep(-0.08 - 0.22*uSss, 0.32, ndl);
+  float lit = mix(form, wrap, 0.3);
+  vec3 sky = vec3(0.30, 0.36, 0.50);
+  vec3 col = alb*kc*(uKeyK*1.7*lit)*ao;
+  col += alb*mix(sky, kc*0.5, 0.3)*uAmb*1.4*(0.45 + 0.55*clamp(Nw.y*0.5 + 0.5, 0., 1.))*ao;
+  col += alb*kc*0.18*clamp(-Nw.y, 0., 1.)*ao*(0.3 + uAmb);                            // floor bounce
+  col += alb*uKeyCol*exp(-pow((ndl - 0.02)*4.2, 2.))*uSss*0.25*ao;                    // warm scatter at the terminator (keeps the full warmth)
 
-  // rim light from behind: fresnel gated to the lit side, brightened by hair-line sparkle
-  float fres = pow(1. - nv, uRimPow);
+  float fres = pow(1. - nv, max(uRimPow, 3.4));
   float side = dot(normalize(Nv.xy + 1e-4), uL);
-  float rimLit = mix(0.22, 1., smoothstep(-0.45, 0.7, side));
-  float sparkle = mix(1., 0.45 + 1.3*strand, furAmt);
-  vec3 rimc = uRim*fres*rimLit*uRimK*sparkle*(0.6 + 0.4*ao);
-  // anisotropic (Kajiya-Kay) hair sheen along the flow direction
+  float rimLit = smoothstep(-0.1, 0.75, side);
+  float sparkle = mix(1., 0.8 + 0.4*strand, furAmt);
+  float rimK = min(uRimK, 1.8);
+  vec3 rimc = uRim*fres*rimLit*rimK*0.38*sparkle*(0.55 + 0.45*ao);
+  // anisotropic (Kajiya-Kay) hair sheen along the flow direction, gentle
   vec3 Lr = normalize(vec3(uL*0.9, -0.5));
   vec3 Tv = normalize(mat3(viewMatrix)*mat3(modelMatrix)*normalize(vec3(-1., -0.28, 0.)));
   Tv = normalize(Tv - Nv*dot(Tv, Nv));
   vec3 Hh = normalize(Lr + V);
   float tdh = dot(Tv, Hh);
   float kk = pow(sqrt(max(1. - tdh*tdh, 0.)), 36.)*smoothstep(-0.2, 0.5, dot(Nv, Lr));
-  col += rimc*(mat < 2.5 ? 1. : 0.4) + uRim*kk*uRimK*0.28*furAmt*(0.5 + strand);
-  if (mat > 0.5 && mat < 1.5) col += uSkin*uRim*pow(1. - nv, 1.6)*rimLit*0.35;     // thin ears glow when backlit
+  col += rimc*(mat < 2.5 ? 1. : 0.4) + uRim*kk*rimK*0.12*furAmt*(0.5 + strand);
+  if (mat > 0.5 && mat < 1.5) col += uSkin*uRim*pow(1. - nv, 2.2)*rimLit*0.18;     // thin ears glow a little when backlit
 
   float gl = uGloss*(mat < 2.5 ? 1. : 0.);
   if (gl > 0.) col += uKeyCol*pow(max(dot(reflect(-V, Nv), Lk), 0.), 40.)*0.25*gl*ao + uRim*pow(max(dot(reflect(-V, Nv), Lr), 0.), 24.)*0.15*gl;
@@ -357,7 +369,8 @@ void main(){
     col += vec3(1.)*pow(max(dot(R, Lk), 0.), 55.)*0.9 + uRim*pow(max(dot(R, Lr), 0.), 30.)*0.6;
   }
 
-  gl_FragColor = vec4(col*uW*alpha, alpha);
+  // fade by transparency (premultiplied), not by darkening: a figure coming or going must not turn into a black cut-out
+  gl_FragColor = vec4(col*uW*alpha, alpha*uW);
   vec4 cp = projectionMatrix*viewMatrix*modelMatrix*vec4(p, 1.);
   gl_FragDepth = clamp(cp.z/cp.w*0.5 + 0.5, 0., 1.);
 }`;
@@ -374,7 +387,7 @@ export function createCreatureMaterial(): CreatureMaterial {
     uSkin: { value: new THREE.Color() }, uSplash: { value: new THREE.Color() }, uKeyCol: { value: new THREE.Color() }, uBone: { value: new THREE.Color() },
     uW: { value: 1 }, uRimK: { value: 1 }, uRimPow: { value: 2.6 }, uKeyK: { value: 0.5 }, uAmb: { value: 0.3 }, uFur: { value: 0.8 },
     uFurScale: { value: 1 }, uSss: { value: 0.5 }, uSplashK: { value: 0 }, uGroundAO: { value: 0.5 }, uGloss: { value: 0 },
-    uPixAng: { value: 0.001 }, uSteps: { value: 44 }, uDbg: { value: 0 }, uTime: { value: 0 },
+    uPixAng: { value: 0.001 }, uSteps: { value: 44 }, uDbg: { value: 0 }, uTime: { value: 0 }, uAlb: { value: 1.8 }, uKeySat: { value: 0.45 },
     uL: { value: new THREE.Vector2(-0.62, 0.78) }, uKeyDir: { value: new THREE.Vector3(0.35, 0.55, 0.75) },
   };
   return new THREE.ShaderMaterial({

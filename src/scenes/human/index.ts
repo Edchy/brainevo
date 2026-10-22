@@ -14,6 +14,7 @@ import Imaging from './Imaging';
 import Bci from './Bci';
 import AiMirror from './AiMirror';
 import Now, { NOW_CAM } from './Now';
+import Gobekli from './Gobekli';
 
 const BG = '#03050b';
 
@@ -54,6 +55,13 @@ export const humanScenes: SceneDef[] = [
     // close over the beaded grave and the lamp first, then rising to show the network of fires (behavioural modernity)
     camera: (t) => ({ pos: [-0.35, 2.7 + t * 3.6, 2.3 + t * 6.8], look: [-0.3, 0.0, -0.15 - t * 2.3], fov: 50 }),
     mood: () => ({ bg: '#040307', bloom: 1.3 }),
+  },
+  {
+    id: 'human-gobekli', from: 'gobekli-tepe', to: 'gobekli-tepe', lead: 0.5, tail: 0.4, fade: 0.45,
+    Component: Gobekli,
+    // low, from outside the ring, drifting round towards the two tall central pillars and the fire
+    camera: (t) => ({ pos: [Math.sin(-0.45 + t * 0.6) * 11.5, 2.3 + t * 0.3, Math.cos(-0.45 + t * 0.6) * 11.5], look: [0, 2.1, 0], fov: 46 }),
+    mood: () => ({ bg: '#04050b', bloom: 1.35 }),
   },
   {
     id: 'human-agriculture', from: 'agriculture', to: 'agriculture', lead: 0.45, tail: 0.3, fade: 0.4,
@@ -99,13 +107,13 @@ export const humanScenes: SceneDef[] = [
     mood: () => ({ bg: '#03050d', bloom: 1.3 }),
   },
   {
-    id: 'human-ai', from: 'ai-mirror', to: 'ai-mirror', lead: 0.6, tail: 0.5,
+    id: 'human-ai', from: 'ai-mirror', to: 'machines-learn-language', lead: 0.6, tail: 0.5,
     Component: AiMirror,
     camera: (t) => ({ pos: [0, 0.2, 9.4 - t * 0.6], look: [0, 0, 0], fov: 50 }),
     mood: () => ({ bg: '#03050d', bloom: 1.3 }),
   },
   {
-    id: 'human-now', from: 'now', to: 'now', lead: 0.3, tail: 2.0, fade: 0.35,
+    id: 'human-now', from: 'now', to: 'now', lead: 0.3, tail: 0.5, fade: 0.35,
     Component: Now,
     camera: NOW_CAM,
     mood: (t) => ({ bg: t < 0.5 ? '#03050b' : '#02030a', bloom: 1.2 + 0.5 * t }),

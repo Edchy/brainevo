@@ -1,17 +1,19 @@
 import { getSettings, subscribe } from '../style/store';
 
 /**
- * Web Audio graph shared by narration, score and sound effects:
+ * Web Audio graph shared by narration, score, soundscape and sound effects:
  *
  *   voice ─────────────────────────┐
+ *   amb ─── duck ──────────────────┤
  *   music ── duck ──┬──────────────┼── master ── limiter ── out
  *   fx ─────────────┤              │
- *                   └── reverb ────┘   (music + fx also feed one long hall reverb)
+ *                   └── reverb ────┘   (music + fx also feed one long hall reverb; each scene sound in amb
+ *                                       sends its own share straight to it)
  *
  * Browsers only start audio after a click, tap or key press in the visit (a wheel scroll does not count), so the
  * context is created lazily and resumed from the first such gesture once the visitor has sound switched on.
  */
-export interface Bus { ctx: AudioContext; voice: GainNode; music: GainNode; fx: GainNode; reverb: ConvolverNode; master: GainNode }
+export interface Bus { ctx: AudioContext; voice: GainNode; music: GainNode; amb: GainNode; fx: GainNode; reverb: ConvolverNode; master: GainNode }
 
 let bus: Bus | null = null;
 const listeners = new Set<() => void>();
@@ -22,7 +24,7 @@ export const getBus = () => bus;
 export const isRunning = () => !!bus && bus.ctx.state === 'running';
 
 /** long, dark, slightly modulated hall: decaying stereo noise, low-passed as it decays */
-function hall(ctx: AudioContext, seconds = 4.2) {
+export function hall(ctx: BaseAudioContext, seconds = 4.2) {
   const n = Math.floor(ctx.sampleRate * seconds);
   const ir = ctx.createBuffer(2, n, ctx.sampleRate);
   for (let ch = 0; ch < 2; ch++) {
@@ -48,6 +50,7 @@ function build(): Bus {
   master.connect(limiter).connect(ctx.destination);
   const voice = ctx.createGain();
   const music = ctx.createGain();
+  const amb = ctx.createGain();
   const fx = ctx.createGain();
   const reverb = ctx.createConvolver();
   reverb.buffer = hall(ctx);
@@ -55,10 +58,11 @@ function build(): Bus {
   wet.gain.value = 0.9;
   voice.connect(master);
   music.connect(master); music.connect(reverb);
+  amb.connect(master);
   fx.connect(master); fx.connect(reverb);
   reverb.connect(wet).connect(master);
   master.gain.value = 0;
-  return { ctx, voice, music, fx, reverb, master };
+  return { ctx, voice, music, amb, fx, reverb, master };
 }
 
 /** dev: window.__silent = true runs the whole audio logic at zero volume (for automated checks in a real browser) */
@@ -85,12 +89,14 @@ export function unlock() {
 }
 
 let duckLevel = 1;
-/** music sinks under the voice; fx are left alone */
+/** music and the scene sounds sink under the voice; fx are left alone */
 export function duck(on: boolean) {
   const v = on ? 0.42 : 1;
   if (!bus || v === duckLevel) return;
   duckLevel = v;
-  bus.music.gain.setTargetAtTime(v, bus.ctx.currentTime, on ? 0.25 : 1.2);
+  const now = bus.ctx.currentTime;
+  bus.music.gain.setTargetAtTime(v, now, on ? 0.25 : 1.2);
+  bus.amb.gain.setTargetAtTime(on ? 0.6 : 1, now, on ? 0.25 : 1.2);
 }
 
 if (typeof window !== 'undefined') {

@@ -6,17 +6,22 @@ interface Props {
   progress: number;
   xToFrac: (x: number) => number;
   years: number;
+  /** replaces the years readout (the closing reflection reads "Here and now") */
+  readout?: string;
   eraName: string;
+  /** how the world is being seen here ("see through their eyes"), or null once it is seen as we see it */
+  vision: string | null;
   onJump: (frac: number) => void;
 }
 
 /** Minimal interface: a hairline time axis with only the years readout and era name. Navigation lives in the Menu. */
-export default function Axis({ layout, progress, xToFrac, years, eraName, onJump }: Props) {
+export default function Axis({ layout, progress, xToFrac, years, readout, eraName, vision, onJump }: Props) {
   return (
     <footer className="axis">
       <p className="ax-read">
-        <strong>{fmtYearsAgo(years)}</strong>
-        <span>{eraName}</span>
+        <strong>{readout ?? fmtYearsAgo(years)}</strong>
+        <span className="ax-era">{eraName}</span>
+        {vision && <em className="ax-vision" key={vision}>{vision}</em>}
       </p>
       <div
         className="ax-line"

@@ -171,7 +171,8 @@ export default function Laetoli() {
     if (h) {
       h.override.phase = phase;
       h.look.w = w;
-      h.look.rimK = 1.7 + lucy * 1.1; h.look.keyK = 0.28 + lucy * 0.25;
+      // lit from the side by the glowing volcano (screen right), cool dusk in the shadows
+      h.look.rimK = 1.1 + lucy * 0.4; h.look.keyK = 0.75 + lucy * 0.25; h.look.amb = 0.22;
       h.state.headYaw = lerp(0.0, 0.85, smoothstep(0.1, 1, lucy)) + Math.sin(tt * 0.5) * 0.06;
       h.state.headPitch = -0.05 + 0.08 * lucy;
       h.state.mouth = 0;
@@ -189,7 +190,7 @@ export default function Laetoli() {
       <points geometry={R.ag} material={R.ashMat} frustumCulled={false} />
       <group ref={grp} position={[X0, 0, 0]}>
         <group scale={SC}>
-          <Creature ref={hero} rig="biped" preset="lucy" look={{ rimDir: [0.8, 0.28], keyDir: [-0.3, 0.2, 0.9] }} palette={{ rim: '#ff8a40', key: '#b09078' }} />
+          <Creature ref={hero} rig="biped" preset="lucy" look={{ rimDir: [0.8, 0.28], keyDir: [0.75, 0.35, 0.3], sss: 0.3 }} palette={{ rim: '#ffa868', key: '#d89a6a' }} />
         </group>
       </group>
     </group>

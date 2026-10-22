@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import type { ThreeElements } from '@react-three/fiber';
 import { world } from '../../../world/store';
 import { axialTube, constellation, cubeSphere } from './geometry';
-import { FRAG, NUC_FRAG, NUC_VERT, STAR_FRAG, STAR_VERT, VERT } from './glsl';
+import { DEPTH_FRAG, FRAG, NUC_FRAG, NUC_VERT, STAR_FRAG, STAR_VERT, VERT } from './glsl';
 import { PART_REGIONS, REGION_DEFS, STAGES, shapeAt } from './params';
 import type { BrainRegion, BrainShape } from './params';
 
@@ -86,16 +86,34 @@ function makeShared() {
 }
 type Shared = ReturnType<typeof makeShared>;
 
-function makeMat(shared: Shared, part: number): THREE.ShaderMaterial {
+const partUniforms = (shared: Shared, part: number) => ({
+  ...shared,
+  uPart: { value: part }, uOff: { value: new THREE.Vector3() },
+  uTint: { value: new THREE.Color(1, 1, 1) }, uTintAmt: { value: 0 }, uPartGlow: { value: new THREE.Color(0, 0, 0) },
+});
+type PartUniforms = ReturnType<typeof partUniforms>;
+
+/**
+ * Each part has three materials sharing one set of uniforms (so all three always agree):
+ *  - the colour pass, without the cutaway;
+ *  - the same with the cutaway compiled in (BRAIN_CUT): it writes depth, which disables early depth testing, so it is
+ *    used only while ctl.cut is on;
+ *  - a depth-only pass drawn first while the brain is opaque, so the colour pass shades just the front-most fold.
+ * Measured on an M2: two overlapping brains went from ~45 to ~15 ms of GPU time per frame.
+ */
+function makeMat(uniforms: PartUniforms, cut: boolean): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
-    vertexShader: VERT, fragmentShader: FRAG, side: THREE.DoubleSide, transparent: true,
+    vertexShader: VERT, fragmentShader: FRAG, side: THREE.DoubleSide, transparent: true, defines: cut ? { BRAIN_CUT: '' } : {},
     blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendEquation: THREE.AddEquation,
     blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
-    uniforms: {
-      ...shared,
-      uPart: { value: part }, uOff: { value: new THREE.Vector3() },
-      uTint: { value: new THREE.Color(1, 1, 1) }, uTintAmt: { value: 0 }, uPartGlow: { value: new THREE.Color(0, 0, 0) },
-    },
+    uniforms,
+  });
+}
+function depthMat(uniforms: PartUniforms): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    vertexShader: VERT, fragmentShader: DEPTH_FRAG, uniforms, transparent: true, colorWrite: false, depthWrite: true,
+    // nudged back a hair so the colour pass of the same surface always passes the depth test
+    polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
   });
 }
 
@@ -134,14 +152,17 @@ export function Brain({ ctl, children, ...rest }: BrainProps) {
   const root = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
   const nucG = useRef<THREE.Group>(null);
-  const meshes = useRef<Record<PartKey, THREE.Mesh | null>>({ cerebrum: null, cerebellum: null, stem: null, tectum: null, bulbs: null });
+  const meshes = useRef<Partial<Record<PartKey, { main: THREE.Mesh | null; cut: THREE.Mesh | null; pre: THREE.Mesh | null }>>>({});
   const starPts = useRef<THREE.Points>(null), starLines = useRef<THREE.LineSegments>(null);
 
   const R = useMemo(() => {
     const shared = makeShared();
-    const parts: Record<PartKey, THREE.ShaderMaterial> = {
-      cerebrum: makeMat(shared, 0), cerebellum: makeMat(shared, 1), stem: makeMat(shared, 2), bulbs: makeMat(shared, 3), tectum: makeMat(shared, 4),
-    };
+    const PART_NO: Record<PartKey, number> = { cerebrum: 0, cerebellum: 1, stem: 2, bulbs: 3, tectum: 4 };
+    const parts = {} as Record<PartKey, THREE.ShaderMaterial>, cuts = {} as Record<PartKey, THREE.ShaderMaterial>, depth = {} as Record<PartKey, THREE.ShaderMaterial>;
+    for (const k of Object.keys(PART_NO) as PartKey[]) {
+      const u = partUniforms(shared, PART_NO[k]);
+      parts[k] = makeMat(u, false); cuts[k] = makeMat(u, true); depth[k] = depthMat(u);
+    }
     const nuc = { striatum: nucMat(), thalamus: nucMat(), hippocampus: nucMat(), amygdala: nucMat() };
     const geos = {
       cerebrum: cubeSphere(q < 0.6 ? 72 : 150), cerebellum: cubeSphere(q < 0.6 ? 48 : 80), stem: axialTube(q < 0.6 ? 120 : 220, 40),
@@ -153,11 +174,11 @@ export function Brain({ ctl, children, ...rest }: BrainProps) {
       cau: tubeGeo([[0.34, 0.16, 0.2], [0.26, 0.31, 0.22], [0.04, 0.36, 0.26], [-0.2, 0.24, 0.3], [-0.3, 0.05, 0.36]], 0.05),
     };
     const stars = constellation(Math.floor(900 * Math.max(0.5, q)), 3);
-    return { shared, parts, nuc, geos, ng, stars, starMats: makeStarMats(shared) };
+    return { shared, parts, cuts, depth, nuc, geos, ng, stars, starMats: makeStarMats(shared) };
   }, [q]);
 
   useEffect(() => () => {
-    Object.values(R.parts).forEach((m) => m.dispose()); Object.values(R.nuc).forEach((m) => m.dispose());
+    [R.parts, R.cuts, R.depth, R.nuc].forEach((set) => Object.values(set).forEach((m) => m.dispose()));
     Object.values(R.ng).forEach((g) => g.dispose()); R.starMats.pts.dispose(); R.starMats.lines.dispose();
   }, [R]);
 
@@ -227,7 +248,7 @@ export function Brain({ ctl, children, ...rest }: BrainProps) {
     // per-part
     for (const p of Object.keys(R.parts) as PartKey[]) {
       const m = R.parts[p];
-      m.depthWrite = dw;
+      m.depthWrite = R.cuts[p].depthWrite = dw;
       m.uniforms.uOff.value.set(0, EXPLODE_Y[p] * ctl.explode, 0);
       m.uniforms.uTintAmt.value = ctl.tint;
       (m.uniforms.uTint.value as THREE.Color).set(ctl.tintColors[p] ?? PART_TINT[p]);
@@ -252,18 +273,31 @@ export function Brain({ ctl, children, ...rest }: BrainProps) {
       m.uniforms.uPx.value = renderer.getPixelRatio();
     }
     sm.lines.uniforms.uStarCol.value.multiplyScalar(0.55);
-    // part visibility
-    const mm = meshes.current;
-    if (mm.cerebrum) mm.cerebrum.visible = cs > 0.03;
-    if (mm.cerebellum) mm.cerebellum.visible = cur.cbS > 0.03;
-    if (mm.bulbs) mm.bulbs.visible = cur.olfS > 0.03 && cs > 0.03;
-    if (mm.tectum) mm.tectum.visible = cur.tecS > 0.03;
+    // part visibility, and which of each part's passes draw (takes effect next frame: the draw list is already built)
+    const cutOn = ctl.cut > 0.5, pre = !cutOn && dw && ctl.alpha >= 0.995;
+    const show = (k: PartKey, on: boolean) => {
+      const m = meshes.current[k];
+      if (!m) return;
+      if (m.main) m.main.visible = on && !cutOn;
+      if (m.cut) m.cut.visible = on && cutOn;
+      if (m.pre) m.pre.visible = on && pre;
+    };
+    show('cerebrum', cs > 0.03);
+    show('cerebellum', cur.cbS > 0.03);
+    show('stem', true);
+    show('bulbs', cur.olfS > 0.03 && cs > 0.03);
+    show('tectum', cur.tecS > 0.03);
     if (starPts.current) starPts.current.visible = starLines.current!.visible = ctl.stars > 0.001 && cs > 0.03;
     if (body.current) body.current.scale.setScalar(ctl.size);
   };
 
+  const slot = (k: PartKey) => (meshes.current[k] ??= { main: null, cut: null, pre: null });
   const part = (k: PartKey, geo: THREE.BufferGeometry) => (
-    <mesh ref={(m) => { meshes.current[k] = m; }} geometry={geo} material={R.parts[k]} frustumCulled={false} onBeforeRender={sync} />
+    <>
+      <mesh ref={(m) => { slot(k).pre = m; }} geometry={geo} material={R.depth[k]} renderOrder={-1} frustumCulled={false} onBeforeRender={sync} />
+      <mesh ref={(m) => { slot(k).main = m; }} geometry={geo} material={R.parts[k]} frustumCulled={false} onBeforeRender={sync} />
+      <mesh ref={(m) => { slot(k).cut = m; }} geometry={geo} material={R.cuts[k]} visible={false} frustumCulled={false} onBeforeRender={sync} />
+    </>
   );
 
   return (

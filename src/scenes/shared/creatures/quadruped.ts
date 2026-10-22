@@ -39,7 +39,8 @@ const BASE: QuadParams = {
   earSize: 0.15, earW: 1, earTilt: 0.35, earBack: 0.2,
   whisker: 0, tailLen: 0.9, tailR0: 0.045, tailR1: 0.012, tailSegs: 3, tailRise: 0.1, tailCurl: 0.25, tailNaked: false,
   gait: 'trot', stride: 0.5, lift: 0.045, bob: 0.012, wave: 0.02,
-  palette: { base: '#3a3b44', belly: '#6c6c76', rim: '#c4d6ff', skin: '#6a5359', splash: '#ffb866', key: '#8e9ac0', bone: '#d8d2c4' },
+  // warm, earthy coats under a neutral key: the old cool grey coats and lavender key read as pale ghosts once painted
+  palette: { base: '#4a3d33', belly: '#7a6c5e', rim: '#e8dcc8', skin: '#9a7468', splash: '#ffb866', key: '#c4b8a4', bone: '#d8d2c4' },
   look: {},
 };
 
@@ -56,7 +57,7 @@ export const QUAD_PRESETS: Record<QuadPresetName, QuadParams> = {
     muzzleLen: 0.34, muzzleR: 0.092, muzzleTipR: 0.062, noseR: 0.03, eyeR: 0.03, eyeFwd: 0.12, eyeUp: 0.35,
     earSize: 0, tailLen: 0.85, tailR0: 0.1, tailR1: 0.016, tailRise: 0.0, tailCurl: 0.05,
     gait: 'walk', stride: 0.6, lift: 0.045, bob: 0.008, wave: 0.05,
-    palette: { base: '#2b2d36', belly: '#4a4b55', rim: '#bcd0ff', skin: '#4a4048', splash: '#ffb060', key: '#8a96b8', bone: '#d4cdbd' },
+    palette: { base: '#463a32', belly: '#6e5f50', rim: '#e4d8c4', skin: '#8a6a5e', splash: '#ffb060', key: '#c4b8a4', bone: '#d4cdbd' },
     look: { fur: 0.35 },
   }),
   // tiny, hunched, a long flexible snout, thin legs, scaly-ish tail
@@ -68,12 +69,12 @@ export const QUAD_PRESETS: Record<QuadPresetName, QuadParams> = {
     earSize: 0.075, earW: 1, earTilt: 0.2, earBack: 0.35, whisker: 0.8,
     tailLen: 0.5, tailR0: 0.04, tailR1: 0.008, tailSegs: 3, tailRise: 0.05, tailCurl: 0.15,
     gait: 'scurry', stride: 0.34, lift: 0.03, bob: 0.01, wave: 0.03,
-    palette: { base: '#24262e', belly: '#4c4d57', rim: '#d4e0ff', skin: '#5d4850', splash: '#e8f0ff', key: '#8a96b8', bone: '#d8d2c4' },
+    palette: { base: '#43372f', belly: '#75675a', rim: '#e8dece', skin: '#a07c70', splash: '#e8f0ff', key: '#c4b8a4', bone: '#d8d2c4' },
     look: { keyK: 0.55, amb: 0.2 },
   }),
   rat: P({
     bodyLen: 0.78, chestR: 0.14, ext: 0.9,
-    palette: { base: '#33343c', belly: '#63636e', rim: '#c8d8ff', skin: '#7a5a62', splash: '#ffd9a0', key: '#8e9ac0', bone: '#d8d2c4' },
+    palette: { base: '#4c3f35', belly: '#82725f', rim: '#e8dcc8', skin: '#a8847a', splash: '#ffd9a0', key: '#c4b8a4', bone: '#d8d2c4' },
     waistR: 0.145, hipR: 0.18, arch: 0.3, belly: 0.5,
     neckUp: 0.3, headDrop: 0.3, skullR: 0.14, skullLen: 0.27, muzzleLen: 0.26, muzzleR: 0.08, muzzleTipR: 0.03, noseR: 0.026,
     eyeR: 0.03, eyeFwd: 0.14, eyeUp: 0.36,

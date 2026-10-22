@@ -137,7 +137,7 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string
 
 function drawSlot(ctx: CanvasRenderingContext2D, W: number, H: number, idx: number, th: Theme) {
   const ev = events[idx];
-  if (!ev) return;
+  if (!ev || ev.kind === 'coda') return; // the closing reflection has no headline: its line is the whole thing
   const eraStart = !events[idx - 1] || events[idx - 1].era !== ev.era;
   const font = (px: number) => `${th.weight} ${px}px ${th.family}`;
   const wt = th.withText;

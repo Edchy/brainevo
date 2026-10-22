@@ -62,12 +62,12 @@ export default function Coop() {
     if (mm) {
       setCarry(mm, km, 0, wM, mine);
       mm.state.headPitch = -0.3 * (mine ? 1 : 0.4) + 0.03 * Math.sin(tm * 0.6); mm.state.headYaw = 0; mm.state.mouth = 0;
-      mm.look.w = w; mm.look.rimK = 1.0; mm.look.keyK = 0.55; mm.look.amb = 0.2; mm.look.sss = 0.55;
+      mm.look.w = w; mm.look.rimK = 1.0; mm.look.keyK = 0.6; mm.look.amb = 0.24; mm.look.sss = 0.3;
     }
     if (hh) {
       setCarry(hh, kh, Math.PI, wH, !mine);
       hh.state.headPitch = -0.12 - 0.2 * smoothstep(0.5, 0.75, t) + 0.03 * Math.sin(tm * 0.5 + 1); hh.state.headYaw = 0; hh.state.mouth = 0;
-      hh.look.w = w; hh.look.rimK = 1.0; hh.look.keyK = 0.55; hh.look.amb = 0.2; hh.look.sss = 0.55;
+      hh.look.w = w; hh.look.rimK = 1.0; hh.look.keyK = 0.6; hh.look.amb = 0.24; hh.look.sss = 0.3;
     }
     look.copy(W);
     R.floor.uniforms.uAlpha.value = w;

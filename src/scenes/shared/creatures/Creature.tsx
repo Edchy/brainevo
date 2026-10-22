@@ -44,8 +44,8 @@ export interface CreatureProps {
   /** update the rig every N rendered frames (2 = half rate) */
   every?: number;
   /**
-   * Render resolution relative to the canvas, 0.4..1. 'auto' (default) renders natively up to a pixel ratio of ~1.25 and
-   * at 1.25/dpr above that (into a shared low-res buffer that is blitted back with depth). Cost scales with pixels.
+   * Render resolution relative to the canvas, 0.4..1. 'auto' (default) renders natively up to a pixel ratio of ~1.5 and
+   * at 1.5/dpr above that (into a shared low-res buffer that is blitted back with depth). Cost scales with pixels.
    */
   resolution?: number | 'auto';
   /** extra distance-travelled-to-phase multiplier */
@@ -82,7 +82,8 @@ export const Creature = forwardRef<CreatureHandle, CreatureProps>(function Creat
   const composite = useMemo(() => createCompositeMaterial(material), [material]);
   const dpr = useThree((st) => st.viewport.dpr);
   const res = props.resolution ?? 'auto';
-  const scale = res === 'auto' ? Math.min(1, 1.25 / dpr) : Math.min(1, Math.max(0.4, res));
+  const devRes = import.meta.env.DEV ? (window as unknown as { __creatureRes?: number }).__creatureRes : undefined; // dev: A/B the render scale
+  const scale = devRes ?? (res === 'auto' ? Math.min(1, 1.5 / dpr) : Math.min(1, Math.max(0.4, res)));
   const lowRes = scale < 0.97;
   const scaleRef = useRef(scale);
   scaleRef.current = scale;
@@ -163,6 +164,18 @@ export const Creature = forwardRef<CreatureHandle, CreatureProps>(function Creat
       pr.onBeforeDraw?.(h);
       // onBeforeDraw may tweak look; re-apply cheap scalar fields
       applyLook(material, h.look);
+      // dev: window.__creatureLook = { sss: 0.4, keyK: 1 } overrides every creature's look (scaled: { keyKx: 1.5 }), and
+      // window.__creatureU = { uAlb: 2.4, uKeySat: 0.55 } sets shader tuning uniforms, to tune lighting live
+      if (import.meta.env.DEV) {
+        const w = window as unknown as { __creatureLook?: Record<string, number>; __creatureU?: Record<string, number> };
+        const o = w.__creatureLook;
+        if (o) {
+          const l = { ...h.look } as Record<string, unknown>;
+          for (const [k, v] of Object.entries(o)) { if (k.endsWith('x')) l[k.slice(0, -1)] = (l[k.slice(0, -1)] as number) * v; else l[k] = v; }
+          applyLook(material, l as unknown as typeof h.look);
+        }
+        for (const [k, v] of Object.entries(w.__creatureU ?? {})) if (u[k]) u[k].value = v;
+      }
     };
     // low-res mode: the SDF is drawn into a shared buffer right before this mesh is blitted
     const m0 = m.onBeforeRender;

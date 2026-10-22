@@ -87,9 +87,7 @@ button { font: inherit; color: inherit; }
 .intro-hint { margin: 22px 0 0; font-size: var(--t-small); color: var(--ink-faint); animation: rise 2s 2.6s both var(--ease-out); }
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
-.outro { position: absolute; top: 0; bottom: var(--track-bottom); width: 440px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 8px; }
-.outro h2 { font-family: var(--ui-font-display); font-weight: 500; font-size: 2.6rem; line-height: 1.05; margin: 0; }
-.outro p { color: var(--ui-ink-dim); margin: 0 0 18px; font-size: var(--t-body); max-width: 28ch; }
+.outro { position: absolute; top: 0; bottom: var(--track-bottom); width: 440px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; }
 
 /* ---- chapter + breakthrough interstitials: a quiet title, its context underneath ---- */
 .banner, .bt-marker {
@@ -116,7 +114,107 @@ button { font: inherit; color: inherit; }
 .summary { margin: 0; font-size: 1em; line-height: 1.58; letter-spacing: 0.004em; font-weight: 430; color: var(--ui-ink); text-wrap: pretty; }
 .when { font-style: italic; font-weight: 450; color: var(--gilt); }
 .when::after { content: '\2002'; }
+.when.lead::after { content: none; }
 .cap-actions { display: flex; align-items: center; gap: 22px; margin-top: 12px; }
+
+/* ---- the closing reflection: one centred line in the dark ---- */
+.caption.coda { left: 0; right: 0; margin: 0 auto; bottom: max(calc(var(--bar-h) + 40px), 22vh); width: min(31em, calc(100vw - 2 * var(--gutter))); text-align: center; }
+.caption.coda .cap-actions { justify-content: center; }
+.coda-line { margin: 0; font-family: var(--ui-font-display); font-weight: 500; font-size: clamp(1.32rem, 1.05rem + 0.9vw, 1.95rem); line-height: 1.34; color: var(--ui-ink); text-wrap: balance; text-shadow: 0 0 22px var(--ground-deep), 0 0 6px var(--ground-deep); }
+.coda-imagine .coda-line { font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.6rem); font-style: italic; }
+.beats { margin: 0 0 6px; font-family: var(--ui-font-display); font-weight: 500; font-size: clamp(3rem, 2rem + 4vw, 5.6rem); line-height: 1; color: var(--gilt); font-variant-numeric: lining-nums tabular-nums; }
+html[data-text='band'] .caption.coda { bottom: calc(var(--band-h) + 40px); }
+
+/* ---- Four Thousand Weeks: the visitor's age ---- */
+.age-field { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin-top: 16px; pointer-events: auto; color: var(--ui-ink); }
+.age-field span { font-family: var(--ui-font-display); font-size: 1.25rem; }
+.age-field input {
+  width: 4.4em; font: inherit; font-size: 1.2rem; color: var(--ui-ink); text-align: center; padding: 6px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--ground-deep) 55%, transparent); border: 1px solid color-mix(in srgb, var(--gilt) 75%, transparent); font-variant-numeric: lining-nums tabular-nums;
+}
+.age-empty input { animation: invite-breathe 2.8s ease-in-out 1.2s infinite; }
+.age-field input:focus-visible { outline: 1px solid var(--gilt); outline-offset: 3px; }
+.age-field small { font-size: 0.82em; font-style: italic; color: var(--ink-faint); }
+.weeks-chart { position: fixed; z-index: 3; right: max(5vw, var(--gutter)); top: 9vh; height: calc(100vh - 9vh - var(--bar-h) - 34px); width: min(40vw, 560px); pointer-events: none; transition: opacity 0.4s; }
+@media (max-width: 759px) { .weeks-chart { left: var(--gutter); right: var(--gutter); top: 8vh; width: auto; height: 35vh; } }
+
+/* ---- the mirror (the visitor's reflection, opt-in camera) ---- */
+.mirror-btn { display: inline-flex; align-items: center; gap: 7px; }
+
+/* ---- try it yourself: one small toy per breakthrough ---- */
+.bt-play {
+  margin-top: 18px; pointer-events: auto; display: inline-flex; align-items: center; gap: 9px; padding: 10px 20px; border-radius: 999px;
+  font: inherit; font-size: 1.02rem; color: var(--gilt); background: color-mix(in srgb, var(--ground-deep) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gilt) 70%, transparent); cursor: pointer; animation: invite-breathe 2.8s ease-in-out 1.2s infinite;
+}
+.bt-play:hover, .bt-play:focus-visible { color: var(--ui-ink); border-color: var(--gilt); }
+
+/* ---- invitations: the one look for "you can do something here" ---- */
+.invite { position: fixed; z-index: 4; right: max(9vw, var(--gutter)); top: 50%; transform: translateY(-58%); width: min(22em, 32vw); transition: opacity 0.4s; }
+.invite-card {
+  display: grid; justify-items: center; gap: 8px; width: 100%; padding: 26px 24px 22px; cursor: pointer; text-align: center; font: inherit; color: var(--ui-ink);
+  background: color-mix(in srgb, var(--ui-panel) 72%, transparent); border: 1px solid color-mix(in srgb, var(--gilt) 75%, transparent); border-radius: 18px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45); animation: invite-breathe 2.8s ease-in-out 1.2s infinite;
+}
+.invite-card:hover, .invite-card:focus-visible { border-color: var(--gilt); background: color-mix(in srgb, var(--ui-panel) 88%, transparent); }
+.invite-icon { color: var(--gilt); }
+.invite-title { font-family: var(--ui-font-display); font-size: clamp(1.3rem, 1rem + 0.8vw, 1.7rem); line-height: 1.15; }
+.invite-sub { font-size: var(--t-small); font-style: italic; color: var(--ui-ink-dim); }
+@keyframes invite-breathe { 0%, 100% { box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45), 0 0 0 0 color-mix(in srgb, var(--gilt) 0%, transparent); } 50% { box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45), 0 0 0 8px color-mix(in srgb, var(--gilt) 18%, transparent); } }
+@media (max-width: 759px) { .invite { left: var(--gutter); right: var(--gutter); top: 16vh; transform: none; width: auto; } .invite-card { padding: 18px; } }
+
+/* ---- watch: the piece plays itself ---- */
+.intro-watch { display: block; margin: 14px auto 0; font-style: italic; }
+.menu-watch { margin: 6px 0 2px; }
+.watch-bar {
+  position: fixed; z-index: 6; left: 50%; transform: translateX(-50%); bottom: calc(var(--bar-h) + 6px); display: flex; align-items: center; gap: 18px;
+  padding: 6px 16px; border-radius: 999px; background: color-mix(in srgb, var(--ui-panel) 80%, transparent); border: 1px solid var(--ui-line); font-size: var(--t-small);
+}
+.watch-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gilt); animation: watch-pulse 2.4s ease-in-out infinite; }
+@keyframes watch-pulse { 50% { opacity: 0.25; } }
+.play {
+  color: var(--ui-ink); background: var(--ui-panel); border: 1px solid var(--ui-line); border-radius: var(--ui-radius);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6); padding: 0; width: min(880px, calc(100vw - 20px)); max-height: calc(100vh - 20px);
+  font-family: var(--ui-font-body); overflow: hidden auto;
+}
+.play::backdrop { background: color-mix(in srgb, var(--ground-deep) 70%, transparent); }
+.play[open] { animation: sheet-in 0.5s var(--ease-out); }
+.play-head { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 2px 16px; padding: 22px 28px 6px; }
+.play-kicker { grid-column: 1; margin: 0; font-size: var(--t-label); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+.play-head h2 { grid-column: 1; margin: 0; font-family: var(--ui-font-display); font-weight: 500; font-size: clamp(1.5rem, 1.2rem + 1vw, 2.1rem); line-height: 1.1; }
+.play-close { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+.play-body { padding: 4px 28px 26px; }
+.play-prompt { margin: 0 0 14px; max-width: 46em; font-size: 1.04rem; line-height: 1.55; color: var(--ui-ink-dim); }
+.play-prompt .gold { color: var(--gilt); font-weight: 500; } .play-prompt .blue { color: #8fb6ff; font-weight: 500; }
+.play-stage { display: block; width: 100%; height: min(52vh, 440px); border: 1px solid var(--ui-line); border-radius: calc(var(--ui-radius) * 0.6); background: var(--ground-deep); touch-action: none; }
+.play-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 26px; margin-top: 16px; }
+.play-controls button:disabled { opacity: 0.35; cursor: default; }
+.play-hint { font-size: var(--t-small); font-style: italic; color: var(--ink-faint); }
+.play-ask { flex-basis: 100%; text-align: center; font-family: var(--ui-font-display); font-size: 1.35rem; }
+.play-hold { user-select: none; -webkit-user-select: none; padding: 10px 6px; }
+.play-reveal { margin-top: 16px; }
+.play-reveal p { margin: 0; line-height: 1.6; font-size: 1.05rem; }
+.play-reveal strong { font-family: var(--ui-font-display); font-weight: 600; font-size: 1.22em; color: var(--gilt); }
+.play-sources { list-style: none; margin: 10px 0 0; padding: 0; font-size: var(--t-small); }
+.play-sources a { color: var(--ui-ink-dim); }
+.play-words { margin-top: 14px; }
+.play-sentence { margin: 0 0 10px; min-height: 1.6em; text-align: center; font-family: var(--ui-font-display); font-size: 1.4rem; }
+.play-bank { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; }
+@media (max-width: 759px) { .play-head, .play-body { padding-left: 16px; padding-right: 16px; } .play-stage { height: 44vh; } }
+.mirror-note { font-size: var(--t-small); font-style: italic; color: var(--ink-faint); }
+.mirror-panel {
+  position: fixed; z-index: 4; right: max(9vw, var(--gutter)); bottom: calc(var(--bar-h) + 28px); width: min(21em, 30vw); margin: 0;
+  font-family: var(--ui-font-display); font-size: clamp(1.05rem, 0.9rem + 0.5vw, 1.35rem); line-height: 1.35; text-align: center;
+  color: var(--ui-ink); text-shadow: 0 0 18px var(--ground-deep), 0 0 6px var(--ground-deep); pointer-events: none;
+  animation: ax-vision 1.2s ease both;
+}
+.mirror-panel[data-phase='touched'], .mirror-panel[data-phase='shown'] { font-size: clamp(0.98rem, 0.85rem + 0.4vw, 1.18rem); }
+.mirror-panel p { margin: 0; }
+.mirror-panel strong { font-weight: 600; color: var(--gilt); }
+.mirror-choices { display: flex; justify-content: center; gap: 22px; margin-top: 12px; pointer-events: auto; }
+.mirror-again { pointer-events: auto; margin-top: 10px; }
+.mirror-private { display: block; margin-top: 10px; font-family: var(--ui-font-body); font-size: 0.72rem; font-style: italic; color: var(--ink-faint); }
+@media (max-width: 759px) { .mirror-panel { left: var(--gutter); right: var(--gutter); top: 10vh; bottom: auto; width: auto; font-size: 1rem; } }
 /* hidden copies of every caption, measured so each headline can rest on its own caption */
 .caption-measure { position: fixed; left: var(--gutter); bottom: 0; visibility: hidden; pointer-events: none; z-index: -1; will-change: auto; }
 /* overlay: no painted ground under the text, so the letters carry their own soft shade */
@@ -134,7 +232,6 @@ html[data-text='band'] .app { --track-bottom: calc(var(--band-h) - var(--bar-h))
 }
 html[data-text='band'] .band { border-top-color: var(--ui-line); }
 html[data-text='band'] .caption { bottom: calc(var(--bar-h) + 16px); }
-html[data-text='band'] .caption .summary { display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* ---- narration control ---- */
 .narrate { position: relative; }
@@ -165,8 +262,6 @@ html[data-text='band'] .caption .summary { display: -webkit-box; -webkit-line-cl
 .volume-fill { display: block; height: 100%; border-radius: 2px; background: var(--gilt); transition: width 0.6s var(--ease-out); }
 .volume-ref { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--ui-ink); }
 .volume-note { font-size: var(--t-label); margin-top: 6px; color: var(--ink-faint); }
-.transcript summary { cursor: pointer; color: var(--ui-ink); }
-.transcript p { margin: 8px 0 0; font-style: italic; }
 .tags { font-size: var(--t-small); color: var(--ink-faint); font-style: italic; }
 .sources { list-style: none; margin: 0; padding: 0; font-size: var(--t-small); }
 .sources li { margin: 0 0 6px; padding-left: 1.1em; text-indent: -1.1em; }
@@ -205,6 +300,8 @@ html[data-text='band'] .caption .summary { display: -webkit-box; -webkit-line-cl
 .ax-read { margin: 0 0 0 max(0px, calc(var(--gutter) - 18px)); display: flex; align-items: baseline; gap: 14px; font-size: var(--t-small); }
 .ax-read strong { font-weight: 500; font-variant-numeric: lining-nums tabular-nums; color: var(--ui-ink); }
 .ax-read span { color: var(--ink-faint); font-style: italic; }
+.ax-vision { color: var(--gilt); font-style: italic; opacity: 0.9; animation: ax-vision 1.6s ease both; }
+@keyframes ax-vision { from { opacity: 0; } }
 .ax-line { position: relative; height: 1px; background: var(--ui-line); pointer-events: auto; cursor: pointer; }
 .ax-line::before { content: ''; position: absolute; left: 0; right: 0; top: -10px; bottom: -10px; } /* generous hit area */
 .ax-fill { position: absolute; left: 0; top: 0; height: 1px; background: var(--gilt); }
@@ -220,11 +317,11 @@ html[data-text='band'] .caption .summary { display: -webkit-box; -webkit-line-cl
 .lab-pop label { display: flex; gap: 9px; align-items: center; cursor: pointer; font-size: 0.98rem; }
 .lab-pop input { accent-color: var(--gilt); margin: 0; }
 .swatch { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--ui-line); flex: none; }
-.lab-check { border-top: 1px solid var(--ui-line); padding-top: 10px; }
 
 @media (max-width: 759px) {
   :root { --gutter: 20px; --bar-h: 52px; --measure: 100%; }
   .ax-read { margin-left: 0; }
+  .ax-read:has(.ax-vision) .ax-era { display: none; } /* one note fits beside the date on a phone */
   .caption { bottom: calc(var(--bar-h) + 16px); }
   .banner, .bt-marker { width: 86vw; }
   .intro-begin { flex-direction: column; align-items: center; gap: 12px; }

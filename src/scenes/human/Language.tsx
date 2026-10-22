@@ -30,6 +30,8 @@ float sdHead(vec2 p){
 }
 vec3 mind(vec2 u, float side, float act, out float rimA){
   float d = sdHead(u);
+  // well outside the head every term below is zero: skip its four noise fields (most of the frame, for each head)
+  if(d>.2){ rimA=0.; return vec3(0.,0.,-d); }
   float warp = (fbm(vec3(u*2.4, side*3.+uTime*.05))-.5)*.05;
   float depth = -d + warp;
   float inside = smoothstep(0.,.012,depth)*smoothstep(-1.3,-.85,u.y);

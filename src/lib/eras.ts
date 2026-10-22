@@ -9,7 +9,7 @@ export interface EraMeta {
 }
 
 export const ERA_ORDER: Era[] = [
-  'cosmic', 'origin', 'nerves', 'vertebrate', 'mammal', 'primate', 'hominin', 'sapiens', 'modern',
+  'cosmic', 'origin', 'nerves', 'vertebrate', 'mammal', 'primate', 'hominin', 'sapiens', 'modern', 'future', 'after',
 ];
 
 export const ERA_META: Record<Era, EraMeta> = {
@@ -22,6 +22,8 @@ export const ERA_META: Record<Era, EraMeta> = {
   hominin: { name: 'Upright and Inventive', tagline: 'Walking, tools and fire feed a growing brain.', top: '#3a1306', bottom: '#6c2b11', accent: '#ff9366' },
   sapiens: { name: 'Language and Symbol', tagline: 'Speech, art and shared imagination.', top: '#33270a', bottom: '#6b4e10', accent: '#ffd966' },
   modern: { name: 'The Reflective Brain', tagline: 'Farming, writing, science: the brain studies itself.', top: '#0d2227', bottom: '#1f5260', accent: '#92f0ff' },
+  future: { name: 'What Comes Next', tagline: 'What we will do is only sketched. What physics decides is painted.', top: '#0b0b10', bottom: '#1d1c24', accent: '#e9e1cf' },
+  after: { name: 'Here and Now', tagline: 'What it means to be a brain that knows it will end.', top: '#000000', bottom: '#07070c', accent: '#f2d48a' },
 };
 
 function hex(c: string): [number, number, number] {

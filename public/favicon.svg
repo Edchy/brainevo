@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="ground" cx="40%" cy="35%" r="75%">
+      <stop offset="0" stop-color="#2b3352"/>
+      <stop offset="1" stop-color="#151a2c"/>
+    </radialGradient>
+    <linearGradient id="gilt" x1="0.15" y1="0" x2="0.75" y2="1">
+      <stop offset="0" stop-color="#f1d9a0"/>
+      <stop offset="0.55" stop-color="#d8b36e"/>
+      <stop offset="1" stop-color="#a9823f"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#ground)"/>
+  <!-- a gilt brain in profile, facing left: brainstem and cerebellum first, the cerebrum over them -->
+  <g fill="url(#gilt)" stroke="#181d31" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M34.6 40 C36.2 45 36.2 50 34.8 56 L41.4 56 C41.9 50 42.6 45 43.4 40 Z"/>
+    <path d="M39.6 40.4 C41.6 36.4 52.4 35.4 55.8 38.6 C58.4 41.2 55.2 46.8 48 47 C43.4 47.2 39.6 45.2 39.6 40.4 Z"/>
+    <path d="M8.4 30 C6.6 21 12.6 12.6 22 10.2 C30 8 41 8.4 48.6 12.4 C55.6 16.2 59 23.6 57.2 30.6 C56 35.4 51.6 38.6 46 39.2 C42 43 36 44.6 29.6 43.8 C22.6 45 16 42.4 16.6 37.6 C12.8 37.4 9.4 34.4 8.4 30 Z"/>
+  </g>
+  <g fill="none" stroke="#181d31" stroke-width="1.8" stroke-linecap="round">
+    <path d="M17.6 36.4 C24 34 30 32 35.4 30.6 C37 30.2 38.2 28.8 38.8 27.2"/>
+    <path d="M35.6 9.6 C33.2 13.4 35.6 16.4 33.4 20 C31.6 23 32.6 26.2 30.2 29.4"/>
+    <path d="M26.4 11 C24.4 14.4 27.4 17.4 24.8 21 C23.2 23.2 24.6 25.6 22.8 28.4"/>
+    <path d="M10.6 22.6 C14 21.2 16.8 23.6 20.6 21.8"/>
+    <path d="M39.6 18.6 C43.4 16.6 46.2 20.6 50.6 18.4"/>
+    <path d="M47 26 C50.2 24.4 52.6 28 56 26.2"/>
+    <path d="M22.6 40.4 C28 38 34 38 40 35.6"/>
+  </g>
+  <g fill="none" stroke="#181d31" stroke-width="1.1" stroke-linecap="round" opacity="0.8">
+    <path d="M45 41.6 C48.4 40.4 51.6 40.4 54.4 41.2"/>
+    <path d="M44.8 44.4 C47.6 43.6 50.4 43.6 52.6 44.2"/>
+  </g>
+</svg>

@@ -8,7 +8,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'nerves',
     title: 'First Neurons and the Nerve Net',
     summary:
-      'In early animals such as the ancestors of jellyfish and sea anemones, specialized cells appeared that conduct electrical signals and release chemical messengers. Cnidarians still show the result: a diffuse nerve net with no brain.',
+      "Around 600 million years ago, some animals began using cells that carry electrical signals. In jellyfish and sea anemones they form a nerve net, a web of neurons with no central command: the first step toward every brain that followed.",
     brainSignificance:
       'Neurons let one part of an animal rapidly coordinate with another, linking sensing to movement far faster than chemical diffusion. A nerve net spreads signals in all directions and supports simple behaviors such as contraction, feeding and withdrawal. Whether neurons arose once or twice (ctenophores may have evolved them independently) remains debated.',
     details:
@@ -16,11 +16,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/first-neurons-nerve-net.svg',
       alt: 'Illustration of a jellyfish with a web-like net of neurons spread through its body',
-    },
-    audio: {
-      src: '/media/first-neurons-nerve-net.mp3',
-      transcript:
-        'Around six hundred million years ago, some animals began to use cells that carry electrical signals. In jellyfish and sea anemones this takes the form of a nerve net, a web of neurons with no central command. It was the first step toward every brain that followed.',
     },
     tags: ['neuron', 'nerve net', 'cnidarian', 'synapse'],
     sources: [
@@ -35,7 +30,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'nerves',
     title: 'Bilateral Symmetry and Ganglia',
     summary:
-      'The bilaterians, animals with a left and right side and a front and back, evolved from radially symmetric ancestors. Many of them gathered neurons into clusters called ganglia and into longitudinal nerve cords.',
+      "Animals that crawl or swim in one direction developed a head end and a tail end, with matching left and right sides. Their neurons began to gather into clusters called ganglia, connected by nerve cords. Centralizing the nervous system made faster and smarter responses possible.",
     brainSignificance:
       'Moving in one direction made the front end the place where new information arrives first. Concentrating neurons into ganglia shortened signal paths and allowed more complex processing than a diffuse net. This centralization is the basis of nearly all later nervous systems.',
     details:
@@ -43,11 +38,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/bilateral-symmetry-ganglia.svg',
       alt: 'Diagram of a worm-like animal with paired nerve cords and clusters of neurons along its body',
-    },
-    audio: {
-      src: '/media/bilateral-symmetry-ganglia.mp3',
-      transcript:
-        'Animals that crawl or swim in one direction developed a head end and a tail end, with matching left and right sides. Their neurons began to gather into clusters called ganglia, connected by nerve cords. Centralizing the nervous system made faster and smarter responses possible.',
     },
     tags: ['bilateria', 'ganglia', 'nerve cord', 'centralization'],
     sources: [
@@ -63,7 +53,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'nerves',
     title: 'Cephalization: The First Heads',
     summary:
-      'In many bilaterian lineages, sense organs and neurons became concentrated at the leading end of the body, forming a head with an anterior brain. Flatworms are a living example, with a cerebral ganglion and sensory structures at the front.',
+      "As animals moved forward through the world, their senses and neurons piled up at the front. This process is called cephalization, and it created the first heads. The cluster of neurons in a head is what we now call a brain.",
     brainSignificance:
       'A head brings together chemical sensors, light detectors and a processing center right where the animal meets new surroundings. The anterior ganglion became a true brain, integrating sensory input and steering the body. Cephalization began a trend toward larger, more specialized brains.',
     details:
@@ -71,11 +61,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/cephalization.svg',
       alt: 'Flatworm with a highlighted cluster of neurons and eyespots at its head end',
-    },
-    audio: {
-      src: '/media/cephalization.mp3',
-      transcript:
-        'As animals moved forward through the world, their senses and neurons piled up at the front. This process is called cephalization, and it created the first heads. The cluster of neurons in a head is what we now call a brain.',
     },
     tags: ['cephalization', 'head', 'flatworm', 'sensory organs'],
     sources: [
@@ -90,7 +75,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'nerves',
     title: 'The Cambrian Explosion and the Rise of Eyes',
     summary:
-      'Within roughly 20 million years, most major animal body plans appear in the fossil record. Image-forming eyes evolved in several groups, including arthropods such as trilobites, and predation became a driving force.',
+      "About 540 million years ago, animal life diversified dramatically in the Cambrian explosion. Many animals evolved eyes, and the race between hunters and hunted favored sharper senses. Processing all that visual information pushed brains to become more complex.",
     brainSignificance:
       'Vision supplies rich, rapid information about distance, motion and shape, and processing it demands larger and more elaborate brains. An arms race of predators and prey rewarded better senses, faster reactions and learning. The Cambrian is when complex, sensory-driven brains became widespread.',
     details:
@@ -98,11 +83,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/cambrian-explosion-eyes.svg',
       alt: 'Cambrian seafloor scene with a trilobite and a predator, showing compound eyes',
-    },
-    audio: {
-      src: '/media/cambrian-explosion-eyes.mp3',
-      transcript:
-        'About five hundred and forty million years ago, animal life diversified dramatically in the Cambrian explosion. Many animals evolved eyes, and the race between hunters and hunted favored sharper senses. Processing all that visual information pushed brains to become more complex.',
     },
     tags: ['Cambrian', 'eyes', 'vision', 'predation', 'trilobite'],
     sources: [
@@ -118,17 +98,12 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'Chordates: Notochord and Dorsal Nerve Cord',
     summary:
-      "Early chordates had a flexible notochord and a hollow nerve cord along the back, a plan seen in fossils such as Pikaia, about 508 million years old, and in living lancelets. Their nerve cord formed from a folded neural tube, unlike the solid nerve cords along the belly of many invertebrates.",
+      "Chordates added a stiff rod called the notochord and a hollow nerve cord along the back. That nerve cord is the forerunner of our spinal cord and brain. It also helped these animals swim with coordinated, wave-like movements.",
     brainSignificance:
       'The hollow dorsal nerve cord is the ancestor of the vertebrate spinal cord and brain. A stiff notochord allowed strong, wave-like swimming that demanded precise motor coordination along the body. In lancelets, a swelling at the front end of the cord hints at a rudimentary brain.',
     image: {
       src: '/media/chordates-notochord-nerve-cord.svg',
       alt: 'Cross-section of a lancelet showing the notochord below a hollow dorsal nerve cord',
-    },
-    audio: {
-      src: '/media/chordates-notochord-nerve-cord.mp3',
-      transcript:
-        'Chordates added a stiff rod called the notochord and a hollow nerve cord along the back. That nerve cord is the forerunner of our spinal cord and brain. It also helped these animals swim with coordinated, wave-like movements.',
     },
     tags: ['chordate', 'notochord', 'neural tube', 'lancelet', 'Pikaia'],
     sources: [
@@ -143,17 +118,12 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'The First Vertebrates',
     summary:
-      "Small, jawless fishlike animals such as Haikouichthys and Myllokunmingia appear in Chinese Cambrian fossils. They had a distinct head with paired eyes, probably protected by a braincase of cartilage.",
+      "Around 520 million years ago, the first true vertebrates swam in Cambrian seas. They had a head with paired eyes and a protective braincase, built by new embryonic cells called the neural crest. These innovations let the brain grow more complex.",
     brainSignificance:
       'Vertebrates evolved neural crest cells and sensory placodes, embryonic tissues that build sensory organs, cranial nerves and parts of the head. These allowed a larger, more complex brain protected by cartilage. Whole-genome duplications in early vertebrates also supplied extra genes for neural development.',
     image: {
       src: '/media/first-vertebrates-neural-crest.svg',
       alt: 'Reconstruction of a small jawless Cambrian fish with visible eyes and a head',
-    },
-    audio: {
-      src: '/media/first-vertebrates-neural-crest.mp3',
-      transcript:
-        'Around five hundred and twenty million years ago, the first true vertebrates swam in Cambrian seas. They had a head with paired eyes and a protective braincase, built by new embryonic cells called the neural crest. These innovations let the brain grow more complex.',
     },
     tags: ['vertebrate', 'neural crest', 'placodes', 'Haikouichthys'],
     sources: [
@@ -168,7 +138,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'The Tripartite Brain',
     summary:
-      'The vertebrate brain organized into three regions: the forebrain (prosencephalon), midbrain (mesencephalon) and hindbrain (rhombencephalon). This plan is seen in every vertebrate embryo today.',
+      "Early vertebrates organized their brains into three parts: the forebrain, the midbrain and the hindbrain. Each part took on different jobs, from smell and vision to balance and breathing. Your own brain still follows this ancient three-part plan.",
     brainSignificance:
       'The forebrain handles smell and, later, higher integration; the midbrain processes vision and hearing; the hindbrain controls breathing, balance and basic body functions. Dividing the brain into modules let each region specialize and expand independently. The basic division persists in the human brain.',
     details:
@@ -176,11 +146,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/tripartite-brain.svg',
       alt: 'Side view of a simple fish brain with forebrain, midbrain and hindbrain labeled in three colors',
-    },
-    audio: {
-      src: '/media/tripartite-brain.mp3',
-      transcript:
-        'Early vertebrates organized their brains into three parts: the forebrain, the midbrain and the hindbrain. Each part took on different jobs, from smell and vision to balance and breathing. Your own brain still follows this ancient three-part plan.',
     },
     tags: ['forebrain', 'midbrain', 'hindbrain', 'brain regionalization'],
     sources: [
@@ -195,17 +160,12 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: "Lampreys: Camera Eyes and an Old Brain Plan",
     summary:
-      "Jawless fishes such as the ancestors of modern lampreys show the early vertebrate brain. Lampreys have a camera-type eye, a retina and optic tectum, and at most a rudimentary cerebellum.",
+      "Lampreys are living jawless fishes that preserve a very old vertebrate brain design. They have a camera-style eye and the same basic brain layout we have. Studying them shows that this plan arose before jaws did.",
     brainSignificance:
       "The cerebellum fine-tunes movement and balance by comparing intended and actual motion. It is tiny or absent in lampreys and well formed in jawed fishes. Lampreys also show the basic vertebrate layout of pallium, basal ganglia and tectum, which means this blueprint is older than the jaw.",
     image: {
       src: '/media/lampreys-brain-and-cerebellum.svg',
       alt: 'Lamprey with its brain highlighted, showing the cerebellum at the back',
-    },
-    audio: {
-      src: '/media/lampreys-brain-and-cerebellum.mp3',
-      transcript:
-        "Lampreys are living jawless fishes that preserve a very old vertebrate brain design. They have a camera-style eye and the same basic brain layout we have. Studying them shows that this plan arose before jaws did.",
     },
     tags: ['lamprey', 'cerebellum', 'optic tectum', 'agnathan'],
     sources: [
@@ -221,7 +181,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'Jawed Fishes and Myelin',
     summary:
-      'Jawed vertebrates (gnathostomes) arose, including placoderms, cartilaginous fishes and bony fishes. They also evolved myelin, a fatty insulating sheath around nerve axons made by glial cells.',
+      "Jawed fishes appeared and spread, and with them came myelin, a fatty wrapping around nerve fibers. Myelin makes signals travel much faster and more efficiently. Fast nerves were a big advantage for large, active predators.",
     brainSignificance:
       "Myelin lets nerve impulses leap from gap to gap along an axon and travel many times faster, which supports quick reflexes in larger bodies and lets thin axons pack more densely. Lampreys lack true myelin, so it is an innovation of jawed vertebrates.",
     details:
@@ -229,11 +189,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/myelin-jawed-fish.svg',
       alt: 'Early jawed fish beside a close-up of an axon wrapped in a myelin sheath',
-    },
-    audio: {
-      src: '/media/myelin-jawed-fish.mp3',
-      transcript:
-        'Jawed fishes appeared and spread, and with them came myelin, a fatty wrapping around nerve fibers. Myelin makes signals travel much faster and more efficiently. Fast nerves were a big advantage for large, active predators.',
     },
     tags: ['myelin', 'gnathostome', 'glia', 'saltatory conduction'],
     sources: [
@@ -249,7 +204,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'The Pallium in the Fish Forebrain',
     summary:
-      'In bony fishes, the forebrain develops by an unusual folding outward of the neural tube, called eversion, in ray-finned species. In all vertebrates the roof of the forebrain is called the pallium.',
+      "The roof of the vertebrate forebrain is called the pallium. In fishes it handles smell, learning and memory. Much later, in mammals, a part of it would swell into the cerebral cortex.",
     brainSignificance:
       'The pallium receives smell and other sensory input and handles learning and memory. In fish it has regions comparable to the hippocampus and amygdala of later animals. In mammals, part of the pallium expanded into the neocortex, so this region is the evolutionary seed of the cerebral cortex.',
     details:
@@ -257,11 +212,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/pallium-fish-forebrain.svg',
       alt: 'Top view of a bony fish brain with the pallium region of the forebrain highlighted',
-    },
-    audio: {
-      src: '/media/pallium-fish-forebrain.mp3',
-      transcript:
-        'The roof of the vertebrate forebrain is called the pallium. In fishes it handles smell, learning and memory. Much later, in mammals, a part of it would swell into the cerebral cortex.',
     },
     tags: ['pallium', 'forebrain', 'telencephalon', 'homology'],
     sources: [
@@ -276,17 +226,12 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'Tetrapods Move onto Land',
     summary:
-      "Lobe-finned fishes like Tiktaalik, with sturdy fins, a neck and lungs, show how fish became four-limbed animals. Trackways in Poland show that tetrapods were already walking about 395 million years ago.",
+      "About 375 million years ago, fishes like Tiktaalik, with sturdy fins and lungs, were exploring the shallows, and their relatives became the first animals with four limbs. Life in air demanded new ways to see, hear and move.",
     brainSignificance:
       "Air offers clearer vision over long distances, different sounds and new smells, so the senses were retuned. Limbs required spinal and cerebellar circuits to coordinate weight-bearing walking, and a gill-support bone became the stapes of the middle ear. Amphibian brains remain relatively simple, with a modest pallium.",
     image: {
       src: '/media/tetrapods-move-to-land.svg',
       alt: 'Tiktaalik crawling from shallow water onto a muddy shore',
-    },
-    audio: {
-      src: '/media/tetrapods-move-to-land.mp3',
-      transcript:
-        "About three hundred and seventy-five million years ago, fishes like Tiktaalik, with sturdy fins and lungs, were exploring the shallows, and their relatives became the first animals with four limbs. Life in air demanded new ways to see, hear and move.",
     },
     tags: ['tetrapod', 'Tiktaalik', 'amphibian', 'limbs', 'middle ear'],
     sources: [
@@ -302,17 +247,12 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'Amniotes: Life Free from Water',
     summary:
-      'The first amniotes, such as Hylonomus, laid eggs with a protective membrane and shell that could develop on dry land. The group soon split into the lineages leading to reptiles and birds and to mammals.',
+      "Amniotes evolved eggs that could survive on land, freeing animals from needing water to reproduce. They spread across dry habitats and soon divided into the reptile and mammal lineages. Their forebrains began to develop the layered structures that would later become the cortex.",
     brainSignificance:
       'Independence from water allowed amniotes to occupy inland habitats and favored active, mobile lifestyles. The amniote forebrain enlarged, and the pallium became more organized, with layered regions receiving sensory input. This split carried two alternative paths: a dorsal cortex in reptiles and the origin of the six-layered neocortex in mammals.',
     image: {
       src: '/media/amniotes-first-eggs.svg',
       alt: 'Small lizard-like Hylonomus beside a shelled egg on dry ground',
-    },
-    audio: {
-      src: '/media/amniotes-first-eggs.mp3',
-      transcript:
-        'Amniotes evolved eggs that could survive on land, freeing animals from needing water to reproduce. They spread across dry habitats and soon divided into the reptile and mammal lineages. Their forebrains began to develop the layered structures that would later become the cortex.',
     },
     tags: ['amniote', 'Hylonomus', 'amniotic egg', 'dorsal cortex'],
     sources: [
@@ -327,17 +267,12 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'The Reptile Brain Plan',
     summary:
-      "Living reptiles suggest that early reptiles had a compact brain with a well-developed brainstem, cerebellum, optic tectum and basal ganglia, and a three-layered dorsal cortex.",
+      "Reptiles evolved a compact brain with strong brainstem, midbrain and basal ganglia circuits for movement, habit and survival, under a thin layered cortex. We still carry these structures, and reptile brains turn out to be more capable than once believed.",
     brainSignificance:
       'Basal ganglia and brainstem circuits support habits, movement, aggression, feeding and territorial behavior. The popular idea of a separate "reptilian brain" inside humans is a simplification, but these ancient structures do remain in our brains and keep performing similar roles. Reptiles also show learning, spatial memory and complex behaviors, so their brains are not merely primitive.',
     image: {
       src: '/media/reptile-brain-plan.svg',
       alt: 'Lizard brain diagram with brainstem, cerebellum, optic tectum, basal ganglia and dorsal cortex labeled',
-    },
-    audio: {
-      src: '/media/reptile-brain-plan.mp3',
-      transcript:
-        'Reptiles evolved a compact brain with strong brainstem, midbrain and basal ganglia circuits for movement, habit and survival. A thin layered cortex sat on top. These ancient structures are still present in the human brain, though modern research shows reptile brains are more capable than once believed.',
     },
     tags: ['reptile', 'basal ganglia', 'brainstem', 'dorsal cortex', 'triune brain'],
     sources: [
@@ -352,7 +287,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'Dopamine as a Learning Signal',
     summary:
-      'Early vertebrates used dopamine neurons to signal not simply reward but surprise about reward: whether an outcome was better or worse than expected. Dopamine systems are conserved from lampreys to mammals, which is why the date is inferred from living species.',
+      "Early in vertebrate history, neurons that release dopamine took on a special job. They fire when things turn out better than expected and fall silent when worse. That teaching signal lets an animal learn which actions lead to good outcomes.",
     brainSignificance:
       'This resembles the prediction error of temporal-difference learning in computer science. Instead of waiting for a final outcome, an animal can learn from each step that predicts a good or bad result. Trial-and-error learning became practical for animals with long chains of actions.',
     details:
@@ -360,11 +295,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/dopamine-reinforcement-signal.svg',
       alt: 'Illustration of a neuron releasing dopamine, with a glowing pulse when a reward is better than predicted',
-    },
-    audio: {
-      src: '/media/dopamine-reinforcement-signal.mp3',
-      transcript:
-        'Early in vertebrate history, neurons that release dopamine took on a special job. They fire when things turn out better than expected and fall silent when worse. That teaching signal lets an animal learn which actions lead to good outcomes.',
     },
     tags: ['dopamine','prediction error','temporal difference','reinforcement learning'],
     sources: [
@@ -379,7 +309,7 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     era: 'vertebrate',
     title: 'Basal Ganglia: Actor and Critic',
     summary:
-      'The basal ganglia, a set of deep forebrain structures, select which action an animal performs and are reshaped by dopamine. A basal ganglia circuit is present in lampreys, so its core design is very old.',
+      "Deep in the forebrain, the basal ganglia pick the next action. Dopamine adjusts how strongly each choice is favored, based on how well it turned out. Scientists often compare this to an actor choosing and a critic judging, and the circuit appears in lampreys.",
     brainSignificance:
       'Many researchers describe this system in terms of an actor that chooses actions and a critic that predicts value, a framing borrowed from reinforcement learning. Dopamine teaches both. The result is an animal that repeats what worked and drops what did not.',
     details:
@@ -387,11 +317,6 @@ export const nervesVertebrateEvents: TimelineEvent[] = [
     image: {
       src: '/media/basal-ganglia-actor-critic.svg',
       alt: 'Diagram of a lamprey brain with the basal ganglia highlighted and arrows labeled choose and evaluate',
-    },
-    audio: {
-      src: '/media/basal-ganglia-actor-critic.mp3',
-      transcript:
-        'Deep in the forebrain, the basal ganglia pick the next action. Dopamine adjusts how strongly each choice is favored, based on how well it turned out. Scientists often compare this to an actor choosing and a critic judging, and the circuit appears in lampreys.',
     },
     tags: ['basal ganglia','actor-critic','action selection','lamprey'],
     sources: [

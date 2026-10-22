@@ -9,7 +9,7 @@ const KEY = 'brainevo.settings.v3';
 
 const DEFAULTS: Settings = {
   palette: 'prussian', brush: 'fine', text: 'scrim', titles: true, headline: 'text', lab: true,
-  sound: false, narration: true, music: true, previewVoice: true,
+  sound: false, narration: true, music: true, ambience: true,
 };
 
 function load(): Settings {

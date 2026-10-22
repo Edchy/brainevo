@@ -4,8 +4,8 @@ import { Effect, EffectAttribute } from 'postprocessing';
 import { Uniform, Vector3 } from 'three';
 import { world } from '../../world/store';
 import { BRUSH_DEF, PALETTES_DEF } from '../palettes';
+import { visionAt } from '../../lib/vision';
 import { getSettings } from '../store';
-import './theme.css';
 
 /*
  * Oil painting, one fullscreen pass, 21 taps:
@@ -15,6 +15,8 @@ import './theme.css';
  *    with crisp painterly edges.
  *  - impasto relief: stroke-stretched noise + luminance gradient -> normal -> diffuse + specular glints on ridges.
  *  - canvas weave, palette grade (ground, cast, tone, saturation; see palettes.ts), butter-soft highlights.
+ *  - perception ("see through their eyes", src/lib/vision.ts): no colour sense before eyes, two-cone mammal vision,
+ *    richer-than-human four-cone colour, all eased by where you are in the story.
  * Palette and brushwork are uniforms, so switching them never recompiles the pass.
  */
 const frag = /* glsl */ `
@@ -29,6 +31,10 @@ uniform vec3 uToneHi;
 uniform vec3 uSpec;
 uniform float uSat;
 uniform float uMono;
+uniform float uBlind;   // no colour sense at all (before eyes)
+uniform float uDichro;  // two-cone vision: red and green collapse into one channel
+uniform float uRich;    // four-cone vision: more saturated than ours, light leans violet
+uniform float uSketch;  // not painted yet: chalk underdrawing on the toned ground
 
 float h21(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p,p+45.32); return fract(p.x*p.y); }
 float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
@@ -91,11 +97,15 @@ void mainImage(const in vec4 inputColor0, const in vec2 uv, out vec4 outputColor
     col += mean[k] * w; wsum += w;
   }
   col = col / max(wsum, 1e-4);
+  // dichromat (deuteranope-like: an S cone and one long-wave cone), Machado et al. 2009, severity 1
+  vec3 dic = vec3(dot(col, vec3(.367322, .860646, -.227968)), dot(col, vec3(.280085, .672501, .047413)), dot(col, vec3(-.011820, .042940, .968881)));
+  col = mix(col, max(dic, 0.), uDichro);
 
   // --- impasto relief
   vec2 pp = uv * resolution.xy / s;               // paint-space pixels
   vec2 rp = vec2(dot(pp, t), dot(pp, n));         // stroke frame
-  float bristle = vn(vec2(rp.x * .06, rp.y * 1.15)) * .6 + vn(vec2(rp.x * .17 + 3., rp.y * 2.6)) * .4;
+  // bristle streaks a few pixels wide (finer than ~3 device pixels aliased into salt-and-pepper speckle)
+  float bristle = vn(vec2(rp.x * .05, rp.y * .34)) * .6 + vn(vec2(rp.x * .12 + 3., rp.y * .68)) * .4;
   vec2 cp = uv * resolution.xy / uScale;           // canvas weave keeps its size whatever the brush
   float weave = (sin(cp.x * 1.25) * .5 + .5) * (sin(cp.y * 1.25) * .5 + .5) * .6
               + (sin((cp.x + cp.y) * .62) * .5 + .5) * .4;
@@ -112,12 +122,14 @@ void mainImage(const in vec4 inputColor0, const in vec2 uv, out vec4 outputColor
 
   // --- colour grade: palette ground, cast and tone
   float l = lum(col);
-  vec3 c = mix(vec3(l), col, uSat);                               // saturation
+  vec3 c = mix(vec3(l), col, uSat * (1. + .32 * uRich));         // saturation (four cones: richer)
   // grisaille-style palettes drain hue except where the (stroke-averaged) source is strongly saturated and lit
   float mxc = max(max(col.r, col.g), col.b), mnc = min(min(col.r, col.g), col.b);
   float satc = (mxc - mnc) / max(mxc, 0.04);
   float splash = smoothstep(.42, .78, satc) * smoothstep(.05, .22, mxc);
   c = mix(c, vec3(l), uMono * (1. - splash * .9));
+  c = mix(c, vec3(l), uBlind);                                    // no eyes: light and dark only
+  c += vec3(.045, 0., .085) * uRich * smoothstep(.45, .95, l);     // ultraviolet, hinted as violet in the light
   c = c * uCast;                                                  // cast
   c *= mix(uToneLo, uToneHi, smoothstep(.12, .8, l));             // cool/warm split tone
   c += uGround * (1. - smoothstep(0., .35, l));                   // the ground shows through thin dark paint
@@ -128,10 +140,21 @@ void mainImage(const in vec4 inputColor0, const in vec2 uv, out vec4 outputColor
   c *= 1.12;
 
   c *= .7 + .68 * diff;                                           // paint ridges catch the light
-  c += uSpec * spec * (.28 + .5 * paint) * min(uRelief, 1.25);
+  c += uSpec * spec * (.16 + .34 * paint) * min(uRelief, 1.25);
   c *= 1. - .07 * weave * (1.0 - paint*.6);                        // canvas tooth shows in thin paint
   c = mix(c, c * (.85 + .3 * bristle), .9);
   c = min(c, vec3(1.0));
+
+  // --- the future is not painted yet: edges and hatching in pale chalk on the dark ground, a faint wash of colour
+  if (uSketch > .001) {
+    float lineE = smoothstep(.02, .12, gm);
+    float hatch = smoothstep(.55, .92, .5 + .5 * sin(dot(pp, n) * .55 + bristle * 2.2));
+    float lit = smoothstep(.03, .42, l);                          // chalk goes where the light is
+    vec3 sk = (uGround * 1.25 + vec3(.012, .011, .01)) * (1. - .12 * weave);
+    sk += vec3(.86, .83, .76) * clamp(lineE * .8 + lit * (.3 + .7 * hatch), 0., 1.) * (.65 + .35 * bristle);
+    sk += col * .05;
+    c = mix(c, min(sk, vec3(1.)), uSketch);
+  }
 
   outputColor = vec4(max(c, 0.), inputColor.a);
 }
@@ -154,6 +177,10 @@ class OilEffect extends Effect {
         ['uSpec', new Uniform(new Vector3(1, 1, 1))],
         ['uSat', new Uniform(1)],
         ['uMono', new Uniform(0)],
+        ['uBlind', new Uniform(0)],
+        ['uDichro', new Uniform(0)],
+        ['uRich', new Uniform(0)],
+        ['uSketch', new Uniform(0)],
       ]),
     });
   }
@@ -165,7 +192,11 @@ class OilEffect extends Effect {
     const u = this.uniforms;
     const go = (n: string, t: number) => { const x = u.get(n) as Uniform<number>; x.value += (t - x.value) * k; };
     const go3 = (n: string, t: [number, number, number]) => { (u.get(n)!.value as Vector3).lerp(tmp.set(t[0], t[1], t[2]), k); };
-    go('uBrush', b.size); go('uRelief', b.relief); go('uSat', p.sat); go('uMono', p.mono);
+    const v = visionAt(world.stationF);
+    // dev: window.__vis = { sketch: 0 } overrides the perception stage (to inspect a scene unfiltered)
+    if (import.meta.env.DEV) Object.assign(v, (window as unknown as { __vis?: object }).__vis);
+    go('uBrush', b.size * v.brush); go('uRelief', b.relief); go('uSat', p.sat); go('uMono', p.mono);
+    go('uBlind', v.blind); go('uDichro', v.dichro); go('uRich', v.rich); go('uSketch', v.sketch);
     go3('uGround', p.ground); go3('uCast', p.cast); go3('uToneLo', p.toneLo); go3('uToneHi', p.toneHi); go3('uSpec', p.spec);
   }
 }

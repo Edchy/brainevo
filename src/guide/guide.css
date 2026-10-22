@@ -1,0 +1,37 @@
+/* the voice guide (dev only): a mic under the sound switch, and a small panel beside it while talking */
+.guide-btn {
+  position: fixed; z-index: 6; top: 62px; right: max(14px, env(safe-area-inset-right)); width: 40px; height: 40px; display: grid; place-items: center; padding: 0; cursor: pointer;
+  color: var(--ui-ink-dim); background: color-mix(in srgb, var(--ground-deep) 55%, transparent); border: 1px solid var(--ui-line); border-radius: 50%;
+  transition: border-color 0.3s, color 0.3s;
+}
+.guide-btn:hover, .guide-btn:focus-visible { color: var(--ui-ink); border-color: var(--gilt); }
+.guide-btn.live { color: var(--gilt); border-color: color-mix(in srgb, var(--gilt) 70%, transparent); }
+.guide-btn svg { position: relative; }
+.guide-orb {
+  --v: 0; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none;
+  box-shadow: 0 0 0 calc(var(--v) * 9px) color-mix(in srgb, var(--gilt) 22%, transparent), 0 0 calc(6px + var(--v) * 26px) color-mix(in srgb, var(--gilt) 45%, transparent);
+  opacity: 0; transition: opacity 0.4s;
+}
+.guide-btn.live .guide-orb { opacity: 1; }
+
+.guide-panel {
+  position: fixed; z-index: 6; top: 62px; right: calc(max(14px, env(safe-area-inset-right)) + 52px); width: min(340px, calc(100vw - 96px));
+  display: grid; gap: 8px; padding: 12px 16px 12px; font-family: var(--ui-font-body); font-size: var(--t-small); color: var(--ui-ink);
+  background: color-mix(in srgb, var(--ui-panel) 86%, transparent); border: 1px solid var(--ui-line); border-radius: 14px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+}
+.guide-head { display: flex; align-items: center; gap: 10px; }
+.guide-head .btn-text { margin-left: auto; padding: 0; }
+.guide-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ui-ink-dim); }
+.guide-dot.on { background: var(--gilt); animation: guide-pulse 1.6s ease-in-out infinite; }
+.guide-dot.connecting { background: var(--ui-ink-dim); animation: guide-pulse 0.8s ease-in-out infinite; }
+.guide-dot.error { background: #d9785f; }
+.guide-time { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.guide-line { margin: 0; line-height: 1.45; }
+.guide-line.guide { font-family: var(--ui-font-display); font-size: 1.08rem; line-height: 1.35; }
+.guide-line.you, .guide-line.hint { color: var(--ui-ink-dim); font-style: italic; }
+.guide-you { font-style: normal; color: var(--ink-faint); }
+.guide-error { margin: 0; color: #e8a08c; }
+.guide-note { margin: 2px 0 0; font-size: 0.78rem; color: var(--ink-faint); }
+@keyframes guide-pulse { 50% { opacity: 0.35; } }
+@media (min-width: 760px) { .guide-panel.aside { right: auto; left: calc(max(14px, env(safe-area-inset-left)) + 52px); top: 14px; } }
+@media (max-width: 759px) { .guide-panel { top: 110px; right: var(--gutter, 16px); left: var(--gutter, 16px); width: auto; } }

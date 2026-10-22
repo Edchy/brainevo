@@ -1,18 +1,22 @@
 # Narration script: Evolution of the Brain
 
-84 lines, 3,121 words, about 21 minutes at 150 words a minute.
+102 lines, 3,711 words, about 25 minutes at 150 words a minute.
 Generated from the event data by `npx tsx scripts/narration.ts export`; edit the text in `src/data/`, not here.
 
 ## How to record
 
-**Automatic (recommended).** With an ElevenLabs API key and the voice you picked:
+**Automatic (recommended).** Put `ELEVENLABS_API_KEY=...` (with Text to Speech access) and
+`ELEVENLABS_VOICE_ID=...` (the voice you picked) in `.env.local`, then:
 
 ```
-ELEVENLABS_API_KEY=... ELEVENLABS_VOICE_ID=... npx tsx scripts/narration.ts voice
+npm run narration -- voice --dry        # what is missing and how many characters (credits) it would take
+npm run narration -- voice --limit=10   # the next 10 missing lines
+npm run narration -- voice fire speech  # just these events
+npm run narration -- voice              # everything still missing
 ```
 
-Every line becomes `src/assets/narration/<file>`. Each request sends the neighbouring lines as context so the
-delivery flows from one event to the next. Lines that already have a file are skipped.
+Every line becomes `src/assets/narration/<file>` (64 kbps mono). Each request sends the neighbouring lines as context
+so the delivery flows from one event to the next. Lines that already have a file are skipped.
 
 **By hand.** In ElevenLabs Text to Speech, paste one line at a time, generate, download, and save it under exactly
 the file name shown (for example `big-bang.mp3`) in `src/assets/narration/`.
@@ -25,6 +29,10 @@ style 0.15, speaker boost on, speed 0.95.
 Warm, unhurried, intimate documentary narration: think a late-night natural history programme, not a trailer.
 Mid-low register, gentle smile in the voice, real curiosity. Leave air at full stops. Never announce or sell.
 Pace about 150 words a minute. The listener is scrolling through deep time; each line is a small, complete thought.
+Each line is also the caption on screen, so keep every take word for word: regenerate any take that skips or changes a word.
+The last chapter, Here and Now, is slower and closer, as if to one person: half a beat more between sentences, no
+emphasis on the facts, warmth on "Breathe in" and "Now go and spend the rest". "Try to imagine being dead." is said
+plainly and followed by silence (the site holds it).
 
 ## Lines
 
@@ -50,7 +58,7 @@ As Earth cooled, oceans formed, and simple molecules may have begun to combine i
 
 **04 · `first-life.mp3`** · First Single-Celled Life
 
-By three and a half billion years ago, and probably much earlier, the first living cells had appeared. They were single cells, but they could already sense chemicals and respond. That is the seed of every nervous system.
+By 3.5 billion years ago, and probably much earlier, the first living cells had appeared. They were single cells, but they could already sense chemicals and respond. That is the seed of every nervous system.
 
 **05 · `chemical-signalling.mp3`** · Chemical Signalling
 
@@ -66,7 +74,7 @@ Bacteria evolved a tiny sense-and-act loop. Receptors compare chemical levels ov
 
 **08 · `eukaryotes.mp3`** · Eukaryotic Cells
 
-Around two billion years ago, one cell swallowed another and the two became partners. The swallowed bacterium became the mitochondrion, a power plant that fueled bigger and more complex cells, including eventually neurons.
+Around 2 billion years ago, one cell swallowed another and the two became partners. The swallowed bacterium became the mitochondrion, a power plant that fueled bigger and more complex cells, including eventually neurons.
 
 **09 · `multicellularity.mp3`** · Multicellular Life
 
@@ -80,7 +88,7 @@ Sponges are some of the oldest animals alive. They have no neurons at all, yet t
 
 **11 · `first-neurons-nerve-net.mp3`** · First Neurons and the Nerve Net
 
-Around six hundred million years ago, some animals began to use cells that carry electrical signals. In jellyfish and sea anemones this takes the form of a nerve net, a web of neurons with no central command. It was the first step toward every brain that followed.
+Around 600 million years ago, some animals began using cells that carry electrical signals. In jellyfish and sea anemones they form a nerve net, a web of neurons with no central command: the first step toward every brain that followed.
 
 **12 · `bilateral-symmetry-ganglia.mp3`** · Bilateral Symmetry and Ganglia
 
@@ -92,7 +100,7 @@ As animals moved forward through the world, their senses and neurons piled up at
 
 **14 · `cambrian-explosion-eyes.mp3`** · The Cambrian Explosion and the Rise of Eyes
 
-About five hundred and forty million years ago, animal life diversified dramatically in the Cambrian explosion. Many animals evolved eyes, and the race between hunters and hunted favored sharper senses. Processing all that visual information pushed brains to become more complex.
+About 540 million years ago, animal life diversified dramatically in the Cambrian explosion. Many animals evolved eyes, and the race between hunters and hunted favored sharper senses. Processing all that visual information pushed brains to become more complex.
 
 ### The Vertebrate Plan
 
@@ -102,7 +110,7 @@ Chordates added a stiff rod called the notochord and a hollow nerve cord along t
 
 **16 · `first-vertebrates-neural-crest.mp3`** · The First Vertebrates
 
-Around five hundred and twenty million years ago, the first true vertebrates swam in Cambrian seas. They had a head with paired eyes and a protective braincase, built by new embryonic cells called the neural crest. These innovations let the brain grow more complex.
+Around 520 million years ago, the first true vertebrates swam in Cambrian seas. They had a head with paired eyes and a protective braincase, built by new embryonic cells called the neural crest. These innovations let the brain grow more complex.
 
 **17 · `tripartite-brain.mp3`** · The Tripartite Brain
 
@@ -130,7 +138,7 @@ The roof of the vertebrate forebrain is called the pallium. In fishes it handles
 
 **23 · `tetrapods-move-to-land.mp3`** · Tetrapods Move onto Land
 
-About three hundred and seventy-five million years ago, fishes like Tiktaalik, with sturdy fins and lungs, were exploring the shallows, and their relatives became the first animals with four limbs. Life in air demanded new ways to see, hear and move.
+About 375 million years ago, fishes like Tiktaalik, with sturdy fins and lungs, were exploring the shallows, and their relatives became the first animals with four limbs. Life in air demanded new ways to see, hear and move.
 
 **24 · `amniotes-first-eggs.mp3`** · Amniotes: Life Free from Water
 
@@ -138,11 +146,11 @@ Amniotes evolved eggs that could survive on land, freeing animals from needing w
 
 **25 · `synapsids.mp3`** · Synapsids: Our Branch Splits Off
 
-This is the start of our own branch of the tree. Around 315 million years ago, the synapsids split from the line that would lead to reptiles and birds. Their brains were still small, but they held the pallium tissue that would one day become the neocortex.
+Around 315 million years ago, our own branch of the tree began: the synapsids split from the line leading to reptiles and birds. Their brains were small, but held the pallium tissue that would one day become the neocortex.
 
 **26 · `reptile-brain-plan.mp3`** · The Reptile Brain Plan
 
-Reptiles evolved a compact brain with strong brainstem, midbrain and basal ganglia circuits for movement, habit and survival. A thin layered cortex sat on top. These ancient structures are still present in the human brain, though modern research shows reptile brains are more capable than once believed.
+Reptiles evolved a compact brain with strong brainstem, midbrain and basal ganglia circuits for movement, habit and survival, under a thin layered cortex. We still carry these structures, and reptile brains turn out to be more capable than once believed.
 
 ### Warm-Blooded Minds
 
@@ -214,41 +222,41 @@ Apes keep track of what others can see and want. A subordinate chimpanzee may ta
 
 **43 · `mirror-self-recognition.mp3`** · Recognizing Oneself in the Mirror
 
-Put a mark on a chimpanzee’s face and show it a mirror, and it touches the mark on itself. That is the mirror test. It suggests a sense of self that we share with our closest relatives.
+Put a mark on a chimpanzee’s face and show it a mirror, and it touches the mark on itself. That is the mirror test. It suggests a sense of self that we share with our closest relatives. You can take it yourself, right here.
 
 ### Upright and Inventive
 
 **44 · `sahelanthropus.mp3`** · Sahelanthropus: the Dawn of the Hominin Line
 
-Around seven million years ago in Chad, a small-brained ape called Sahelanthropus lived close to the split between our ancestors and the chimpanzees. Its brain was about the size of a chimp's, but its skull hints at an upright stance. The long story of the human brain begins with a modest organ.
+Around 7 million years ago, in Chad, Sahelanthropus lived close to the split between our ancestors and chimpanzees. Its brain was chimp-sized, but its skull hints at an upright stance. The human brain's long story begins with a modest organ.
 
 **45 · `bipedalism.mp3`** · Walking Upright
 
-Some six million years ago, early hominins started walking on two legs. This freed their hands to carry things and, eventually, to make tools. It also narrowed the pelvis, setting up a long-running tension between big brains and the birth canal.
+About 6 million years ago, early hominins started walking on two legs. This freed their hands to carry things and, eventually, to make tools. It also narrowed the pelvis, setting up a long-running tension between big brains and the birth canal.
 
 **46 · `ardipithecus.mp3`** · Ardipithecus ramidus
 
-Ardi lived in Ethiopian woodland about four and a half million years ago. She walked upright on the ground yet could still climb, thanks to a grasping big toe. Her brain was still chimp-sized, so the brain's big expansion had not begun.
+About 4.4 million years ago, Ardi lived in Ethiopian woodland. She walked upright on the ground yet could still climb, thanks to a grasping big toe. Her brain was still chimp-sized, so the brain's big expansion had not begun.
 
 **47 · `laetoli-footprints.mp3`** · Footprints at Laetoli
 
-Three and a half million years ago, hominins walked across wet volcanic ash in what is now Tanzania. Their footprints hardened and survived. They show a human-like stride, long before our ancestors had big brains.
+About 3.7 million years ago, hominins walked across wet volcanic ash in what is now Tanzania. Their footprints hardened and survived. They show a human-like stride, long before our ancestors had big brains.
 
 **48 · `australopithecus-lucy.mp3`** · Australopithecus afarensis and "Lucy"
 
-Lucy was an Australopithecus afarensis who lived in Ethiopia over three million years ago. She walked upright but was just over a metre tall. Her kind had brains of about four to five hundred cubic centimetres, still close to a chimpanzee’s.
+About 3.2 million years ago, Lucy, an Australopithecus afarensis, lived in Ethiopia. She walked upright but was just over a metre tall. Her kind had brains of about 400 to 500 cubic centimetres, still close to a chimpanzee’s.
 
 **49 · `oldowan-tools.mp3`** · The First Stone Tools: Oldowan
 
-Nearly three million years ago, hominins in Africa began striking flakes off stones to make sharp edges. Even this simple craft needs planning and precise hands. The meat these tools unlocked fed a hungry, growing brain.
+Nearly 3 million years ago, hominins in Africa began striking flakes off stones to make sharp edges. Even this simple craft needs planning and precise hands. The meat these tools unlocked fed a hungry, growing brain.
 
 **50 · `homo-habilis.mp3`** · Homo habilis, the "Handy Man"
 
-Homo habilis, the handy man, lived in Africa over two million years ago. Its brain was around six hundred cubic centimetres, noticeably bigger than Lucy’s. It made simple stone tools and may show early hints of language-related brain structure, though that is debated.
+Over 2 million years ago, Homo habilis, the handy man, lived in Africa. Its brain was around 600 cubic centimetres, noticeably bigger than Lucy’s. It made simple stone tools and may show early hints of language-related brain structure, though that is debated.
 
 **51 · `homo-erectus.mp3`** · Homo erectus: A Bigger Brain and Body
 
-Homo erectus appeared about two million years ago, with a body much like ours and a brain around nine hundred cubic centimetres. It was the first hominin known to spread far beyond Africa. Yet its children still grew up faster than ours do.
+About 2 million years ago, Homo erectus appeared, with a body much like ours and a brain around 900 cubic centimetres. It was the first hominin known to spread far beyond Africa. Yet its children still grew up faster than ours do.
 
 **52 · `cooperative-breeding.mp3`** · Cooperative Breeding
 
@@ -268,11 +276,11 @@ Casts of early Homo skulls show the frontal bulge where Broca's area sits, a reg
 
 **56 · `control-of-fire.mp3`** · Control of Fire and Cooking
 
-By about a million years ago, our ancestors were using fire under control. Cooking makes food easier to digest, so the body gets more energy for less effort, which may have helped feed larger brains. Evenings by the fire also gave people more time to be social.
+By about a million years ago, our ancestors were using fire under control. Cooked food is easier to digest, giving more energy for less effort, which may have helped feed larger brains. Evenings by the fire also left more time to be social.
 
 **57 · `homo-heidelbergensis.mp3`** · Homo heidelbergensis
 
-Homo heidelbergensis was a large hominin with a brain of around twelve hundred cubic centimetres. It hunted big game, which demanded teamwork and planning. It may be close to the common ancestor of Neanderthals and modern humans.
+Homo heidelbergensis was a large hominin with a brain of around 1,200 cubic centimetres. It hunted big game, which demanded teamwork and planning. It may be close to the common ancestor of Neanderthals and modern humans.
 
 **58 · `teaching-cumulative-culture.mp3`** · Teaching and Cumulative Culture
 
@@ -280,11 +288,11 @@ Humans do something rare: we teach, and learners copy carefully. Each generation
 
 **59 · `neanderthals.mp3`** · Neanderthals
 
-Neanderthals lived in Europe and western Asia for hundreds of thousands of years. Their brains averaged about fifteen hundred cubic centimetres, a little larger than ours, though shaped differently. They made fine tools, controlled fire, and looked after their sick.
+Neanderthals lived in Europe and western Asia for hundreds of thousands of years. Their brains averaged about 1,500 cubic centimetres, a little larger than ours, though shaped differently. They made fine tools, controlled fire, and looked after their sick.
 
 **60 · `homo-naledi.mp3`** · Homo naledi: A Small Brain in a Late Species
 
-Homo naledi lived in South Africa as recently as a quarter of a million years ago, yet its brain was only about the size of an early Homo's. It reminds us that brain size is not the whole story. Its remains were found deep inside a cave, and why they got there remains debated.
+Homo naledi lived in South Africa as recently as a quarter of a million years ago, yet its brain was about the size of early Homo's. Brain size is not the whole story. How its remains got deep into a cave is still debated.
 
 **61 · `denisovans.mp3`** · Denisovans
 
@@ -294,7 +302,7 @@ Denisovans are known from a few bones in a Siberian cave, plus their DNA. They w
 
 **62 · `jebel-irhoud-sapiens.mp3`** · The Earliest Homo sapiens
 
-In the hills of Morocco, researchers found skulls about three hundred thousand years old. The faces look strikingly like ours. Inside, the brain was already large, though not yet shaped like ours.
+In the hills of Morocco, researchers found skulls about 300,000 years old. The faces look strikingly like ours. Inside, the brain was already large, though not yet shaped like ours.
 
 **63 · `globular-brain.mp3`** · The Globular Brain
 
@@ -314,7 +322,7 @@ Language is hard to find in fossils, but it left clues. The gene FOXP2 helps con
 
 **67 · `out-of-africa.mp3`** · Out of Africa
 
-Around sixty thousand years ago, groups of modern humans left Africa for good. They crossed deserts, mountains and seas. Their flexible, social brains carried them to every continent but Antarctica.
+Around 60,000 years ago, groups of modern humans left Africa for good. They crossed deserts, mountains and seas. Their flexible, social brains carried them to every continent but Antarctica.
 
 **68 · `cave-art.mp3`** · Cave Art
 
@@ -326,61 +334,137 @@ In caves in Germany, people carved flutes from bird bone and ivory. Music lights
 
 **70 · `burial-ritual.mp3`** · Burial and Ritual
 
-People started laying their dead in graves, often with gifts of beads, ochre or tools. This hints at grief, memory and a concept of death. The brain was now imagining beyond the present moment.
+People had been burying their dead for at least 100,000 years. At Sunghir they dressed them in thousands of ivory beads. Somewhere along the way, a brain looked at someone it loved, now still, and asked: where did they go?
 
 **71 · `behavioural-modernity.mp3`** · Behavioural Modernity
 
 Tools became finer and more varied. People sewed clothing, traded over long distances and wore ornaments. Culture itself became cumulative, as each generation built on what the last had learned.
 
+**72 · `gobekli-tepe.mp3`** · Minds in Everything
+
+About 11,500 years ago, hunter-gatherers raised giant carved pillars at Göbekli Tepe. Was it a temple? Archaeologists still debate it. A brain built to read minds senses them everywhere: in animals, storms and stars. Many scientists see that as one root of religion.
+
 ### The Reflective Brain
 
-**72 · `agriculture.mp3`** · Agriculture
+**73 · `agriculture.mp3`** · Agriculture
 
-About eleven thousand years ago, people began to sow grain and keep animals. Villages and towns followed. Life in bigger groups called for counting, planning and trust among many people.
+About 11,000 years ago, people began to sow grain and keep animals. Villages and towns followed. Life in bigger groups called for counting, planning and trust among many people.
 
-**73 · `writing.mp3`** · Writing
+**74 · `writing.mp3`** · Writing
 
-Around five thousand two hundred years ago, scribes in Sumer pressed marks into clay. Reading repurposes parts of the visual brain that evolved for other tasks. Writing gave humanity a memory beyond any single mind.
+Around 5,200 years ago, scribes in Sumer pressed marks into clay. Reading repurposes parts of the visual brain that evolved for other tasks. Writing gave humanity a memory beyond any single mind.
 
-**74 · `alphabet.mp3`** · The Alphabet
+**75 · `alphabet.mp3`** · The Alphabet
 
 Alphabets trimmed writing down to a few dozen letters, each standing for a sound. That made reading far easier to learn. More minds could now take part in the written world.
 
-**75 · `philosophy-of-mind.mp3`** · Philosophy and the Seat of the Mind
+**76 · `philosophy-of-mind.mp3`** · Philosophy and the Seat of the Mind
 
 Ancient thinkers began to ask what the mind is and where it lives. Hippocrates declared that the brain is the source of joy and sorrow. The brain had started to study itself.
 
-**76 · `printing-press.mp3`** · The Printing Press
+**77 · `printing-press.mp3`** · The Printing Press
 
 Around 1440, Gutenberg built a press with movable type. Books became cheap and ideas spread widely. Human knowledge could now accumulate and be questioned at a much larger scale.
 
-**77 · `scientific-revolution.mp3`** · The Scientific Revolution
+**78 · `scientific-revolution.mp3`** · The Scientific Revolution
 
 In the sixteenth and seventeenth centuries, anatomists drew the brain with new accuracy. Thomas Willis tied brain structures to behaviour. Observation and experiment were becoming the tools for understanding the mind.
 
-**78 · `neuron-doctrine.mp3`** · Neurons and the Localisation of Function
+**79 · `neuron-doctrine.mp3`** · Neurons and the Localisation of Function
 
 Broca and Wernicke linked speech to specific regions of the cortex. Then Cajal looked through his microscope and drew the neurons themselves. The brain, he showed, is a network of separate cells.
 
-**79 · `eeg.mp3`** · The EEG
+**80 · `eeg.mp3`** · The EEG
 
-In 1929 Hans Berger recorded electrical rhythms from the human scalp. Brain waves could now be watched in a living person. They revealed the patterns of sleep, attention and seizures.
+In 1929, Hans Berger recorded electrical rhythms from the human scalp. Brain waves could now be watched in a living person. They revealed the patterns of sleep, attention and seizures.
 
-**80 · `fmri.mp3`** · fMRI
+**81 · `fmri.mp3`** · fMRI
 
 Functional MRI follows blood flow to reveal which parts of the brain are busy. It lets us see thinking, remembering and feeling in healthy people. Entire networks of the brain came into view.
 
-**81 · `brain-computer-interfaces.mp3`** · Brain-Computer Interfaces
+**82 · `brain-computer-interfaces.mp3`** · Brain-Computer Interfaces
 
 Tiny electrode arrays can now read movement and speech intentions from the cortex. People with paralysis have controlled cursors, robot arms and voice synthesisers by thought alone. The brain is learning to speak directly to machines.
 
-**82 · `ai-mirror.mp3`** · AI as a Mirror
+**83 · `ai-mirror.mp3`** · AI as a Mirror
 
-Neural networks, inspired loosely by the brain, can now see, translate and converse. They are very unlike biological brains. By comparing them with our own minds, we learn what intelligence might be.
+In 2012, a neural network loosely inspired by the brain learned to recognise objects in photos far better than any program before it. Machines began to learn from examples, a little like brains do, and became a mirror for studying our own minds.
 
-**83 · `now.mp3`** · Now
+**84 · `machines-learn-language.mp3`** · Machines Learn Our Language
 
-Here we are. A brain of eighty-six billion neurons, running on twenty watts, is looking back over its own history. What it does next is up to us.
+In 2017, a new kind of neural network appeared: the transformer. Trained on vast amounts of human writing, its descendants learned to use language with startling fluency. For the first time, something other than a person could talk back. Is anyone home inside? Nobody knows.
+
+**85 · `now.mp3`** · Now
+
+Here we are: a brain of 86 billion neurons, running on 20 watts, looking back over its own history. Now it shares the world with machines that learn. What happens next is up to us. Look into the mirror: there it is.
+
+### What Comes Next
+
+**86 · `minds-and-machines.mp3`** · Minds and Machines
+
+What comes next is not painted yet. Machines that learn could help us understand the brain, heal it, maybe even connect to it. They could also be misused. Whether a machine can ever feel is an open question. The brush is in our hands.
+
+**87 · `your-lifetime.mp3`** · Four Thousand Weeks
+
+A long human life is about 4,000 weeks. Each square here is one of them. Tell us your age, and the weeks you have already lived will fill in. The rest are still blank. Nobody else gets to paint them.
+
+**88 · `sun-brightens.mp3`** · The Sun Grows Brighter
+
+The Sun is slowly brightening. Within one or two billion years, it will make Earth too hot for life as we know it. Every species, every city, every name will be gone.
+
+**89 · `red-giant.mp3`** · The Sun Becomes a Red Giant
+
+In about 5 billion years, the Sun will run out of hydrogen at its core and swell into a red giant, probably swallowing the Earth. Much of what made you will drift back into space, to build new stars and worlds.
+
+**90 · `last-stars.mp3`** · The Last Stars
+
+In about 100 trillion years, the universe will stop making stars. One by one, the last ones will fade. Then, as far as we know, the dark.
+
+### Here and Now
+
+**91 · `coda-imagine.mp3`** · Imagine Being Dead
+
+Try to imagine being dead.
+
+**92 · `coda-someone.mp3`** · Someone Was Still There
+
+You probably pictured darkness, or silence. But someone was still there, noticing the dark. A brain, it seems, cannot imagine its own absence. That may be one reason so many people believe something comes after. Maybe it does. Science can't tell us.
+
+**93 · `coda-before.mp3`** · You Have Been Here Before
+
+And this dark isn't new to you. It's the same dark as the 13.8 billion years before you were born, and those never troubled you. The Roman poet Lucretius made this point more than two thousand years ago.
+
+**94 · `coda-scale.mp3`** · Both Are True
+
+So here is the strange part. On the scale of the universe, nothing you do matters. On the scale of a life, almost everything does. Both are true. You get to choose which one to live by.
+
+**95 · `coda-electricity.mp3`** · Electricity
+
+Every fear you've had, every doubt, the voice that says you're not enough: electricity, racing through your neurons. What other people think of you? Electricity too, in their heads. Real, yes. But a thought is not a fact.
+
+**96 · `coda-nobody.mp3`** · Nobody Has It Figured Out
+
+Everyone is figuring it out as they go. Even very successful people often feel like impostors; psychologists first described it in 1978. Nobody was handed a manual. There isn't one.
+
+**97 · `coda-invented.mp3`** · Everything Is Invented
+
+Money, borders, job titles, the rules about how to be: all invented, by brains like yours. Most of what we treat as fixed was made up, and can be made again. You're allowed to invent too.
+
+**98 · `coda-mistakes.mp3`** · Get It Wrong
+
+Every brain in this story learned by getting things wrong. A mistake is a surprise, and surprise is exactly the signal neurons learn from. So don't hide. Try. Get it wrong. Try again.
+
+**99 · `coda-here.mp3`** · Here, Now
+
+You are 13.8 billion years in the making: atoms from the Big Bang and from long-dead stars, an unbroken line of life four billion years long. There has never been another you. You live here, now. Breathe in.
+
+**100 · `coda-morning.mp3`** · It Is Still Morning
+
+And it is early. Stars will keep forming for about 100 trillion years. If that span were a single day, we would be twelve seconds past midnight. The story has barely begun, and you are in it.
+
+**101 · `coda-heartbeats.mp3`** · Your Heartbeats
+
+That is about how many times your heart has beaten since you arrived. Thank you for spending them here. Now go and spend the rest.
 
 ## Music (optional)
 
@@ -397,3 +481,5 @@ and save each as `src/assets/music/<era>.mp3`. Any era without a file keeps the 
 - **`hominin.mp3`** (Upright and Inventive): Earthy cinematic ambient in D minor, low frame drum pulses very sparse, warm cello, breath-like textures, open savanna at dusk, slow and grounded, seamless loop
 - **`sapiens.mp3`** (Language and Symbol): Hopeful cinematic ambient in E flat major, choir-like pads, soft piano notes far apart, cave-echo reverb, wonder at the first art and music, no drums, seamless loop
 - **`modern.mp3`** (The Reflective Brain): Luminous modern cinematic ambient in E major, shimmering strings, soft piano and subtle electronic textures, reflective and quietly awe-struck, no drums, seamless loop
+- **`future.mp3`** (What Comes Next): undefined
+- **`after.mp3`** (Here and Now): undefined

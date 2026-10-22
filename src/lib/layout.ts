@@ -55,18 +55,22 @@ export function buildLayout(events: TimelineEvent[]): Layout {
     prevEra = event.era;
     prevY = event.yearsAgo;
   });
-  const endX = prevX + CARD_W / 2 + 560;
+  // far enough past the last station that its line has faded before the way back comes into view
+  const endX = prevX + CARD_W / 2 + 980;
   return {
     stations,
     banners,
     markers,
-    anchors: stations.map((s) => ({ x: s.x, y: s.event.yearsAgo })),
+    // the closing reflection is here and now, not a point on the time line: the readout holds before it
+    anchors: stations.filter((s) => s.event.era !== 'after').map((s) => ({ x: s.x, y: s.event.yearsAgo })),
     endX,
     total: endX + 420,
   };
 }
 
-const l1 = (y: number) => Math.log1p(Math.max(0, y));
+/** signed log scale, so time interpolates smoothly from the past through now into the future */
+const l1 = (y: number) => Math.sign(y) * Math.log1p(Math.abs(y));
+const l1inv = (v: number) => Math.sign(v) * Math.expm1(Math.abs(v));
 
 /** Years-ago at a track x (log interpolation between neighbouring events). */
 export function xToYears(L: Layout, x: number): number {
@@ -77,7 +81,7 @@ export function xToYears(L: Layout, x: number): number {
   for (let i = 0; i < a.length - 1; i++) {
     if (x <= a[i + 1].x) {
       const t = (x - a[i].x) / (a[i + 1].x - a[i].x || 1);
-      return Math.expm1(l1(a[i].y) + (l1(a[i + 1].y) - l1(a[i].y)) * t);
+      return l1inv(l1(a[i].y) + (l1(a[i + 1].y) - l1(a[i].y)) * t);
     }
   }
   return 0;

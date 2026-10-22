@@ -231,8 +231,9 @@ export default function Savanna() {
       morphBiped(p, BIPED_PRESETS.sahelanthropus, BIPED_PRESETS.ardipithecus, smoothstep(0.6, 0.9, t));
       p.lean += (1 - up) * 0.08 - 0.03; p.kneeFlex += (1 - up) * 0.2 - 0.05; p.neckFwd += (1 - up) * 0.1;
       h.look.w = w;
-      h.state.headYaw = Math.sin(tNow() * 0.4) * 0.25; h.state.headPitch = 0.1 * Math.sin(tNow() * 0.23) + 0.38 * (1 - up);
-      h.look.keyK = 0.75; h.look.amb = 0.3; h.look.rimK = 1.9 + near(eventPos('bipedalism'), 0.5) * 0.8;
+      h.state.headYaw = Math.sin(tNow() * 0.4) * 0.25; h.state.headPitch = 0.08 * Math.sin(tNow() * 0.23) + 0.08 * (1 - up); // head up: a stooped, head-down figure seen from behind read as a lump
+      // contre-jour: the low sun is ahead of them, so they stand dark against it with a bright edge
+      h.look.keyK = 0.32; h.look.amb = 0.42; h.look.rimK = 1.6 + near(eventPos('bipedalism'), 0.5) * 0.2;
     }
   });
 
@@ -244,7 +245,7 @@ export default function Savanna() {
       <primitive object={R.grass} />
       <mesh position={[0, 1.6, -19]} material={R.hazeMat}><planeGeometry args={[160, 3.2]} /></mesh>
       <points geometry={R.mg} material={R.moteMat} frustumCulled={false} />
-      <group ref={walker} position={[-7, 0, 0]}><group scale={1.55}><Creature ref={hero} rig="biped" preset="sahelanthropus" params={heroParams} look={{ rimDir: [0.85, 0.3], keyDir: [-0.2, 0.3, 0.9] }} palette={{ rim: '#ffb070', key: '#a89078' }} /></group></group>
+      <group ref={walker} position={[-7, 0, 0]}><group scale={1.55}><Creature ref={hero} rig="biped" preset="sahelanthropus" params={heroParams} look={{ rimDir: [0.3, 0.95], keyDir: [-0.6, 0.6, 0.5], sss: 0.3, rimPow: 4 }} palette={{ rim: '#ffcf96', key: '#c8b096' }} /></group></group>
     </group>
   );
 }

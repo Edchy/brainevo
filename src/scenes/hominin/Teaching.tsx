@@ -73,14 +73,14 @@ export default function Teaching() {
     if (hTm) {
       setKnap(hTm.state, cT.raise, cT.hit, tm, 1, 0.9, 0.85);
       hTm.state.headPitch = -0.2 + 0.03 * Math.sin(tm * 0.7); hTm.state.headYaw = 0; hTm.state.mouth = 0;
-      hTm.look.w = w; hTm.look.keyK = 0.4 + cT.hit * 0.9; hTm.look.rimK = 0.6; hTm.look.sss = 0.5; hTm.look.amb = 0.14;
+      hTm.look.w = w; hTm.look.keyK = 0.4 + cT.hit * 0.9; hTm.look.rimK = 0.6; hTm.look.sss = 0.3; hTm.look.amb = 0.18;
     }
     if (hLm) {
       // the learner watches the teacher's hands, then tries it
       const watch = 1 - smoothstep(0.0, 0.5, fl2) * (pl > 0 ? 1 : 0);
       setKnap(hLm.state, cL.raise * (pl > 0 ? 1 : 0.0), cL.hit, tm + 1.7, -1, 0.55, 0.85);
       hLm.state.headPitch = -0.22 + 0.04 * watch; hLm.state.headYaw = 0; hLm.state.mouth = 0;
-      hLm.look.w = w; hLm.look.keyK = 0.38 + cL.hit * 0.9; hLm.look.rimK = 0.6; hLm.look.sss = 0.5; hLm.look.amb = 0.14;
+      hLm.look.w = w; hLm.look.keyK = 0.38 + cL.hit * 0.9; hLm.look.rimK = 0.6; hLm.look.sss = 0.3; hLm.look.amb = 0.18;
     }
     R.floor.uniforms.uAlpha.value = w; R.flake.uniforms.uAlpha.value = w; R.flake.uniforms.uHotAmt.value = 0;
     if (hTm) tw(hTm.state.pLx, hTm.state.pLy + 0.05, hTm.state.pLz, A);

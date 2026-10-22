@@ -23,7 +23,7 @@ float spr(){ vec2 c = gl_PointCoord-.5; float d = length(c)*2.; return smoothste
 `;
 
 /** warm-rimmed primate palette used by every primate scene (rim colour is the per-creature accent) */
-export const PRIMATE_LOOK = { rimK: 1.9, rimPow: 2.4, keyK: 1.1, amb: 0.15, sss: 0.5, fur: 1, groundAO: 0.4, keyDir: [0.25, 0.85, 0.45] as [number, number, number] } as const;
+export const PRIMATE_LOOK = { rimK: 1.9, rimPow: 2.4, keyK: 1.1, amb: 0.2, sss: 0.35, fur: 1, groundAO: 0.4, keyDir: [0.25, 0.85, 0.45] as [number, number, number] } as const;
 
 interface PrimateProps extends Omit<CreatureProps, 'rig'> {
   /** scene weight 0..1 (crossfade) is written into look.w by the caller via handle.look.w */

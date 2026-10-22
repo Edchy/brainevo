@@ -45,6 +45,6 @@ export const PALETTES_DEF: Record<PaletteId, Palette> = {
 };
 
 export const BRUSH_DEF: Record<BrushId, { name: string; blurb: string; size: number; relief: number }> = {
-  fine: { name: 'Fine', blurb: 'Small strokes, detail survives.', size: 1, relief: 1 },
+  fine: { name: 'Fine', blurb: 'Small strokes, detail survives.', size: 0.8, relief: 1 },
   full: { name: 'Full', blurb: 'Broad loaded strokes, heavy impasto.', size: 1.75, relief: 1.45 },
 };

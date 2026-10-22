@@ -37,7 +37,7 @@
     "file": "first-life.mp3",
     "title": "First Single-Celled Life",
     "era": "origin",
-    "text": "By three and a half billion years ago, and probably much earlier, the first living cells had appeared. They were single cells, but they could already sense chemicals and respond. That is the seed of every nervous system."
+    "text": "By 3.5 billion years ago, and probably much earlier, the first living cells had appeared. They were single cells, but they could already sense chemicals and respond. That is the seed of every nervous system."
   },
   {
     "n": 5,
@@ -69,7 +69,7 @@
     "file": "eukaryotes.mp3",
     "title": "Eukaryotic Cells",
     "era": "origin",
-    "text": "Around two billion years ago, one cell swallowed another and the two became partners. The swallowed bacterium became the mitochondrion, a power plant that fueled bigger and more complex cells, including eventually neurons."
+    "text": "Around 2 billion years ago, one cell swallowed another and the two became partners. The swallowed bacterium became the mitochondrion, a power plant that fueled bigger and more complex cells, including eventually neurons."
   },
   {
     "n": 9,
@@ -93,7 +93,7 @@
     "file": "first-neurons-nerve-net.mp3",
     "title": "First Neurons and the Nerve Net",
     "era": "nerves",
-    "text": "Around six hundred million years ago, some animals began to use cells that carry electrical signals. In jellyfish and sea anemones this takes the form of a nerve net, a web of neurons with no central command. It was the first step toward every brain that followed."
+    "text": "Around 600 million years ago, some animals began using cells that carry electrical signals. In jellyfish and sea anemones they form a nerve net, a web of neurons with no central command: the first step toward every brain that followed."
   },
   {
     "n": 12,
@@ -117,7 +117,7 @@
     "file": "cambrian-explosion-eyes.mp3",
     "title": "The Cambrian Explosion and the Rise of Eyes",
     "era": "nerves",
-    "text": "About five hundred and forty million years ago, animal life diversified dramatically in the Cambrian explosion. Many animals evolved eyes, and the race between hunters and hunted favored sharper senses. Processing all that visual information pushed brains to become more complex."
+    "text": "About 540 million years ago, animal life diversified dramatically in the Cambrian explosion. Many animals evolved eyes, and the race between hunters and hunted favored sharper senses. Processing all that visual information pushed brains to become more complex."
   },
   {
     "n": 15,
@@ -133,7 +133,7 @@
     "file": "first-vertebrates-neural-crest.mp3",
     "title": "The First Vertebrates",
     "era": "vertebrate",
-    "text": "Around five hundred and twenty million years ago, the first true vertebrates swam in Cambrian seas. They had a head with paired eyes and a protective braincase, built by new embryonic cells called the neural crest. These innovations let the brain grow more complex."
+    "text": "Around 520 million years ago, the first true vertebrates swam in Cambrian seas. They had a head with paired eyes and a protective braincase, built by new embryonic cells called the neural crest. These innovations let the brain grow more complex."
   },
   {
     "n": 17,
@@ -189,7 +189,7 @@
     "file": "tetrapods-move-to-land.mp3",
     "title": "Tetrapods Move onto Land",
     "era": "vertebrate",
-    "text": "About three hundred and seventy-five million years ago, fishes like Tiktaalik, with sturdy fins and lungs, were exploring the shallows, and their relatives became the first animals with four limbs. Life in air demanded new ways to see, hear and move."
+    "text": "About 375 million years ago, fishes like Tiktaalik, with sturdy fins and lungs, were exploring the shallows, and their relatives became the first animals with four limbs. Life in air demanded new ways to see, hear and move."
   },
   {
     "n": 24,
@@ -205,7 +205,7 @@
     "file": "synapsids.mp3",
     "title": "Synapsids: Our Branch Splits Off",
     "era": "vertebrate",
-    "text": "This is the start of our own branch of the tree. Around 315 million years ago, the synapsids split from the line that would lead to reptiles and birds. Their brains were still small, but they held the pallium tissue that would one day become the neocortex."
+    "text": "Around 315 million years ago, our own branch of the tree began: the synapsids split from the line leading to reptiles and birds. Their brains were small, but held the pallium tissue that would one day become the neocortex."
   },
   {
     "n": 26,
@@ -213,7 +213,7 @@
     "file": "reptile-brain-plan.mp3",
     "title": "The Reptile Brain Plan",
     "era": "vertebrate",
-    "text": "Reptiles evolved a compact brain with strong brainstem, midbrain and basal ganglia circuits for movement, habit and survival. A thin layered cortex sat on top. These ancient structures are still present in the human brain, though modern research shows reptile brains are more capable than once believed."
+    "text": "Reptiles evolved a compact brain with strong brainstem, midbrain and basal ganglia circuits for movement, habit and survival, under a thin layered cortex. We still carry these structures, and reptile brains turn out to be more capable than once believed."
   },
   {
     "n": 27,
@@ -349,7 +349,7 @@
     "file": "mirror-self-recognition.mp3",
     "title": "Recognizing Oneself in the Mirror",
     "era": "primate",
-    "text": "Put a mark on a chimpanzee’s face and show it a mirror, and it touches the mark on itself. That is the mirror test. It suggests a sense of self that we share with our closest relatives."
+    "text": "Put a mark on a chimpanzee’s face and show it a mirror, and it touches the mark on itself. That is the mirror test. It suggests a sense of self that we share with our closest relatives. You can take it yourself, right here."
   },
   {
     "n": 44,
@@ -357,7 +357,7 @@
     "file": "sahelanthropus.mp3",
     "title": "Sahelanthropus: the Dawn of the Hominin Line",
     "era": "hominin",
-    "text": "Around seven million years ago in Chad, a small-brained ape called Sahelanthropus lived close to the split between our ancestors and the chimpanzees. Its brain was about the size of a chimp's, but its skull hints at an upright stance. The long story of the human brain begins with a modest organ."
+    "text": "Around 7 million years ago, in Chad, Sahelanthropus lived close to the split between our ancestors and chimpanzees. Its brain was chimp-sized, but its skull hints at an upright stance. The human brain's long story begins with a modest organ."
   },
   {
     "n": 45,
@@ -365,7 +365,7 @@
     "file": "bipedalism.mp3",
     "title": "Walking Upright",
     "era": "hominin",
-    "text": "Some six million years ago, early hominins started walking on two legs. This freed their hands to carry things and, eventually, to make tools. It also narrowed the pelvis, setting up a long-running tension between big brains and the birth canal."
+    "text": "About 6 million years ago, early hominins started walking on two legs. This freed their hands to carry things and, eventually, to make tools. It also narrowed the pelvis, setting up a long-running tension between big brains and the birth canal."
   },
   {
     "n": 46,
@@ -373,7 +373,7 @@
     "file": "ardipithecus.mp3",
     "title": "Ardipithecus ramidus",
     "era": "hominin",
-    "text": "Ardi lived in Ethiopian woodland about four and a half million years ago. She walked upright on the ground yet could still climb, thanks to a grasping big toe. Her brain was still chimp-sized, so the brain's big expansion had not begun."
+    "text": "About 4.4 million years ago, Ardi lived in Ethiopian woodland. She walked upright on the ground yet could still climb, thanks to a grasping big toe. Her brain was still chimp-sized, so the brain's big expansion had not begun."
   },
   {
     "n": 47,
@@ -381,7 +381,7 @@
     "file": "laetoli-footprints.mp3",
     "title": "Footprints at Laetoli",
     "era": "hominin",
-    "text": "Three and a half million years ago, hominins walked across wet volcanic ash in what is now Tanzania. Their footprints hardened and survived. They show a human-like stride, long before our ancestors had big brains."
+    "text": "About 3.7 million years ago, hominins walked across wet volcanic ash in what is now Tanzania. Their footprints hardened and survived. They show a human-like stride, long before our ancestors had big brains."
   },
   {
     "n": 48,
@@ -389,7 +389,7 @@
     "file": "australopithecus-lucy.mp3",
     "title": "Australopithecus afarensis and \"Lucy\"",
     "era": "hominin",
-    "text": "Lucy was an Australopithecus afarensis who lived in Ethiopia over three million years ago. She walked upright but was just over a metre tall. Her kind had brains of about four to five hundred cubic centimetres, still close to a chimpanzee’s."
+    "text": "About 3.2 million years ago, Lucy, an Australopithecus afarensis, lived in Ethiopia. She walked upright but was just over a metre tall. Her kind had brains of about 400 to 500 cubic centimetres, still close to a chimpanzee’s."
   },
   {
     "n": 49,
@@ -397,7 +397,7 @@
     "file": "oldowan-tools.mp3",
     "title": "The First Stone Tools: Oldowan",
     "era": "hominin",
-    "text": "Nearly three million years ago, hominins in Africa began striking flakes off stones to make sharp edges. Even this simple craft needs planning and precise hands. The meat these tools unlocked fed a hungry, growing brain."
+    "text": "Nearly 3 million years ago, hominins in Africa began striking flakes off stones to make sharp edges. Even this simple craft needs planning and precise hands. The meat these tools unlocked fed a hungry, growing brain."
   },
   {
     "n": 50,
@@ -405,7 +405,7 @@
     "file": "homo-habilis.mp3",
     "title": "Homo habilis, the \"Handy Man\"",
     "era": "hominin",
-    "text": "Homo habilis, the handy man, lived in Africa over two million years ago. Its brain was around six hundred cubic centimetres, noticeably bigger than Lucy’s. It made simple stone tools and may show early hints of language-related brain structure, though that is debated."
+    "text": "Over 2 million years ago, Homo habilis, the handy man, lived in Africa. Its brain was around 600 cubic centimetres, noticeably bigger than Lucy’s. It made simple stone tools and may show early hints of language-related brain structure, though that is debated."
   },
   {
     "n": 51,
@@ -413,7 +413,7 @@
     "file": "homo-erectus.mp3",
     "title": "Homo erectus: A Bigger Brain and Body",
     "era": "hominin",
-    "text": "Homo erectus appeared about two million years ago, with a body much like ours and a brain around nine hundred cubic centimetres. It was the first hominin known to spread far beyond Africa. Yet its children still grew up faster than ours do."
+    "text": "About 2 million years ago, Homo erectus appeared, with a body much like ours and a brain around 900 cubic centimetres. It was the first hominin known to spread far beyond Africa. Yet its children still grew up faster than ours do."
   },
   {
     "n": 52,
@@ -453,7 +453,7 @@
     "file": "control-of-fire.mp3",
     "title": "Control of Fire and Cooking",
     "era": "hominin",
-    "text": "By about a million years ago, our ancestors were using fire under control. Cooking makes food easier to digest, so the body gets more energy for less effort, which may have helped feed larger brains. Evenings by the fire also gave people more time to be social."
+    "text": "By about a million years ago, our ancestors were using fire under control. Cooked food is easier to digest, giving more energy for less effort, which may have helped feed larger brains. Evenings by the fire also left more time to be social."
   },
   {
     "n": 57,
@@ -461,7 +461,7 @@
     "file": "homo-heidelbergensis.mp3",
     "title": "Homo heidelbergensis",
     "era": "hominin",
-    "text": "Homo heidelbergensis was a large hominin with a brain of around twelve hundred cubic centimetres. It hunted big game, which demanded teamwork and planning. It may be close to the common ancestor of Neanderthals and modern humans."
+    "text": "Homo heidelbergensis was a large hominin with a brain of around 1,200 cubic centimetres. It hunted big game, which demanded teamwork and planning. It may be close to the common ancestor of Neanderthals and modern humans."
   },
   {
     "n": 58,
@@ -477,7 +477,7 @@
     "file": "neanderthals.mp3",
     "title": "Neanderthals",
     "era": "hominin",
-    "text": "Neanderthals lived in Europe and western Asia for hundreds of thousands of years. Their brains averaged about fifteen hundred cubic centimetres, a little larger than ours, though shaped differently. They made fine tools, controlled fire, and looked after their sick."
+    "text": "Neanderthals lived in Europe and western Asia for hundreds of thousands of years. Their brains averaged about 1,500 cubic centimetres, a little larger than ours, though shaped differently. They made fine tools, controlled fire, and looked after their sick."
   },
   {
     "n": 60,
@@ -485,7 +485,7 @@
     "file": "homo-naledi.mp3",
     "title": "Homo naledi: A Small Brain in a Late Species",
     "era": "hominin",
-    "text": "Homo naledi lived in South Africa as recently as a quarter of a million years ago, yet its brain was only about the size of an early Homo's. It reminds us that brain size is not the whole story. Its remains were found deep inside a cave, and why they got there remains debated."
+    "text": "Homo naledi lived in South Africa as recently as a quarter of a million years ago, yet its brain was about the size of early Homo's. Brain size is not the whole story. How its remains got deep into a cave is still debated."
   },
   {
     "n": 61,
@@ -501,7 +501,7 @@
     "file": "jebel-irhoud-sapiens.mp3",
     "title": "The Earliest Homo sapiens",
     "era": "sapiens",
-    "text": "In the hills of Morocco, researchers found skulls about three hundred thousand years old. The faces look strikingly like ours. Inside, the brain was already large, though not yet shaped like ours."
+    "text": "In the hills of Morocco, researchers found skulls about 300,000 years old. The faces look strikingly like ours. Inside, the brain was already large, though not yet shaped like ours."
   },
   {
     "n": 63,
@@ -541,7 +541,7 @@
     "file": "out-of-africa.mp3",
     "title": "Out of Africa",
     "era": "sapiens",
-    "text": "Around sixty thousand years ago, groups of modern humans left Africa for good. They crossed deserts, mountains and seas. Their flexible, social brains carried them to every continent but Antarctica."
+    "text": "Around 60,000 years ago, groups of modern humans left Africa for good. They crossed deserts, mountains and seas. Their flexible, social brains carried them to every continent but Antarctica."
   },
   {
     "n": 68,
@@ -565,7 +565,7 @@
     "file": "burial-ritual.mp3",
     "title": "Burial and Ritual",
     "era": "sapiens",
-    "text": "People started laying their dead in graves, often with gifts of beads, ochre or tools. This hints at grief, memory and a concept of death. The brain was now imagining beyond the present moment."
+    "text": "People had been burying their dead for at least 100,000 years. At Sunghir they dressed them in thousands of ivory beads. Somewhere along the way, a brain looked at someone it loved, now still, and asked: where did they go?"
   },
   {
     "n": 71,
@@ -577,22 +577,30 @@
   },
   {
     "n": 72,
+    "id": "gobekli-tepe",
+    "file": "gobekli-tepe.mp3",
+    "title": "Minds in Everything",
+    "era": "sapiens",
+    "text": "About 11,500 years ago, hunter-gatherers raised giant carved pillars at Göbekli Tepe. Was it a temple? Archaeologists still debate it. A brain built to read minds senses them everywhere: in animals, storms and stars. Many scientists see that as one root of religion."
+  },
+  {
+    "n": 73,
     "id": "agriculture",
     "file": "agriculture.mp3",
     "title": "Agriculture",
     "era": "modern",
-    "text": "About eleven thousand years ago, people began to sow grain and keep animals. Villages and towns followed. Life in bigger groups called for counting, planning and trust among many people."
+    "text": "About 11,000 years ago, people began to sow grain and keep animals. Villages and towns followed. Life in bigger groups called for counting, planning and trust among many people."
   },
   {
-    "n": 73,
+    "n": 74,
     "id": "writing",
     "file": "writing.mp3",
     "title": "Writing",
     "era": "modern",
-    "text": "Around five thousand two hundred years ago, scribes in Sumer pressed marks into clay. Reading repurposes parts of the visual brain that evolved for other tasks. Writing gave humanity a memory beyond any single mind."
+    "text": "Around 5,200 years ago, scribes in Sumer pressed marks into clay. Reading repurposes parts of the visual brain that evolved for other tasks. Writing gave humanity a memory beyond any single mind."
   },
   {
-    "n": 74,
+    "n": 75,
     "id": "alphabet",
     "file": "alphabet.mp3",
     "title": "The Alphabet",
@@ -600,7 +608,7 @@
     "text": "Alphabets trimmed writing down to a few dozen letters, each standing for a sound. That made reading far easier to learn. More minds could now take part in the written world."
   },
   {
-    "n": 75,
+    "n": 76,
     "id": "philosophy-of-mind",
     "file": "philosophy-of-mind.mp3",
     "title": "Philosophy and the Seat of the Mind",
@@ -608,7 +616,7 @@
     "text": "Ancient thinkers began to ask what the mind is and where it lives. Hippocrates declared that the brain is the source of joy and sorrow. The brain had started to study itself."
   },
   {
-    "n": 76,
+    "n": 77,
     "id": "printing-press",
     "file": "printing-press.mp3",
     "title": "The Printing Press",
@@ -616,7 +624,7 @@
     "text": "Around 1440, Gutenberg built a press with movable type. Books became cheap and ideas spread widely. Human knowledge could now accumulate and be questioned at a much larger scale."
   },
   {
-    "n": 77,
+    "n": 78,
     "id": "scientific-revolution",
     "file": "scientific-revolution.mp3",
     "title": "The Scientific Revolution",
@@ -624,7 +632,7 @@
     "text": "In the sixteenth and seventeenth centuries, anatomists drew the brain with new accuracy. Thomas Willis tied brain structures to behaviour. Observation and experiment were becoming the tools for understanding the mind."
   },
   {
-    "n": 78,
+    "n": 79,
     "id": "neuron-doctrine",
     "file": "neuron-doctrine.mp3",
     "title": "Neurons and the Localisation of Function",
@@ -632,15 +640,15 @@
     "text": "Broca and Wernicke linked speech to specific regions of the cortex. Then Cajal looked through his microscope and drew the neurons themselves. The brain, he showed, is a network of separate cells."
   },
   {
-    "n": 79,
+    "n": 80,
     "id": "eeg",
     "file": "eeg.mp3",
     "title": "The EEG",
     "era": "modern",
-    "text": "In 1929 Hans Berger recorded electrical rhythms from the human scalp. Brain waves could now be watched in a living person. They revealed the patterns of sleep, attention and seizures."
+    "text": "In 1929, Hans Berger recorded electrical rhythms from the human scalp. Brain waves could now be watched in a living person. They revealed the patterns of sleep, attention and seizures."
   },
   {
-    "n": 80,
+    "n": 81,
     "id": "fmri",
     "file": "fmri.mp3",
     "title": "fMRI",
@@ -648,7 +656,7 @@
     "text": "Functional MRI follows blood flow to reveal which parts of the brain are busy. It lets us see thinking, remembering and feeling in healthy people. Entire networks of the brain came into view."
   },
   {
-    "n": 81,
+    "n": 82,
     "id": "brain-computer-interfaces",
     "file": "brain-computer-interfaces.mp3",
     "title": "Brain-Computer Interfaces",
@@ -656,19 +664,155 @@
     "text": "Tiny electrode arrays can now read movement and speech intentions from the cortex. People with paralysis have controlled cursors, robot arms and voice synthesisers by thought alone. The brain is learning to speak directly to machines."
   },
   {
-    "n": 82,
+    "n": 83,
     "id": "ai-mirror",
     "file": "ai-mirror.mp3",
     "title": "AI as a Mirror",
     "era": "modern",
-    "text": "Neural networks, inspired loosely by the brain, can now see, translate and converse. They are very unlike biological brains. By comparing them with our own minds, we learn what intelligence might be."
+    "text": "In 2012, a neural network loosely inspired by the brain learned to recognise objects in photos far better than any program before it. Machines began to learn from examples, a little like brains do, and became a mirror for studying our own minds."
   },
   {
-    "n": 83,
+    "n": 84,
+    "id": "machines-learn-language",
+    "file": "machines-learn-language.mp3",
+    "title": "Machines Learn Our Language",
+    "era": "modern",
+    "text": "In 2017, a new kind of neural network appeared: the transformer. Trained on vast amounts of human writing, its descendants learned to use language with startling fluency. For the first time, something other than a person could talk back. Is anyone home inside? Nobody knows."
+  },
+  {
+    "n": 85,
     "id": "now",
     "file": "now.mp3",
     "title": "Now",
     "era": "modern",
-    "text": "Here we are. A brain of eighty-six billion neurons, running on twenty watts, is looking back over its own history. What it does next is up to us."
+    "text": "Here we are: a brain of 86 billion neurons, running on 20 watts, looking back over its own history. Now it shares the world with machines that learn. What happens next is up to us. Look into the mirror: there it is."
+  },
+  {
+    "n": 86,
+    "id": "minds-and-machines",
+    "file": "minds-and-machines.mp3",
+    "title": "Minds and Machines",
+    "era": "future",
+    "text": "What comes next is not painted yet. Machines that learn could help us understand the brain, heal it, maybe even connect to it. They could also be misused. Whether a machine can ever feel is an open question. The brush is in our hands."
+  },
+  {
+    "n": 87,
+    "id": "your-lifetime",
+    "file": "your-lifetime.mp3",
+    "title": "Four Thousand Weeks",
+    "era": "future",
+    "text": "A long human life is about 4,000 weeks. Each square here is one of them. Tell us your age, and the weeks you have already lived will fill in. The rest are still blank. Nobody else gets to paint them."
+  },
+  {
+    "n": 88,
+    "id": "sun-brightens",
+    "file": "sun-brightens.mp3",
+    "title": "The Sun Grows Brighter",
+    "era": "future",
+    "text": "The Sun is slowly brightening. Within one or two billion years, it will make Earth too hot for life as we know it. Every species, every city, every name will be gone."
+  },
+  {
+    "n": 89,
+    "id": "red-giant",
+    "file": "red-giant.mp3",
+    "title": "The Sun Becomes a Red Giant",
+    "era": "future",
+    "text": "In about 5 billion years, the Sun will run out of hydrogen at its core and swell into a red giant, probably swallowing the Earth. Much of what made you will drift back into space, to build new stars and worlds."
+  },
+  {
+    "n": 90,
+    "id": "last-stars",
+    "file": "last-stars.mp3",
+    "title": "The Last Stars",
+    "era": "future",
+    "text": "In about 100 trillion years, the universe will stop making stars. One by one, the last ones will fade. Then, as far as we know, the dark."
+  },
+  {
+    "n": 91,
+    "id": "coda-imagine",
+    "file": "coda-imagine.mp3",
+    "title": "Imagine Being Dead",
+    "era": "after",
+    "text": "Try to imagine being dead."
+  },
+  {
+    "n": 92,
+    "id": "coda-someone",
+    "file": "coda-someone.mp3",
+    "title": "Someone Was Still There",
+    "era": "after",
+    "text": "You probably pictured darkness, or silence. But someone was still there, noticing the dark. A brain, it seems, cannot imagine its own absence. That may be one reason so many people believe something comes after. Maybe it does. Science can't tell us."
+  },
+  {
+    "n": 93,
+    "id": "coda-before",
+    "file": "coda-before.mp3",
+    "title": "You Have Been Here Before",
+    "era": "after",
+    "text": "And this dark isn't new to you. It's the same dark as the 13.8 billion years before you were born, and those never troubled you. The Roman poet Lucretius made this point more than two thousand years ago."
+  },
+  {
+    "n": 94,
+    "id": "coda-scale",
+    "file": "coda-scale.mp3",
+    "title": "Both Are True",
+    "era": "after",
+    "text": "So here is the strange part. On the scale of the universe, nothing you do matters. On the scale of a life, almost everything does. Both are true. You get to choose which one to live by."
+  },
+  {
+    "n": 95,
+    "id": "coda-electricity",
+    "file": "coda-electricity.mp3",
+    "title": "Electricity",
+    "era": "after",
+    "text": "Every fear you've had, every doubt, the voice that says you're not enough: electricity, racing through your neurons. What other people think of you? Electricity too, in their heads. Real, yes. But a thought is not a fact."
+  },
+  {
+    "n": 96,
+    "id": "coda-nobody",
+    "file": "coda-nobody.mp3",
+    "title": "Nobody Has It Figured Out",
+    "era": "after",
+    "text": "Everyone is figuring it out as they go. Even very successful people often feel like impostors; psychologists first described it in 1978. Nobody was handed a manual. There isn't one."
+  },
+  {
+    "n": 97,
+    "id": "coda-invented",
+    "file": "coda-invented.mp3",
+    "title": "Everything Is Invented",
+    "era": "after",
+    "text": "Money, borders, job titles, the rules about how to be: all invented, by brains like yours. Most of what we treat as fixed was made up, and can be made again. You're allowed to invent too."
+  },
+  {
+    "n": 98,
+    "id": "coda-mistakes",
+    "file": "coda-mistakes.mp3",
+    "title": "Get It Wrong",
+    "era": "after",
+    "text": "Every brain in this story learned by getting things wrong. A mistake is a surprise, and surprise is exactly the signal neurons learn from. So don't hide. Try. Get it wrong. Try again."
+  },
+  {
+    "n": 99,
+    "id": "coda-here",
+    "file": "coda-here.mp3",
+    "title": "Here, Now",
+    "era": "after",
+    "text": "You are 13.8 billion years in the making: atoms from the Big Bang and from long-dead stars, an unbroken line of life four billion years long. There has never been another you. You live here, now. Breathe in."
+  },
+  {
+    "n": 100,
+    "id": "coda-morning",
+    "file": "coda-morning.mp3",
+    "title": "It Is Still Morning",
+    "era": "after",
+    "text": "And it is early. Stars will keep forming for about 100 trillion years. If that span were a single day, we would be twelve seconds past midnight. The story has barely begun, and you are in it."
+  },
+  {
+    "n": 101,
+    "id": "coda-heartbeats",
+    "file": "coda-heartbeats.mp3",
+    "title": "Your Heartbeats",
+    "era": "after",
+    "text": "That is about how many times your heart has beaten since you arrived. Thank you for spending them here. Now go and spend the rest."
   }
 ]

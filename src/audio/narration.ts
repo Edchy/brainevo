@@ -3,7 +3,7 @@ import { events } from '../data';
 import type { TimelineEvent } from '../types';
 import { world } from '../world/store';
 import { getSettings, setSetting } from '../style/store';
-import { duck, getBus, isRunning, silent, unlock } from './engine';
+import { duck, getBus, isRunning, unlock } from './engine';
 
 /**
  * Narration that plays itself as you travel. When an event's caption settles at the point of focus, its recording
@@ -13,14 +13,13 @@ import { duck, getBus, isRunning, silent, unlock } from './engine';
  *  - returning to an interrupted clip resumes it; one that finished recently is not repeated (press Listen for that);
  *  - Pause holds the current clip; the next event still speaks on its own.
  *
- * Recordings: drop `<event-id>.mp3` files into src/assets/narration/ (see narration/SCRIPT.md). Until a file exists,
- * the transcript can be read by the system voice ("preview voice" in the Lab), so the flow can be tried now.
+ * Recordings: `<event-id>.mp3` files in src/assets/narration/ (see narration/SCRIPT.md). An event without a file stays
+ * quiet: no Listen button, and Watch gives it reading time instead.
  */
 const FILES = import.meta.glob('../assets/narration/*.mp3', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const URLS: Record<string, string> = {};
 for (const [path, url] of Object.entries(FILES)) URLS[path.split('/').pop()!.replace(/\.mp3$/, '')] = url;
 export const hasRecording = (id: string) => id in URLS;
-export const recordingCount = Object.keys(URLS).length;
 
 const DWELL = 0.45; // s an event must hold the focus before it speaks
 const FOCUS = 0.26; // stations from an event at which it has the focus (its caption is fully shown)
@@ -33,18 +32,18 @@ export interface NarrationState {
   playing: boolean;
   /** 0..1 */
   progress: number;
-  source: 'file' | 'voice' | null;
 }
-let state: NarrationState = { id: null, playing: false, progress: 0, source: null };
+let state: NarrationState = { id: null, playing: false, progress: 0 };
 const subs = new Set<() => void>();
 const set = (p: Partial<NarrationState>) => {
   const n = { ...state, ...p };
-  if (n.id === state.id && n.playing === state.playing && n.source === state.source && Math.abs(n.progress - state.progress) < 0.004) return;
+  if (n.id === state.id && n.playing === state.playing && Math.abs(n.progress - state.progress) < 0.004) return;
   state = n;
   subs.forEach((f) => f());
 };
 const subscribe = (f: () => void) => { subs.add(f); return () => { subs.delete(f); }; };
 export const useNarration = () => useSyncExternalStore(subscribe, () => state);
+export const getNarration = () => state;
 
 interface Clip {
   ev: TimelineEvent;
@@ -107,42 +106,6 @@ function fileClip(ev: TimelineEvent, index: number, from: number, onEnd: () => v
   };
 }
 
-// ---- system voice preview (speechSynthesis) ----
-let voice: SpeechSynthesisVoice | null = null;
-function pickVoice() {
-  const all = typeof speechSynthesis !== 'undefined' ? speechSynthesis.getVoices() : [];
-  const en = all.filter((v) => /^en(-|_|$)/i.test(v.lang));
-  const pref = ['Daniel', 'Serena', 'Arthur', 'Oliver', 'Google UK English Male', 'Samantha', 'Karen', 'Moira'];
-  voice = pref.map((n) => en.find((v) => v.name.startsWith(n))).find(Boolean) ?? en.find((v) => v.localService) ?? en[0] ?? null;
-}
-if (typeof speechSynthesis !== 'undefined') { pickVoice(); speechSynthesis.addEventListener?.('voiceschanged', pickVoice); }
-export const previewAvailable = () => typeof speechSynthesis !== 'undefined';
-
-function voiceClip(ev: TimelineEvent, index: number, onEnd: () => void): Clip {
-  const text = ev.audio?.transcript ?? ev.summary;
-  const u = new SpeechSynthesisUtterance(text);
-  if (voice) u.voice = voice;
-  u.rate = 0.94; u.pitch = 0.96;
-  if (silent()) u.volume = 0;
-  let at = 0, done = false, paused = false, pausedMs = 0, pausedAt = 0;
-  const t0 = performance.now();
-  const est = Math.max(2, text.split(/\s+/).length / (2.6 * u.rate));
-  u.onboundary = (e) => { at = e.charIndex; };
-  u.onend = () => { if (!done) { done = true; onEnd(); } };
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
-  return {
-    ev, index,
-    stop() { done = true; speechSynthesis.cancel(); },
-    pause() { paused = true; pausedAt = performance.now(); speechSynthesis.pause(); },
-    resume() { if (paused) pausedMs += performance.now() - pausedAt; paused = false; speechSynthesis.resume(); },
-    position: () => (performance.now() - t0) / 1000,
-    // not every voice reports word boundaries: fall back to elapsed time against ~2.6 words a second
-    progress: () => Math.min(0.99, Math.max(at / Math.max(1, text.length), (performance.now() - t0 - pausedMs) / 1000 / est)),
-    playing: () => !done && !paused,
-  };
-}
-
 // ---- director ----
 let clip: Clip | null = null;
 let cand = -1, candSince = 0;
@@ -150,22 +113,17 @@ const finishedAt: Record<string, number> = {};
 const leftAt: Record<string, { at: number; pos: number }> = {};
 let held: string | null = null; // event the visitor paused; it stays quiet until they press play
 
-function canSpeak(ev: TimelineEvent) {
-  const s = getSettings();
-  return hasRecording(ev.id) || (s.previewVoice && previewAvailable() && !!(ev.audio?.transcript ?? ev.summary));
-}
-
 function start(index: number, manual = false) {
   const ev = events[index];
-  if (!ev || !canSpeak(ev)) return;
+  if (!ev || !hasRecording(ev.id)) return;
   const now = performance.now() / 1000;
   stopCurrent(true);
   const left = leftAt[ev.id];
   const from = !manual && left && now - left.at < 60 ? Math.max(0, left.pos - 1.5) : 0;
   const end = () => { finishedAt[ev.id] = performance.now() / 1000; if (clip?.ev.id === ev.id) { clip = null; duck(false); set({ playing: false, progress: 1 }); } };
-  clip = hasRecording(ev.id) ? fileClip(ev, index, from, end) : voiceClip(ev, index, end);
+  clip = fileClip(ev, index, from, end);
   duck(true);
-  set({ id: ev.id, playing: true, progress: 0, source: hasRecording(ev.id) ? 'file' : 'voice' });
+  set({ id: ev.id, playing: true, progress: 0 });
 }
 
 function stopCurrent(fade: boolean) {
@@ -176,9 +134,13 @@ function stopCurrent(fade: boolean) {
   duck(false);
 }
 
+/** while the (dev-only) voice guide is talking with the visitor, the recorded narration keeps quiet */
+let guideHold = false;
+export function holdNarration(on: boolean) { guideHold = on; }
+
 function tick() {
   const s = getSettings();
-  const live = s.sound && s.narration && isRunning();
+  const live = s.sound && s.narration && isRunning() && !guideHold;
   const f = world.stationF;
   const i = Math.round(f);
   const focus = i >= 0 && i < events.length && Math.abs(f - i) < FOCUS ? i : -1;
@@ -186,9 +148,9 @@ function tick() {
   if (focus !== cand) { cand = focus; candSince = now; if (held && events[focus]?.id !== held) held = null; }
 
   if (!live) {
-    if (clip && clip.playing() && (!s.sound || !s.narration)) { stopCurrent(true); set({ playing: false }); }
+    if (clip && clip.playing() && (!s.sound || !s.narration || guideHold)) { stopCurrent(true); set({ playing: false }); }
   } else {
-    if (clip && Math.abs(f - clip.index) > AWAY) { stopCurrent(true); set({ id: null, playing: false, progress: 0, source: null }); }
+    if (clip && Math.abs(f - clip.index) > AWAY) { stopCurrent(true); set({ id: null, playing: false, progress: 0 }); }
     if (cand >= 0 && now - candSince > DWELL && events[cand].id !== clip?.ev.id && events[cand].id !== held) {
       const id = events[cand].id;
       const recent = finishedAt[id] !== undefined && now - finishedAt[id] < 45;
@@ -212,11 +174,11 @@ export function toggleNarration(ev: TimelineEvent) {
   }
   held = null;
   const idx = events.findIndex((e) => e.id === ev.id);
-  // after an unlock the context may still be starting; the element/voice starts on its own once it runs
+  // after an unlock the context may still be starting; the element starts on its own once it runs
   start(idx, true);
 }
 
-export const canNarrate = (ev: TimelineEvent) => canSpeak(ev);
+export const canNarrate = (ev: TimelineEvent) => hasRecording(ev.id);
 
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   // dev: window.__narration() -> current narration state

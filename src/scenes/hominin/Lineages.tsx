@@ -83,7 +83,7 @@ export default function Lineages() {
       s.headYaw = lerp(0.1, -0.35, smoothstep(0.0, 0.5, t)) + Math.sin(tm * 0.35) * 0.08;
       s.headPitch = 0.04 * Math.sin(tm * 0.27); s.mouth = 0;
       s.propR = 3; s.gripR = 0.65; s.rollR = 3.0; s.armsFree = 0;
-      h.look.w = w; h.look.rimK = 1.1 + near(eventPos('neanderthals'), 0.5) * 0.5; h.look.keyK = 1.1; h.look.amb = 0.05; h.look.sss = 0.45;
+      h.look.w = w; h.look.rimK = 1.1 + near(eventPos('neanderthals'), 0.5) * 0.5; h.look.keyK = 1.1; h.look.amb = 0.12; h.look.sss = 0.3;
     }
   });
 
