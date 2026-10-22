@@ -3,7 +3,7 @@ import { events } from '../data';
 import type { TimelineEvent } from '../types';
 import { world } from '../world/store';
 import { getSettings, setSetting } from '../style/store';
-import { duck, getBus, isRunning, unlock } from './engine';
+import { duck, getBus, isRunning, onUnlock, unlock } from './engine';
 
 /**
  * Narration that plays itself as you travel. When an event's caption settles at the point of focus, its recording
@@ -57,24 +57,55 @@ interface Clip {
 }
 
 // ---- file playback through the Web Audio voice bus (two elements so one can fade out while the next starts) ----
-const pool: { el: HTMLAudioElement; gain: GainNode | null; busy: boolean }[] = [];
-function element() {
-  let p = pool.find((x) => !x.busy);
-  if (!p) {
-    const el = new Audio();
-    el.preload = 'auto';
-    el.crossOrigin = 'anonymous';
-    p = { el, gain: null, busy: false };
-    pool.push(p);
-  }
+interface Player { el: HTMLAudioElement; gain: GainNode | null; busy: boolean; primed: boolean }
+const pool: Player[] = [];
+function create() {
+  const el = new Audio();
+  el.preload = 'auto';
+  el.crossOrigin = 'anonymous';
+  const p: Player = { el, gain: null, busy: false, primed: false };
+  pool.push(p);
+  return p;
+}
+function connect(p: Player) {
   const bus = getBus();
   if (bus && !p.gain) {
     p.gain = bus.ctx.createGain();
     bus.ctx.createMediaElementSource(p.el).connect(p.gain).connect(bus.voice);
   }
+}
+function element() {
+  const p = pool.find((x) => !x.busy) ?? create();
+  connect(p);
   p.busy = true;
   return p;
 }
+
+// iOS (every browser there) lets an audio element start by itself, as a line does when you arrive at its event, only
+// after it has once played from a tap. The tap that switches sound on plays a moment of silence on each player, so the
+// lines that follow may start on their own. Elsewhere it is harmless.
+let silence = '';
+function silentWav() {
+  const n = 800, b = new Uint8Array(44 + n), v = new DataView(b.buffer); // 0.1 s, 8 kHz, 8-bit mono
+  const tag = (o: number, t: string) => { for (let i = 0; i < 4; i++) b[o + i] = t.charCodeAt(i); };
+  tag(0, 'RIFF'); v.setUint32(4, 36 + n, true); tag(8, 'WAVE'); tag(12, 'fmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 8000, true);
+  v.setUint16(32, 1, true); v.setUint16(34, 8, true); tag(36, 'data'); v.setUint32(40, n, true);
+  b.fill(128, 44);
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+}
+onUnlock(() => {
+  while (pool.length < 3) create();
+  silence ||= silentWav();
+  for (const p of pool) {
+    if (p.busy || p.primed) continue;
+    connect(p);
+    p.primed = true;
+    p.el.src = silence;
+    // a line may have claimed the player meanwhile: leave it playing
+    p.el.play().then(() => { if (!p.busy) p.el.pause(); }, () => { p.primed = false; });
+  }
+});
 
 function fileClip(ev: TimelineEvent, index: number, from: number, onEnd: () => void): Clip {
   const p = element();

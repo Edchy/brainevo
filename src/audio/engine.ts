@@ -10,8 +10,8 @@ import { getSettings, subscribe } from '../style/store';
  *                   └── reverb ────┘   (music + fx also feed one long hall reverb; each scene sound in amb
  *                                       sends its own share straight to it)
  *
- * Browsers only start audio after a click, tap or key press in the visit (a wheel scroll does not count), so the
- * context is created lazily and resumed from the first such gesture once the visitor has sound switched on.
+ * Browsers only start audio after a click, tap or key press in the visit (a wheel scroll or a swipe does not count), so
+ * the context is created lazily and resumed from the first such gesture once the visitor has sound switched on.
  */
 export interface Bus { ctx: AudioContext; voice: GainNode; music: GainNode; amb: GainNode; fx: GainNode; reverb: ConvolverNode; master: GainNode }
 
@@ -44,6 +44,10 @@ export function hall(ctx: BaseAudioContext, seconds = 4.2) {
 function build(): Bus {
   const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const ctx = new Ctx({ latencyHint: 'playback' });
+  // iOS: sound like a media app's, so it plays with the ringer on silent (Safari 16.4+); otherwise the switch mutes all
+  // Web Audio, and the narration with it, since its files play through this graph
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+  if (session) try { session.type = 'playback'; } catch { /* older WebKit */ }
   const master = ctx.createGain();
   const limiter = ctx.createDynamicsCompressor();
   limiter.threshold.value = -6; limiter.knee.value = 6; limiter.ratio.value = 12; limiter.attack.value = 0.004; limiter.release.value = 0.25;
@@ -79,10 +83,16 @@ function applyMaster(time = 0.6) {
   bus.master.gain.setTargetAtTime(target(), now, time / 3);
 }
 
+const unlockHooks = new Set<() => void>();
+/** `f` runs inside every unlocking gesture (narration uses it: iOS only lets an audio element start on its own once it has
+ * played from a tap) */
+export const onUnlock = (f: () => void) => { unlockHooks.add(f); };
+
 /** Call from inside a user gesture (click / key / tap). Safe to call repeatedly. */
 export function unlock() {
   if (!getSettings().sound) return;
   if (!bus) bus = build();
+  unlockHooks.forEach((f) => f());
   if (bus.ctx.state !== 'running') bus.ctx.resume().then(() => { applyMaster(); emit(); }, () => {});
   applyMaster();
   emit();
@@ -102,7 +112,8 @@ export function duck(on: boolean) {
 if (typeof window !== 'undefined') {
   // first real gesture of the visit unlocks audio when sound is (still) switched on from a previous visit
   const gesture = () => { if (getSettings().sound && !isRunning()) unlock(); };
-  for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.addEventListener(ev, gesture, { capture: true, passive: true });
+  // (a touch counts on its pointerup / touchend / click, and only when it was a tap rather than a swipe)
+  for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const) window.addEventListener(ev, gesture, { capture: true, passive: true });
   subscribe(() => { if (bus) applyMaster(); emit(); });
   // a backgrounded tab keeps playing the voice, but rAF-driven parts stop: let the OS handle it, just resume on return
   document.addEventListener('visibilitychange', () => { if (!document.hidden && bus && getSettings().sound) bus.ctx.resume().catch(() => {}); });

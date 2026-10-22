@@ -22,9 +22,9 @@ score that gains a voice at each breakthrough.
 - **The mirror** (`src/lib/mirror.ts`, `src/scenes/shared/Mirror.tsx`): opt-in camera, painted in oil; the visitor takes the
   mirror test at the chimpanzee event and sees themselves at "Now" and inside the closing light. Nothing leaves the device.
 - **Watch**: the intro (or Menu) can play the whole piece like a film (`src/lib/watch.ts`); any scroll or key hands back control.
-- The whole frame is painted by an oil-painting pass in five palettes (Prussian, Grisaille, Umber, Verdigris, Oxblood), with fine
-  or full brushwork. The headline is composited into the painting in depth; the caption sits on a darkened, painted ground. See
-  `STYLE.md`. Switch looks live from the **Lab** button (`?lab=0` hides it).
+- The whole frame is painted by an oil-painting pass in Grisaille (greys, where only true colour survives) with fine
+  brushwork. The headline is composited into the painting in depth; the caption sits on a darkened, painted ground. See
+  `STYLE.md`.
 - Sound (`src/audio`): narration that auto-plays per event, music that follows the eras, synthesized sounds for every scene
   (sea, fire, crickets, a bone flute, neurons firing...), all reacting to where you are and how fast you move, and sound
   effects on story beats. Off until the
@@ -68,8 +68,8 @@ recordings). `npm run guide:setup -- print` shows the instructions without calli
 - `src/guide/`: the dev-only voice guide (session, tools, panel); `scripts/guide-agent.ts` sets up its agent
 - `src/lib/`: layout, eras, breakthroughs, vision (perception per era), mirror, age, watch
 - `src/world/`: engine (scroll store, Stage, scene blending, dip and reading shade)
-- `src/style/`: the oil pass, palettes, theme tokens, depth headlines
-- `src/components/`: caption, menu, time axis, Lab, sound button, interstitials
+- `src/style/`: the oil pass, palette, theme tokens, depth headlines
+- `src/components/`: caption, menu, time axis, sound button, interstitials
 - `src/audio/`: audio graph, narration director, generative score, scene soundscape
 - `scripts/`: `list-events.ts` (event indices), `narration.ts` (script export and ElevenLabs generation), `guide-agent.ts`
 

@@ -18,13 +18,12 @@ const Stage = lazy(() => import('./world/Stage')); // three.js + scenes load aft
 const Guide = import.meta.env.DEV && import.meta.env.VITE_GUIDE === '1' ? lazy(() => import('./guide/Guide')) : null;
 import { webglAvailable } from './world/gl';
 import { updateWorld, world } from './world/store';
-import LabPanel from './components/LabPanel';
 import Track from './components/Track';
 import Caption from './components/Caption';
 import Axis from './components/Axis';
 import Menu from './components/Menu';
 import SoundButton from './components/SoundButton';
-import { setSetting, useSettings } from './style/store';
+import { setSetting } from './style/store';
 import { CAPTIONS_MEASURED, titleState } from './style/titles/state';
 import { unlock } from './audio/engine';
 import './audio/narration';
@@ -32,32 +31,24 @@ import './audio/score';
 import './audio/soundscape';
 
 /**
- * The reading layer's geometry, in one place: the text band (band layout), the top of the caption, and where the depth
- * headline's last baseline sits so headline + text read as one block. CSS gets it as variables, the WebGL title layer
- * through titleState.
+ * The reading layer's geometry, in one place: the column the caption sits in and where its bottom edge is, so the depth
+ * headline rests on its own caption and headline + text read as one block. CSS gets it as variables, the WebGL title
+ * layer through titleState.
  */
-function readingGeometry(text: string) {
+function readingGeometry() {
   const vw = window.innerWidth, vh = window.innerHeight;
   const mobile = vw < 760;
   const bar = mobile ? 52 : 56;
   const gutter = mobile ? 20 : Math.round(vw * 0.06);
-  // the band holds the tallest caption whole (captions are the narration, word for word, so they are never cut short)
-  const tallest = Math.max(0, ...titleState.capHeights);
-  const band = text === 'band'
-    ? Math.round(Math.max(mobile ? Math.min(330, Math.max(240, vh * 0.4)) : Math.min(290, Math.max(210, vh * 0.32)), tallest + bar + 16 + 28))
-    : 0;
-  const canvasH = vh - band;
-  // band: the headline stands on the picture's lower edge; otherwise it rests on its caption (bottom: bar + 26px)
-  const baseline = text === 'band' ? canvasH - (mobile ? 22 : 30) : 0;
+  // the caption sits bar + 26px (phones: 16px) above the bottom (index.css)
   const capBottom = vh - bar - (mobile ? 16 : 26);
   // the caption's measure (index.css: min(30em, 100vw - 2 gutters) at --t-body), so the headline wraps to the same column
   const em = Math.min(20, Math.max(16.96, 14.4 + vw * 0.004));
   const measure = Math.min(30 * em, vw - 2 * gutter);
-  return { band, gutter, canvasH, canvasW: vw, baseline, capBottom, measure };
+  return { gutter, canvasH: vh, canvasW: vw, capBottom, measure };
 }
 
 export default function App() {
-  const { text, headline } = useSettings();
   const reduced = usePrefersReducedMotion();
   const scroller = useRef<HTMLDivElement>(null);
   const layout = useMemo(() => buildLayout(events), []);
@@ -90,19 +81,19 @@ export default function App() {
     };
   }, [layout]);
 
-  const [geo, setGeo] = useState(() => readingGeometry(text));
+  const [geo, setGeo] = useState(readingGeometry);
   useLayoutEffect(() => {
     const m = () => {
-      const g = readingGeometry(text);
+      const g = readingGeometry();
       setGeo(g);
-      Object.assign(titleState, { left: g.gutter, baseline: g.baseline, capBottom: g.capBottom, canvasH: g.canvasH, canvasW: g.canvasW, measure: g.measure });
+      Object.assign(titleState, { left: g.gutter, capBottom: g.capBottom, canvasH: g.canvasH, canvasW: g.canvasW, measure: g.measure });
       titleState.version++;
     };
     m();
     window.addEventListener('resize', m);
     window.addEventListener(CAPTIONS_MEASURED, m);
     return () => { window.removeEventListener('resize', m); window.removeEventListener(CAPTIONS_MEASURED, m); };
-  }, [text, headline]);
+  }, []);
 
   const { vw, max } = dims;
   const introW = vw;
@@ -209,7 +200,7 @@ export default function App() {
   }, [layout, vw, introW, max, goToStation, scrollByX, scrollToX]);
 
   return (
-    <div className="app" style={{ '--intro-w': `${introW}px`, '--band-h': `${geo.band}px`, '--gutter': `${geo.gutter}px` } as React.CSSProperties}>
+    <div className={gl ? 'app has-gl' : 'app'} style={{ '--intro-w': `${introW}px`, '--gutter': `${geo.gutter}px` } as React.CSSProperties}>
       <a className="skip" href="#timeline-end" onClick={(e) => { e.preventDefault(); scrollToX(max); }}>Skip to the end of the timeline</a>
       {gl ? <Suspense fallback={null}><Stage /></Suspense> : null}
       {!gl && <Background top={top} bottom={bottom} scroll={sl} reduced={reduced} accent={accent} darkness={darkness} />}
@@ -221,7 +212,6 @@ export default function App() {
       >
         <Track layout={layout} onBegin={begin} onWatch={watch} onRestart={restart} />
       </main>
-      <div className="band" aria-hidden="true" />
       <Caption event={capEvent} opacity={capOpacity} />
       <MirrorPanel event={capOpacity > 0.3 ? capEvent : null} />
       {capEvent?.extra === 'weeks' && <WeeksChart opacity={capOpacity} />}
@@ -237,7 +227,6 @@ export default function App() {
       <PlayDialog />
       <SoundButton />
       {Guide && <Suspense fallback={null}><Guide /></Suspense>}
-      <LabPanel />
       <Axis layout={layout} progress={progress} xToFrac={xToFrac} years={years} readout={capEvent?.era === 'after' ? 'Here and now' : undefined} eraName={eraName} vision={activeIndex >= 0 ? visionNote(world.stationF) : null} onJump={(f) => scrollToX(f * max)} />
     </div>
   );

@@ -4,7 +4,6 @@ import type { TimelineEvent } from '../types';
 import { events } from '../data';
 import { captionParts, fmtWhen } from '../lib/format';
 import { canNarrate, toggleNarration, useNarration } from '../audio/narration';
-import { useSettings } from '../style/store';
 import { CAPTIONS_MEASURED, titleState } from '../style/titles/state';
 import DeepContent from './Deep';
 import { setAge, useAge } from '../lib/age';
@@ -87,11 +86,10 @@ function CodaCaption({ event, opacity, onMore }: { event: TimelineEvent; opacity
 
 /**
  * Invisible copies of every caption. Their heights tell the depth-title layer where each headline must sit so it rests
- * on its own caption (headline set "with the text"). Re-measured on resize, font load and layout changes.
+ * on its own caption. Re-measured on resize and font load.
  */
 const CaptionMeasure = memo(function CaptionMeasure() {
   const ref = useRef<HTMLDivElement>(null);
-  const { text } = useSettings();
   useLayoutEffect(() => {
     const measure = () => {
       const el = ref.current;
@@ -107,7 +105,7 @@ const CaptionMeasure = memo(function CaptionMeasure() {
     document.fonts.addEventListener('loadingdone', measure);
     window.addEventListener('resize', measure);
     return () => { document.fonts.removeEventListener('loadingdone', measure); window.removeEventListener('resize', measure); };
-  }, [text]);
+  }, []);
   return (
     <div ref={ref} aria-hidden="true">
       {events.map((ev) => (

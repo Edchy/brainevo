@@ -80,15 +80,14 @@ It decides what survives:
   painted away (the family-tree tubes and pial vessels had to be thickened). Put detail at stroke scale or larger.
 - **Avoid albedo mottling on big, bright, smooth surfaces.** The relief turns it into lumps ("cauliflower"). Model the form
   with light instead: mid-tone colours (not near-white), gloss highlights, rim light.
-- Saturated, emissive accents survive as colour; under the Grisaille palette only strongly saturated, lit areas keep hue.
+- The palette is Grisaille: colour is drained to grey, and only strongly saturated, lit (emissive) areas keep their hue.
 - The pass samples its neighbours from the finished frame (it runs in its own EffectPass), so bloom, the dip and the
   reading shade are painted too. The headline is drawn after it and stays crisp.
 
 ## Headlines in depth
 `SceneDef.titleDepth` defaults to 0.7 x the focal distance, so the hero sits behind the words and only clear foreground
 (near particles, a passing creature) slips in front; and only lit geometry occludes (dark ground does not). The headline
-rests on its own caption at the lower left (`src/style/titles`, geometry from `App.tsx`); `titleAnchor` / `anchors.ts`
-only apply when the Lab's headline placement is set to "Top".
+rests on its own caption at the lower left (`src/style/titles`, geometry from `App.tsx`).
 
 ## More dev hooks
 - `?brainlab=fish` (tube | fish | reptile | mammal | primate | hominin | human) `&yaw=-0.5&tissue=%23ab9fa6&cut=0.35`: a turntable

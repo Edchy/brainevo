@@ -6,7 +6,6 @@ import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
 import type { BloomEffect } from 'postprocessing';
 import * as THREE from 'three';
 import { SCENES } from '../scenes';
-import { useSettings } from '../style/store';
 import { OIL_BLOOM, OilEffects } from '../style/oil';
 import { MirrorOverlay } from '../scenes/shared/Mirror';
 import TitleLayer from '../style/titles';
@@ -109,7 +108,6 @@ function sanitizeBloom(b: BloomEffect | null) {
 }
 
 const PostFX = memo(function PostFX({ bloom }: { bloom: RefObject<BloomEffect | null> }) {
-  const { titles } = useSettings();
   return (
     <EffectComposer multisampling={0}>
       {/* threshold high enough that lit bodies (people, animals) stay crisp while light itself (flames, stars, neurons) glows;
@@ -119,7 +117,7 @@ const PostFX = memo(function PostFX({ bloom }: { bloom: RefObject<BloomEffect | 
       <Dip />
       <Scrim />
       <OilEffects />
-      {titles ? <TitleLayer /> : <></>}
+      <TitleLayer />
     </EffectComposer>
   );
 });

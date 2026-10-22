@@ -51,10 +51,4 @@ export interface SceneDef {
    * distance |pos - look|, so the hero stays behind the words and only clear foreground passes in front.
    */
   titleDepth?: number | ((t: number) => number);
-  /**
-   * Where the headline sits for events in this scene (themes with --title-placement: art). x,y are 0..1 of the frame
-   * (x is the left edge / centre / right edge depending on `align`); size multiplies the type size. Pick the half of
-   * the frame the hero is not in. Can also be set centrally in src/style/titles/anchors.ts.
-   */
-  titleAnchor?: { x: number; y: number; align?: 'left' | 'center' | 'right'; size?: number };
 }

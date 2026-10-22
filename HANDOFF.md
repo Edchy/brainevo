@@ -17,16 +17,16 @@ npm run build                   # tsc -b && vite build, must stay clean
 npx tsx scripts/list-events.ts  # events with their station indices
 npx tsx scripts/narration.ts export   # regenerate narration/SCRIPT.md from the data
 ```
-URL params (all optional, they override the saved settings): `?palette=prussian|grisaille|umber|verdigris|oxblood`,
-`?brush=fine|full`, `?text=scrim|band|overlay`, `?headline=text|top`, `?titles=0|1`, `?lab=0|1`, `?perf=1` (FPS/GPU overlay),
-`?safe=1` (no post-processing), `?dpr=1`, `?adaptive=0`. Settings persist in localStorage `brainevo.settings.v3`.
+URL params (all optional): `?perf=1` (FPS/GPU overlay), `?safe=1` (no post-processing), `?dpr=1`, `?adaptive=0`. The sound
+switches persist in localStorage `brainevo.settings.v3`. The look is fixed (Grisaille, fine brushwork, painted shade, headline
+with the text, in depth); the Lab that switched it was removed on 2026-10-22 (STYLE.md).
 
 ## Where things are
 | Path | What |
 |---|---|
 | `src/types.ts`, `src/data/events.*.ts` | `TimelineEvent` schema and the 102 stations: text (`summary` is both the caption and the narration line, word for word), dates, **sources**. `events.future.ts` holds the future chapter and the closing reflection (`kind: 'coda'`, centred line, no headline; `extra` = weeks / imagine / breath / heartbeats). Negative `yearsAgo` = the future. |
 | `src/lib/` | layout (signed log spacing, `focusX`), eras, breakthroughs, smooth scroll, date formatting (`fmtWhen`, `captionParts`), `vision.ts` (perception per era + sketch), `mirror.ts` (opt-in camera, mirror test), `age.ts`, `watch.ts` (film mode). |
-| `src/components/`, `src/App.tsx`, `src/index.css` | Reading layer: Caption (+ Read more sheet), Menu (with Sound), Axis, SoundButton, LabPanel, Track (intro, chapter and breakthrough interstitials, outro). `readingGeometry()` in App is the single source of the layout numbers. |
+| `src/components/`, `src/App.tsx`, `src/index.css` | Reading layer: Caption (+ Read more sheet), Menu (with Sound), Axis, SoundButton, Track (intro, chapter and breakthrough interstitials, outro). `readingGeometry()` in App is the single source of the layout numbers. |
 | `src/world/` | Engine: `store.ts` (`world.stationF`), `Stage.tsx` (Canvas, scene blending, PostFX chain, dev tools), `Dip.tsx`, `Scrim.tsx`, `PerfHud.tsx`. |
 | `src/style/` | `oil/` (the paint pass + theme tokens), `palettes.ts`, `store.ts` (settings), `titles/` (depth headlines). |
 | `src/audio/` | `engine.ts` (graph, unlock on gesture, ducking), `narration.ts` (auto-play director), `score.ts` (generative music), `soundscape.ts` (the sounds of each event, and how they react to movement), `instruments.ts` (those sounds, synthesized), `dev.ts` (offline level/spectrogram bench). |
@@ -40,7 +40,7 @@ URL params (all optional, they override the saved settings): `?palette=prussian|
   Scenes are scrub-reversible: drive visuals from it, not from elapsed time. Engine contract: SCENES.md.
 - Post chain: scene -> bloom -> vignette -> dip -> reading shade | oil (own pass) -> depth headline. Why the split matters: STYLE.md.
 - Reading layer: the headline is painted into the frame and rests on its own caption (lower left); captions are measured from
-  hidden copies so each headline knows its baseline. The text layouts are `scrim` (default), `band`, `overlay`.
+  hidden copies so each headline knows its baseline. The text sits on the painted shade (darker since 2026-10-22).
 - Audio: off until "Begin with sound" or the speaker button (a click or key is required by browsers). Narration auto-plays for
   the event at the focus after a 0.45 s dwell, fades between events, pauses/resumes, does not repeat a clip finished in the last
   45 s, resumes one interrupted in the last minute. Files: `src/assets/narration/<event-id>.mp3` (picked up at build time);
@@ -61,7 +61,9 @@ URL params (all optional, they override the saved settings): `?palette=prussian|
   a few colour worlds: keep the blue one, add a monochrome one and two or three others (done: five palettes, two brushworks).
 - Headlines: keep them **in depth** ("pretty cool"), but they were too big, too screamy, took too much space. Visuals are the focal
   point, text secondary. The explanatory text must be very readable. They were unsure between overlay / separate dark band /
-  bottom gradient: all three are in the Lab (default: painted shade = gradient), plus two headline placements.
+  bottom gradient: all three were in the Lab, plus two headline placements. **2026-10-22, the user chose**: Grisaille, Fine
+  brushwork, Painted shade (and asked for it darker), headline with the text, painted into the scene (depth); the rest and
+  the Lab were removed.
 - Narration from a script they will put into ElevenLabs; it should **play by itself as you slide**, no play button needed, but
   pausable; a fluent experience. Also a cool cinematic soundtrack. Scrolling a little slower (done: wheel gain 0.8, longer glide).
 - Sound that is **aware of where you are in the timeline and how fast you scroll**, so it becomes immersive (done: scene
@@ -178,10 +180,13 @@ URL params (all optional, they override the saved settings): `?palette=prussian|
 - `THREE.PointsMaterial` draws squares: use `roundSprite()`. A JSX `<shaderMaterial uniforms>` object does not keep its reference.
 
 ## Open work, roughly in priority order
-1. **The user chooses**: palette, brushwork, text layout, headline placement (Lab). Then delete the losing options and, if they
-   want, hide the Lab (`?lab=0` default) for the public site.
+1. **Mobile sound** (2026-10-22): the user found narration did not auto-play on their phone. Fixed for iOS (every browser
+   there is WebKit): the unlocking tap primes the narration players with a moment of silence (an audio element may only start
+   by itself after it has once played from a tap), `navigator.audioSession.type = 'playback'` so the ringer's silent switch
+   does not mute Web Audio, and pointerup/click also unlock. Verified only on desktop Chrome (no regressions); confirm on the
+   user's phone. A swipe never counts as a tap: until the visitor taps once, a returning visitor's sound cannot start.
 2. **"follo-style" oil painting**: the word was unclear. Interpreted as a fuller, more painterly oil ("Full" brushwork). Ask which
-   painter or style they meant (a specific artist? fauvist?) and add it as a brush or palette.
+   painter or style they meant (a specific artist? fauvist?). Possibly moot: on 2026-10-22 they chose Fine brushwork over Full.
 3. **Narration**: being recorded through the API (`npm run narration -- voice --limit=N`) with **Eleven v4** (`eleven_v4`, the
    script's default) and the voice in `ELEVENLABS_VOICE_ID`. The user compared: the same voice and sentence sound "waaay better"
    on v4 than on Multilingual v2, so v4 uses the voice's own settings (no overrides). A second voice was tried and rejected.
@@ -206,7 +211,7 @@ URL params (all optional, they override the saved settings): `?palette=prussian|
    keep outliers out. Phones still unmeasured.
 7. **Remaining weak frames** (from the 2026-10-16 contact sheets under oil): the eukaryote cell (#8) is diagrammatic, oceans (#3)
    and first stars (#1) are sparse, the Denisovan family tree (#61) still reads weakly, four similar brain-in-glass frames
-   (#50, 51, 54, 55), the band layout shows an empty band on the intro.
+   (#50, 51, 54, 55).
 8. **Fact-check caveats**: claims were checked against the cited sources and corrected where wrong, but not every sentence of every
    transcript was traced to a page; the Bennett book itself was never consulted (breakthrough dates come from the fossil record of
    the groups he names). A domain expert read would still be worth it.

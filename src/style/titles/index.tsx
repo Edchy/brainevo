@@ -1,8 +1,8 @@
 /**
  * Depth-sandwiched headlines: type composited INTO the frame using the scene depth buffer. Geometry nearer than the
  * title plane occludes the type; the background and farther geometry sit behind it. The headline is deliberately
- * secondary: a modest size, placed by art direction (SceneDef.titleAnchor / anchors.ts) in the part of the frame the
- * hero is not in, so the picture leads and the type only now and then slips behind it.
+ * secondary: a modest size, set with the reading text as one block (lower left, resting on its own caption), so the
+ * picture leads and the type only now and then slips behind it.
  *
  * Theme knobs (CSS custom properties, read from <html>): --title-font, --title-color, --title-opacity (0..1),
  * --title-blend (normal | screen | add), --title-weight, --title-spacing (em), --title-size (fraction of the frame
@@ -17,8 +17,6 @@ import * as THREE from 'three';
 import { events } from '../../data';
 import { world } from '../../world/store';
 import { titleState } from './state';
-import { resolveAnchor } from './anchors';
-import { getSettings } from '../store';
 
 const FRAG = /* glsl */ `
 uniform sampler2D uTex;
@@ -86,7 +84,7 @@ class TitleEffect extends Effect {
 interface Theme {
   family: string; color: string; weight: string; spacing: number; size: number;
   opacity: number; key: number; mode: number; parallax: number; soft: number; shadow: number;
-  /** headline set with the text: left edge and measure as fractions of the frame width */
+  /** the reading column: left edge and measure as fractions of the frame width (null until App has measured it) */
   withText: { x: number; measure: number } | null;
   version: number;
 }
@@ -107,7 +105,7 @@ function readTheme(): Theme {
     parallax: parseFloat(v('--title-parallax', '0.3')),
     soft: parseFloat(v('--title-softness', '0.4')),
     shadow: parseFloat(v('--title-shadow', '0.5')),
-    withText: getSettings().headline === 'text' && titleState.measure > 0
+    withText: titleState.measure > 0
       ? { x: titleState.left / titleState.canvasW, measure: titleState.measure / titleState.canvasW }
       : null,
     version: titleState.version,
@@ -141,10 +139,9 @@ function drawSlot(ctx: CanvasRenderingContext2D, W: number, H: number, idx: numb
   const eraStart = !events[idx - 1] || events[idx - 1].era !== ev.era;
   const font = (px: number) => `${th.weight} ${px}px ${th.family}`;
   const wt = th.withText;
-  const an = wt ? { x: wt.x, y: 0, align: 'left' as const, size: 1 } : resolveAnchor(idx);
-  const side = an.align !== 'center';
-  const maxW = wt ? W * wt.measure : W * (side ? Math.min(0.42, an.align === 'left' ? 0.94 - an.x : an.x - 0.06) : 0.6);
-  const cap = H * th.size * (eraStart ? 1.12 : 1) * (an.size ?? 1);
+  if (!wt) return;
+  const maxW = W * wt.measure;
+  const cap = H * th.size * (eraStart ? 1.12 : 1);
   // largest size (<= cap) that fits in two lines, else three, within the measure
   let px = cap, lines: string[] = [];
   for (; px > H * 0.03; px *= 0.95) {
@@ -155,16 +152,12 @@ function drawSlot(ctx: CanvasRenderingContext2D, W: number, H: number, idx: numb
     if (widest <= maxW && (lines.length <= 2 || (lines.length === 3 && px < cap * 0.8))) break;
   }
   const lh = px * 1.04;
-  const total = lines.length * lh;
-  const x = W * an.x;
-  // with the text: the block grows upward from just above this event's caption (or from the band's edge)
-  let top = Math.max(H * 0.07, H * an.y - total / 2);
-  if (wt) {
-    const capH = titleState.capHeights[idx] ?? 0;
-    const base = titleState.baseline > 0 ? titleState.baseline : titleState.capBottom - capH - Math.max(10, px * 0.22);
-    top = (base / titleState.canvasH) * H - (lines.length - 1) * lh - 0.8 * lh;
-  }
-  ctx.textAlign = an.align;
+  const x = W * wt.x;
+  // the block grows upward from just above this event's caption
+  const capH = titleState.capHeights[idx] ?? 0;
+  const base = titleState.capBottom - capH - Math.max(10, px * 0.22);
+  const top = (base / titleState.canvasH) * H - (lines.length - 1) * lh - 0.8 * lh;
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(px);
   ctx.letterSpacing = `${th.spacing * px}px`;

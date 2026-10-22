@@ -3,9 +3,9 @@ import { useFrame } from '@react-three/fiber';
 import { Effect, EffectAttribute } from 'postprocessing';
 import { Uniform, Vector3 } from 'three';
 import { world } from '../../world/store';
-import { BRUSH_DEF, PALETTES_DEF } from '../palettes';
+import { BRUSH, PALETTE } from '../palettes';
 import { visionAt } from '../../lib/vision';
-import { getSettings } from '../store';
+import { GLAZE, SHADE_GLSL } from '../../world/shade';
 
 /*
  * Oil painting, one fullscreen pass, 21 taps:
@@ -19,7 +19,8 @@ import { getSettings } from '../store';
  *    richer-than-human four-cone colour, all eased by where you are in the story.
  * Palette and brushwork are uniforms, so switching them never recompiles the pass.
  */
-const frag = /* glsl */ `
+const frag = /* glsl */ `${SHADE_GLSL}
+uniform float uGlaze;   // the painted shade's glaze (world/shade.ts)
 uniform float uTime;
 uniform float uScale;
 uniform float uBrush;   // stroke footprint multiplier (1 = fine)
@@ -156,6 +157,10 @@ void mainImage(const in vec4 inputColor0, const in vec2 uv, out vec4 outputColor
     c = mix(c, min(sk, vec3(1.)), uSketch);
   }
 
+  // a thin dark glaze over the dry paint under the reading text: the shade before this pass stops at the floor this pass
+  // lifts dark paint to (ground, relief), the glaze takes that floor down too. The headline is composited after it.
+  c *= pow(1. - uGlaze * shade(uv), 2.);
+
   outputColor = vec4(max(c, 0.), inputColor.a);
 }
 `;
@@ -167,6 +172,8 @@ class OilEffect extends Effect {
       attributes: EffectAttribute.CONVOLUTION,
       uniforms: new Map<string, Uniform>([
         ['uTime', new Uniform(0)],
+        ['uAspect', new Uniform(1.6)],
+        ['uGlaze', new Uniform(GLAZE)],
         ['uScale', new Uniform(1)],
         ['uBrush', new Uniform(1)],
         ['uRelief', new Uniform(1)],
@@ -185,10 +192,9 @@ class OilEffect extends Effect {
     });
   }
   set(name: string, v: number) { (this.uniforms.get(name) as Uniform<number>).value = v; }
-  /** eases every palette/brush uniform toward its target, so switching in the Lab cross-dissolves */
+  /** eases every palette/brush uniform toward its target, so the perception stages cross-dissolve as you travel */
   ease(k: number) {
-    const st = getSettings();
-    const p = PALETTES_DEF[st.palette], b = BRUSH_DEF[st.brush];
+    const p = PALETTE, b = BRUSH;
     const u = this.uniforms;
     const go = (n: string, t: number) => { const x = u.get(n) as Uniform<number>; x.value += (t - x.value) * k; };
     const go3 = (n: string, t: [number, number, number]) => { (u.get(n)!.value as Vector3).lerp(tmp.set(t[0], t[1], t[2]), k); };
@@ -209,6 +215,9 @@ export function OilEffects() {
     fx.set('uTime', world.reduced ? 0 : world.time);
     // stroke size relative to a 900px-tall viewport, in device pixels
     fx.set('uScale', Math.max(1, state.size.height * state.viewport.dpr / 900));
+    fx.set('uAspect', state.size.width / Math.max(1, state.size.height));
+    // dev: window.__glaze = 0.3 tries another strength of the painted shade's glaze live
+    if (import.meta.env.DEV) fx.set('uGlaze', (window as unknown as { __glaze?: number }).__glaze ?? GLAZE);
     fx.ease(1 - Math.exp(-Math.min(dt, 0.1) * 5));
   });
   return createElement('primitive', { object: fx });

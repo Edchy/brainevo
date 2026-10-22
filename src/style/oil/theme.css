@@ -1,7 +1,7 @@
 /*
  * Oil painting world. One family does all the reading (EB Garamond: a true book face, sturdy at text sizes, with real
- * italics for dates); Cormorant Garamond, its display cousin, sets the painted headlines. Ink is a warm ivory tuned
- * per palette, the single accent is a gilt drawn from the palette's light.
+ * italics for dates); Cormorant Garamond, its display cousin, sets the painted headlines. The palette is Grisaille
+ * (src/style/palettes.ts): ink is a near-white ivory, the single accent a pale stone gilt drawn from its light.
  * The fonts are linked in index.html; this file is imported by main.tsx so the first paint already has the palette.
  */
 :root {
@@ -10,15 +10,15 @@
   --ui-radius: 3px;
   --ui-panel-blur: 0px;
 
-  /* palette tokens (Prussian by default) */
-  --ink: #efe7d6;
-  --ink-dim: rgba(239, 231, 214, 0.74);
-  --ink-faint: rgba(239, 231, 214, 0.5);
-  --rule: rgba(239, 231, 214, 0.2);
-  --gilt: #d8b36e;
-  /* the painting's ground as it renders (sampled from the canvas), and a deeper margin of it for the band and dialogs */
-  --ground: #262d48;
-  --ground-deep: #181d31;
+  /* palette tokens (Grisaille) */
+  --ink: #ecebe6;
+  --ink-dim: rgba(236, 235, 230, 0.72);
+  --ink-faint: rgba(236, 235, 230, 0.48);
+  --rule: rgba(236, 235, 230, 0.2);
+  --gilt: #cdc6b6;
+  /* the painting's ground as it renders (sampled from the canvas), and a deeper margin of it for dialogs and the page */
+  --ground: #313132;
+  --ground-deep: #1f1f20;
 
   --ui-ink: var(--ink);
   --ui-ink-dim: var(--ink-dim);
@@ -27,7 +27,7 @@
   --accent: var(--gilt);
 
   --title-font: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
-  --title-color: #f3ebdb;
+  --title-color: #f1f0eb;
   --title-weight: 600;
   --title-size: 0.06;
   --title-spacing: 0.004;
@@ -38,23 +38,6 @@
   --title-blend: normal;
   /* glowing particles (no depth) dim the letters they cross only a little, so a star never deletes a word */
   --title-key: 0.35;
-}
-
-:root[data-palette='grisaille'] {
-  --ink: #ecebe6; --ink-dim: rgba(236, 235, 230, 0.72); --ink-faint: rgba(236, 235, 230, 0.48); --rule: rgba(236, 235, 230, 0.2);
-  --gilt: #cdc6b6; --ground: #313132; --ground-deep: #1f1f20; --title-color: #f1f0eb;
-}
-:root[data-palette='umber'] {
-  --ink: #f2e6cf; --ink-dim: rgba(242, 230, 207, 0.74); --ink-faint: rgba(242, 230, 207, 0.5); --rule: rgba(242, 230, 207, 0.2);
-  --gilt: #e2ae5c; --ground: #453525; --ground-deep: #2c2117; --title-color: #f6e9cf;
-}
-:root[data-palette='verdigris'] {
-  --ink: #ebe9dd; --ink-dim: rgba(235, 233, 221, 0.74); --ink-faint: rgba(235, 233, 221, 0.5); --rule: rgba(235, 233, 221, 0.2);
-  --gilt: #cdb97c; --ground: #1e3a37; --ground-deep: #122624; --title-color: #f0eee2;
-}
-:root[data-palette='oxblood'] {
-  --ink: #f3e4d8; --ink-dim: rgba(243, 228, 216, 0.74); --ink-faint: rgba(243, 228, 216, 0.5); --rule: rgba(243, 228, 216, 0.2);
-  --gilt: #e3a96c; --ground: #49292d; --ground-deep: #2f1a1d; --title-color: #f7e8dc;
 }
 
 body { background: var(--ground-deep); transition: background-color 0.8s; }
